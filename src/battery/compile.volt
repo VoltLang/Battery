@@ -2,11 +2,13 @@
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 module battery.compile;
 
+import battery.defines;
+
 
 class Target
 {
-	string arch;
-	string platform;
+	Arch arch;
+	Platform platform;
 
 	string[] defs;
 
@@ -49,9 +51,9 @@ string[] buildCmd(Volta v, Target t, Compile c)
 		v.cmd,
 		"--no-stdlib",
 		"--platform",
-		t.platform,
+		t.platform.toString(),
 		"--arch",
-		t.arch,
+		t.arch.toString(),
 		"-o",
 		c.derivedTarget,
 		"-I",

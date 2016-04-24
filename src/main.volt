@@ -4,6 +4,7 @@ module main;
 
 import watt.io : writefln;
 
+import battery.defines;
 import battery.license;
 import battery.compile;
 
@@ -26,8 +27,8 @@ int main(string[] args)
 void doBuild()
 {
 	auto t = new Target();
-	t.arch = "x86_64";
-	t.platform = "linux";
+	t.arch = Arch.X86_64;
+	t.platform = Platform.Linux;
 
 	auto v = new Volta();
 	v.cmd = "volt";
