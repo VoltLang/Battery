@@ -3,24 +3,8 @@
 module battery.compile;
 
 import battery.defines;
+import battery.configuration;
 
-
-class Target
-{
-	Arch arch;
-	Platform platform;
-
-	string[] defs;
-
-	string outdir;
-
-	uint hash;
-}
-
-class Volta
-{
-	string cmd;
-}
 
 class Compile
 {
@@ -45,15 +29,15 @@ public:
 	}
 }
 
-string[] buildCmd(Volta v, Target t, Compile c)
+string[] buildCmd(Configuration config, Compile c)
 {
 	string[] ret = [
-		v.cmd,
+		config.volta.cmd,
 		"--no-stdlib",
 		"--platform",
-		t.platform.toString(),
+		config.platform.toString(),
 		"--arch",
-		t.arch.toString(),
+		config.arch.toString(),
 		"-o",
 		c.derivedTarget,
 		"-I",
@@ -64,7 +48,7 @@ string[] buildCmd(Volta v, Target t, Compile c)
 		ret ~= "-c";
 	}
 
-	foreach (d; t.defs) {
+	foreach (d; config.defs) {
 		ret ~= ["-D", d];
 	}
 

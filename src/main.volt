@@ -7,6 +7,7 @@ import watt.io : writefln;
 import battery.defines;
 import battery.license;
 import battery.compile;
+import battery.configuration;
 
 
 int main(string[] args)
@@ -23,22 +24,17 @@ int main(string[] args)
 	return 0;
 }
 
-
 void doBuild()
 {
-	auto t = new Target();
-	t.arch = Arch.X86_64;
-	t.platform = Platform.Linux;
-
-	auto v = new Volta();
-	v.cmd = "volt";
+	auto config = getHostConfig();
+	auto v = config.volta;
 
 	auto vrt = new Compile();
 	vrt.library = true;
-	vrt.derivedTarget = "%@execdir%/rt/libvrt-%@arch%-%@platform%.o";
+	vrt.derivedTarget = v.rtBin;
+	vrt.srcRoot = v.rtDir;
 	vrt.name = "vrt";
-	vrt.srcRoot = "%@execdir%/rt/src";
-	vrt.libs = ["gc", "rt", "dl"];
+	vrt.libs = v.rtLibs;
 
 	auto c = new Compile();
 	c.deps = [vrt];
@@ -47,11 +43,26 @@ void doBuild()
 	c.src = ["test/test.volt"];
 	c.derivedTarget = "a.out";
 
-
-	auto ret = buildCmd(v, t, c);
+	auto ret = buildCmd(config, c);
 	foreach (r; ret[1 .. $]) {
 		writefln("%s", r);
 	}
+}
+
+Configuration getHostConfig()
+{
+	auto volta = new Volta();
+	volta.cmd = "volt";
+	volta.rtBin = "%@execdir%/rt/libvrt-%@arch%-%@platform%.o";
+	volta.rtDir = "%@execdir%/rt/src";
+	volta.rtLibs = ["gc", "dl"];
+
+	auto c = new Configuration();
+	c.volta = volta;
+	c.arch = Arch.X86_64;
+	c.platform = Platform.Linux;
+
+	return c;
 }
 
 void printLicense()
