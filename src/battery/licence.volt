@@ -1,6 +1,7 @@
-// Copyright © 2015, Jakob Bornecrantz.  All rights reserved.
+// Copyright © 2015-2016, Jakob Bornecrantz.  All rights reserved.
 // See copyright just below.
 module battery.license;
+
 
 /**
  * This is the license for the Battery.
