@@ -39,9 +39,7 @@ string[] buildCmd(Configuration config, Compile c)
 		"--arch",
 		config.arch.toString(),
 		"-o",
-		c.derivedTarget,
-		"-I",
-		c.srcRoot,
+		c.derivedTarget
 	];
 
 	if (c.library) {
@@ -52,8 +50,12 @@ string[] buildCmd(Configuration config, Compile c)
 		ret ~= ["-D", d];
 	}
 
+	// Make sure a Compile (library) is only added once.
 	Compile[int] added;
+
+	// Make sure a external library is only given to the linker once.
 	int[string] libs;
+
 
 	void addDep(Compile c, bool root = false)
 	{
@@ -63,10 +65,10 @@ string[] buildCmd(Configuration config, Compile c)
 		}
 		added[c.id] = c;
 
-		if (root) {
-			ret ~= ["-I", c.srcRoot];
+		if (root || c.derivedTarget is null) {
+			ret ~= ["--src-I", c.srcRoot];
 		} else {
-			ret ~= ["-I", c.srcRoot, c.derivedTarget];
+			ret ~= ["--lib-I", c.srcRoot, c.derivedTarget];
 		}
 
 		foreach (l; c.libs) {
