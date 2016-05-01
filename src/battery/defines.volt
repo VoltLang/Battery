@@ -15,7 +15,6 @@ module battery.defines;
  */
 enum Platform
 {
-	MinGW,
 	MSVC,
 	Linux,
 	OSX,
@@ -50,7 +49,6 @@ string toString(Arch arch)
 string toString(Platform platform)
 {
 	final switch(platform) with (Platform) {
-	case MinGW: return "mingw";
 	case MSVC: return "msvc";
 	case Linux: return "linux";
 	case OSX: return "osx";
