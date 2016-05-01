@@ -15,7 +15,7 @@ class Volta
 	string rtBin;
 	string rtDir;
 
-	string[] rtLibs;
+	string[][4] rtLibs;
 }
 
 /**
@@ -38,6 +38,14 @@ public:
 
 	uint hash;
 
+
 public:
 	string buildDirDerived;
+
+
+public:
+	this(Volta volta)
+	{
+		this.volta = volta;
+	}
 }

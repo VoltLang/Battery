@@ -27,40 +27,69 @@ int main(string[] args)
 void doBuild()
 {
 	auto config = getHostConfig();
-	auto v = config.volta;
-
-	auto vrt = new Compile();
-	vrt.library = true;
-	vrt.derivedTarget = v.rtBin;
-	vrt.srcRoot = v.rtDir;
-	vrt.name = "vrt";
-	vrt.libs = v.rtLibs;
+	auto vrt = getRtCompile(config);
 
 	auto c = new Compile();
 	c.deps = [vrt];
 	c.name = "a.out";
-	c.srcRoot = "test";
-	c.src = ["test/test.volt"];
+	c.srcRoot = "src";
+	c.src = ["src/main.volt"];
 	c.derivedTarget = "a.out";
 
 	auto ret = buildCmd(config, c);
-	foreach (r; ret[1 .. $]) {
+	foreach (r; ret[0 .. $]) {
 		writefln("%s", r);
 	}
 }
 
-Configuration getHostConfig()
+Volta getVolta()
 {
 	auto volta = new Volta();
 	volta.cmd = "volt";
 	volta.rtBin = "%@execdir%/rt/libvrt-%@arch%-%@platform%.o";
 	volta.rtDir = "%@execdir%/rt/src";
-	volta.rtLibs = ["gc", "dl"];
+	volta.rtLibs[Platform.Linux] = ["gc", "dl", "rt"];
+	volta.rtLibs[Platform.MSVC] = ["advapi32.lib"];
+	volta.rtLibs[Platform.OSX] = ["gc"];
 
-	auto c = new Configuration();
-	c.volta = volta;
-	c.arch = Arch.X86_64;
-	c.platform = Platform.Linux;
+	return volta;
+}
+
+Compile getRtCompile(Configuration config)
+{
+	auto vrt = new Compile();
+	vrt.library = true;
+	vrt.derivedTarget = config.volta.rtBin;
+	vrt.srcRoot = config.volta.rtDir;
+	vrt.libs = config.volta.rtLibs[config.platform];
+	vrt.name = "vrt";
+
+	return vrt;
+}
+
+Configuration getHostConfig()
+{
+	auto volta = getVolta();
+	auto c = new Configuration(volta);
+
+
+	version (X86_64) {
+		c.arch = Arch.X86_64;
+	} else version (X86) {
+		c.arch = Arch.X86;
+	} else {
+		static assert(false, "native arch not supported");
+	}
+
+	version (MSVC) {
+		c.platform = Platform.MSVC;
+	} else version (Linux) {
+		c.platform = Platform.Linux;
+	} else version (OSX) {
+		c.platform = Platform.OSX;
+	} else {
+		static assert(false, "native platform not supported");
+	}
 
 	return c;
 }
