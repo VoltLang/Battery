@@ -38,6 +38,8 @@ string[] buildCmd(Configuration config, Compile c)
 		config.platform.toString(),
 		"--arch",
 		config.arch.toString(),
+		config.linker.flag,
+		config.linker.cmd,
 		"-o",
 		c.derivedTarget
 	];

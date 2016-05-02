@@ -3,11 +3,13 @@
 module main;
 
 import watt.io : writefln;
+import watt.process : getEnv;
 
-import battery.defines;
 import battery.license;
 import battery.compile;
 import battery.configuration;
+import battery.policy.host : getHostConfig;
+import battery.policy.rt : getRtCompile;
 
 
 int main(string[] args)
@@ -26,7 +28,8 @@ int main(string[] args)
 
 void doBuild()
 {
-	auto config = getHostConfig();
+	auto path = getEnv("PATH");
+	auto config = getHostConfig(path);
 	auto vrt = getRtCompile(config);
 
 	auto c = new Compile();
@@ -40,58 +43,6 @@ void doBuild()
 	foreach (r; ret[0 .. $]) {
 		writefln("%s", r);
 	}
-}
-
-Volta getVolta()
-{
-	auto volta = new Volta();
-	volta.cmd = "volt";
-	volta.rtBin = "%@execdir%/rt/libvrt-%@arch%-%@platform%.o";
-	volta.rtDir = "%@execdir%/rt/src";
-	volta.rtLibs[Platform.Linux] = ["gc", "dl", "rt"];
-	volta.rtLibs[Platform.MSVC] = ["advapi32.lib"];
-	volta.rtLibs[Platform.OSX] = ["gc"];
-
-	return volta;
-}
-
-Compile getRtCompile(Configuration config)
-{
-	auto vrt = new Compile();
-	vrt.library = true;
-	vrt.derivedTarget = config.volta.rtBin;
-	vrt.srcRoot = config.volta.rtDir;
-	vrt.libs = config.volta.rtLibs[config.platform];
-	vrt.name = "vrt";
-
-	return vrt;
-}
-
-Configuration getHostConfig()
-{
-	auto volta = getVolta();
-	auto c = new Configuration(volta);
-
-
-	version (X86_64) {
-		c.arch = Arch.X86_64;
-	} else version (X86) {
-		c.arch = Arch.X86;
-	} else {
-		static assert(false, "native arch not supported");
-	}
-
-	version (MSVC) {
-		c.platform = Platform.MSVC;
-	} else version (Linux) {
-		c.platform = Platform.Linux;
-	} else version (OSX) {
-		c.platform = Platform.OSX;
-	} else {
-		static assert(false, "native platform not supported");
-	}
-
-	return c;
 }
 
 void printLicense()

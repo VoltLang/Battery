@@ -2,7 +2,7 @@
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 module battery.configuration;
 
-import battery.defines;
+public import battery.defines;
 
 
 /**
@@ -19,6 +19,18 @@ class Volta
 }
 
 /**
+ * Holds information about linker.
+ */
+class Linker
+{
+	/// Fully qualified command.
+	string cmd;
+
+	/// How to give the cmd to Volta, --link, --cc, --ld.
+	string flag;
+}
+
+/**
  * A build configuration for one or more builds.
  *
  * This can be shared between multiple builds. When cross-compiling there will
@@ -28,6 +40,7 @@ class Configuration
 {
 public:
 	Volta volta;
+	Linker linker;
 
 	Arch arch;
 	Platform platform;
@@ -36,16 +49,11 @@ public:
 
 	string buildDir;
 
+	string path;
+
 	uint hash;
 
 
 public:
 	string buildDirDerived;
-
-
-public:
-	this(Volta volta)
-	{
-		this.volta = volta;
-	}
 }
