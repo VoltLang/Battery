@@ -6,6 +6,7 @@
  */
 module uni.core.target;
 
+import watt.io.file : exists;
 import watt.text.format : format;
 import uni.util.file : getTimes;
 
@@ -89,12 +90,11 @@ public:
 			status = CHECKED;
 		}
 
-		try {
-			ulong a;
-
-			getTimes(name, out a, out mod);
-		} catch (Exception e) {
+		if (!exists(name)) {
 			mod = ulong.min;
+		} else {
+			ulong a;
+			getTimes(name, out a, out mod);
 		}
 	}
 
