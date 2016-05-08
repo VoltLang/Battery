@@ -8,7 +8,7 @@
  */
 module uni.core.solver;
 
-import watt.io : writefln;
+import watt.io : output;
 import watt.path : mkdirP, dirName;
 
 
@@ -87,7 +87,8 @@ private bool build(Target t, CmdGroup g)
 	mkdirP(dirName(t.name));
 
 	// Print to console what we do.
-	writefln(t.rule.print);
+	output.writefln(t.rule.print);
+	output.flush();
 
 	// The business end of the solver.
 	t.status = Target.BUILDING;
