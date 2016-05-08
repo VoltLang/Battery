@@ -5,6 +5,8 @@ module main;
 import watt.io : writefln;
 import watt.process : getEnv;
 
+import uni = uni.core;
+
 import battery.license;
 import battery.compile;
 import battery.configuration;
@@ -32,6 +34,7 @@ void doBuild()
 	auto config = getHostConfig(path);
 	auto vrt = getRtCompile(config);
 
+
 	auto c = new Compile();
 	c.deps = [vrt];
 	c.name = "a.out";
@@ -40,9 +43,21 @@ void doBuild()
 	c.derivedTarget = "a.out";
 
 	auto ret = buildCmd(config, c);
-	foreach (r; ret[0 .. $]) {
-		writefln("%s", r);
+
+	auto ins = new uni.Instance();
+	auto t = ins.fileNoRule(c.derivedTarget);
+	t.deps = new uni.Target[](c.src.length);
+
+	foreach (i, src; c.src) {
+		t.deps[i] = ins.file(src);
 	}
+
+	t.rule = new uni.Rule();
+	t.rule.cmd = ret[0];
+	t.rule.print = "  VOLTA  " ~ c.name;
+	t.rule.args = ret[1 .. $];
+
+	uni.build(t, 2);
 }
 
 void printLicense()
