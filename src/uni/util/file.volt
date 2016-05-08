@@ -9,6 +9,9 @@ module uni.util.file;
 version (Linux || OSX) {
 	import core.posix.sys.stat : stat_t, stat;
 } else {
+	import core.windows.windows : MultiByteToWideChar, CP_UTF8,
+		GetFileAttributesExW, GET_FILEEX_INFO_LEVELS,
+		WIN32_FILE_ATTRIBUTE_DATA;
 }
 
 
@@ -28,7 +31,36 @@ void getTimes(string name, out ulong access, out ulong modified)
 		access = cast(ulong) buf.st_atime;
 		modified = cast(ulong) buf.st_mtime;
 	} else {
-		throw new Exception("getTimes not implemented!");
+		WIN32_FILE_ATTRIBUTE_DATA buf;
+		wchar[512] tmp;
+
+		int numChars = MultiByteToWideChar(
+			CP_UTF8, 0, name.ptr, -1, null, 0);
+
+		if (numChars < 0) {
+			throw new Exception("invalid filename");
+		}
+
+		if (cast(uint) numChars + 1 > tmp.length) {
+			throw new Exception("filename to long");
+		}
+
+		numChars = MultiByteToWideChar(
+			CP_UTF8, 0, name.ptr, -1, tmp.ptr, numChars);
+		tmp[numChars] = '\0';
+
+		int ret = GetFileAttributesExW(
+			tmp.ptr, GET_FILEEX_INFO_LEVELS.GetFileExInfoStandard,
+			cast(void*) &buf);
+		if (ret == 0) {
+			throw new Exception("GetFileAttributesExW failed");
+		}
+
+		access = buf.ftLastAccessTime.dwLowDateTime +
+			buf.ftLastAccessTime.dwHighDateTime << 32UL;
+
+		modified = buf.ftLastWriteTime.dwLowDateTime +
+			buf.ftLastWriteTime.dwHighDateTime << 32UL;
 	}
 }
 
