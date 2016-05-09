@@ -21,8 +21,8 @@ import uni.util.cmd : CmdGroup;
  */
 void build(Target t, uint numJobs)
 {
-	auto g = new CmdGroup(numJobs);
-	auto built = build(t, g);
+	g := new CmdGroup(numJobs);
+	built := build(t, g);
 	if (built) {
 		g.waitAll();
 	}
@@ -46,7 +46,7 @@ private bool build(Target t, CmdGroup g)
 	}
 
 	// Build all the dependancies.
-	bool built;
+	built := false;
 	foreach (child; t.deps) {
 		built = build(child, g) || built;
 	}
@@ -56,7 +56,7 @@ private bool build(Target t, CmdGroup g)
 		g.waitAll();
 	}
 
-	bool shouldBuild;
+	shouldBuild := false;
 	foreach (d; t.deps) {
 		// Kinda risky adding =,
 		// but it avoids uneccasery recompiles.

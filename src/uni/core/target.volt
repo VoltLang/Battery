@@ -23,22 +23,21 @@ private:
 public:
 	Target file(string name)
 	{
-		auto test = name in targets;
+		test := name in targets;
 		if (test !is null) {
 			return *test;
 		}
 
-		auto ret = new Target();
+		ret := new Target();
 		ret.name = name;
 		return targets[name] = ret;
 	}
 
 	Target fileNoRule(string name)
 	{
-		auto ret = file(name);
+		ret := file(name);
 		if (ret.rule !is null) {
-			auto str = format(
-				"File \"%s\" already has a rule", name);
+			str := format("File \"%s\" already has a rule", name);
 			throw new Exception(str);
 		}
 
@@ -93,7 +92,7 @@ public:
 		if (!exists(name)) {
 			mod = ulong.min;
 		} else {
-			ulong a;
+			a : ulong;
 			getTimes(name, out a, out mod);
 		}
 	}

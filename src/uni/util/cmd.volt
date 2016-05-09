@@ -103,7 +103,7 @@ public:
 
 	void run(string cmd, string[] args, DoneDg dg, FILE* log)
 	{
-		int count;
+		count : int;
 		while (waiting >= maxWaiting) {
 			waitOne();
 			if (count++ > 5) {
@@ -112,14 +112,14 @@ public:
 		}
 		version (Windows) {
 
-			auto hProcess = spawnProcessWindows(cmd, args, null, log, log);
+			hProcess := spawnProcessWindows(cmd, args, null, log, log);
 			newCmd(cmd, args, dg, hProcess);
 			waiting++;
 
 		} else version(Posix) {
 
-			int logfd = log is null ? 0 : fileno(log);
-			auto pid = spawnProcessPosix(cmd, args, 0, logfd, logfd);
+			logfd := log is null ? 0 : fileno(log);
+			pid := spawnProcessPosix(cmd, args, 0, logfd, logfd);
 			newCmd(cmd, args, dg, pid);
 			waiting++;
 
@@ -131,19 +131,19 @@ public:
 	void waitOne()
 	{
 		version(Windows) {
-			uint hCount;
+			hCount : uint;
 			foreach (cmd; cmdStore) {
 				if (cmd.used) {
 					__handles[hCount++] = cmd.handle;
 				}
 			}
-			auto ptr = cast(HANDLE*)__handles.ptr;
-			DWORD uRet = WaitForMultipleObjects(hCount, ptr, FALSE, cast(uint)-1);
+			ptr := cast(HANDLE*)__handles.ptr;
+			uRet := WaitForMultipleObjects(hCount, ptr, FALSE, cast(uint)-1);
 			if (uRet == cast(DWORD)-1 || uRet >= hCount) {
 				throw new Exception("Wait failed with error code " ~ .toString(cast(int)GetLastError()));
 			}
 
-			auto hProcess = cast(HANDLE)__handles[uRet];
+			hProcess := cast(HANDLE)__handles[uRet];
 
 			// Retrieve the command for the returned wait, and remove it from the lists.
 			Cmd c;
@@ -156,8 +156,8 @@ public:
 			}
 
 			int result = -1;
-			BOOL bRet = GetExitCodeProcess(hProcess, cast(uint*)&result);
-			BOOL cRet = CloseHandle(hProcess);
+			bRet := GetExitCodeProcess(hProcess, cast(uint*)&result);
+			cRet := CloseHandle(hProcess);
 			if (bRet == 0) {
 				c.reset();
 				throw new CmdException(c.cmd, c.args,
@@ -169,8 +169,8 @@ public:
 
 		} else version(Posix) {
 
-			int result;
-			pid_t pid;
+			result : int;
+			pid : pid_t;
 
 			if (waiting == 0) {
 				return;
@@ -181,7 +181,7 @@ public:
 			while(true) {
 				result = waitManyPosix(out pid);
 
-				bool foundPid;
+				foundPid : bool;
 				foreach (cmd; cmdStore) {
 					if (cmd.handle != pid) {
 						continue;
@@ -206,7 +206,7 @@ public:
 		}
 
 		// But also reset it before calling the dg
-		auto dg = c.done;
+		dg := c.done;
 
 		c.reset();
 		waiting--;
@@ -226,8 +226,7 @@ public:
 private:
 	Cmd newCmd(string cmd, string[] args, DoneDg dg, ProcessHandle handle)
 	{
-		for (size_t i = 0; i < cmdStore.length; i++) {
-			auto c = cmdStore[i];
+		foreach (c; cmdStore) {
 			if (c is null) {
 				throw new Exception("null cmdStore.");
 			}
@@ -252,8 +251,7 @@ class CmdException : Exception
 
 	this(string cmd, string[] args, string reason)
 	{
-		for (size_t i = 0; i < args.length; i++) {
-			auto a = args[i];
+		foreach (a; args) {
 			cmd ~= " " ~ a;
 		}
 		this(cmd, reason);
@@ -266,8 +264,7 @@ class CmdException : Exception
 
 	this(string cmd, string[] args, int result)
 	{
-		for (size_t i = 0; i < args.length; i++) {
-			auto a = args[i];
+		foreach (a; args) {
 			cmd ~= " " ~ a;
 		}
 		this(cmd, result);
