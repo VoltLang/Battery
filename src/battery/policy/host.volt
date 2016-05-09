@@ -36,10 +36,10 @@ version (X86_64) {
 
 Configuration getHostConfig(string path)
 {
-	auto volta = getVolta(path);
-	auto linker = getHostLinker(path);
+	volta := getVolta(path);
+	linker := getHostLinker(path);
 
-	auto c = new Configuration();
+	c := new Configuration();
 	c.path = path;
 	c.volta = volta;
 	c.linker = linker;
@@ -51,7 +51,7 @@ Configuration getHostConfig(string path)
 
 Linker getHostLinker(string path)
 {
-	auto linker = new Linker();
+	linker := new Linker();
 	linker.cmd = searchPath(HostLinkerCommand, path);
 	linker.flag = HostLinkerFlag;
 

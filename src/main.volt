@@ -17,7 +17,7 @@ import battery.policy.rt : getRtCompile;
 int main(string[] args)
 {
 	ArgParser p;
-	auto ret = p.parse(args);
+	ret := p.parse(args);
 	if (ret) {
 		return ret;
 	}
@@ -34,9 +34,9 @@ int main(string[] args)
 void doBuild(Lib[] libs, Exe exe)
 {
 	// Setup the build enviroment and configuration.
-	auto path = getEnv("PATH");
-	auto config = getHostConfig(path);
-	auto vrt = getRtCompile(config);
+	path := getEnv("PATH");
+	config := getHostConfig(path);
+	vrt := getRtCompile(config);
 
 
 	// Transforms Lib and Exe into compiles.
@@ -51,7 +51,7 @@ void doBuild(Lib[] libs, Exe exe)
 		}
 	}
 
-	auto c = exeToCompile(exe);
+	c := exeToCompile(exe);
 	c.deps = [vrt];
 	foreach (dep; exe.dep) {
 		c.deps ~= *(dep in store);
@@ -59,12 +59,12 @@ void doBuild(Lib[] libs, Exe exe)
 
 
 	// Turn the Compile into a command line.
-	auto ret = buildCmd(config, c);
+	ret := buildCmd(config, c);
 
 
 	// Feed that into the solver and have it solve it for us.
-	auto ins = new uni.Instance();
-	auto t = ins.fileNoRule(c.derivedTarget);
+	ins := new uni.Instance();
+	t := ins.fileNoRule(c.derivedTarget);
 	t.deps = new uni.Target[](c.src.length);
 
 	foreach (i, src; c.src) {
@@ -88,7 +88,7 @@ void printLicense()
 
 Compile libToCompile(Lib lib)
 {
-	auto c = new Compile();
+	c := new Compile();
 	c.library = true;
 	c.name = lib.name;
 	c.srcRoot = lib.srcDir;
@@ -98,7 +98,7 @@ Compile libToCompile(Lib lib)
 
 Compile exeToCompile(Exe exe)
 {
-	auto c = new Compile();
+	c := new Compile();
 	c.name = exe.name;
 	c.srcRoot = exe.srcDir;
 	c.src = exe.src;
@@ -178,7 +178,7 @@ int parse(ref ArgParser ap, string[] args)
 	ap.mArgs = args;
 
 	for (ap.popFront(); !ap.isEmpty(); ap.popFront()) {
-		auto ret = ap.parseDefault(ap.front());
+		ret := ap.parseDefault(ap.front());
 		if (ret == ArgParser.Abort) {
 			return -1;
 		}
@@ -215,12 +215,12 @@ int parseDefault(ref ArgParser ap, string tmp)
 
 int parseLib(ref ArgParser ap)
 {
-	auto lib = new Lib();
+	lib := new Lib();
 	lib.name = ap.getNext("expected library name");
 	ap.libs ~= lib;
 
 	for (ap.popFront(); !ap.isEmpty(); ap.popFront()) {
-		auto tmp = ap.front();
+		tmp := ap.front();
 		switch (tmp) {
 		case "-I":
 			lib.srcDir = ap.getNext("expected source folder");
@@ -232,7 +232,7 @@ int parseLib(ref ArgParser ap)
 			lib.dep ~= ap.getNext("expected dependency");
 			break;
 		default:
-			auto ret = ap.parseDefault(ap.front());
+			ret := ap.parseDefault(ap.front());
 			if (ret) {
 				return ret;
 			}
@@ -244,12 +244,12 @@ int parseLib(ref ArgParser ap)
 
 int parseExe(ref ArgParser ap)
 {
-	auto exe = new Exe();
+	exe := new Exe();
 	exe.name = ap.getNext("expected exe name");
 	ap.exe = exe;
 
 	for (ap.popFront(); !ap.isEmpty(); ap.popFront()) {
-		auto tmp = ap.front();
+		tmp := ap.front();
 
 		if (tmp.length > 5 && tmp[$ - 5 .. $] == ".volt") {
 			exe.src ~= tmp;
@@ -267,7 +267,7 @@ int parseExe(ref ArgParser ap)
 			exe.dep ~= ap.getNext("expected dependency");
 			break;
 		default:
-			auto ret = ap.parseDefault(ap.front());
+			ret := ap.parseDefault(ap.front());
 			if (ret) {
 				return ret;
 			}

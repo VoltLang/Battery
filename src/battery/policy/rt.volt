@@ -8,7 +8,7 @@ import battery.configuration;
 
 Compile getRtCompile(Configuration config)
 {
-	auto vrt = new Compile();
+	vrt := new Compile();
 	vrt.library = true;
 	vrt.derivedTarget = config.volta.rtBin;
 	vrt.srcRoot = config.volta.rtDir;

@@ -18,7 +18,7 @@ version (MSVC) {
 
 Volta getVolta(string path)
 {
-	auto volta = new Volta();
+	volta := new Volta();
 	volta.cmd = searchPath(VoltaCommand, path);
 	volta.rtBin = "%@execdir%/rt/libvrt-%@arch%-%@platform%.o";
 	volta.rtDir = "%@execdir%/rt/src";

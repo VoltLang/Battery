@@ -19,9 +19,8 @@ string searchPath(string cmd, string path = null)
 
 	assert(pathSeparator.length == 1);
 
-	auto arr = split(path, pathSeparator[0]);
-	foreach (p; arr) {
-		auto t = p ~ dirSeparator ~ cmd;
+	foreach (p; split(path, pathSeparator[0])) {
+		t := p ~ dirSeparator ~ cmd;
 		if (exists(t)) {
 			return t;
 		}
