@@ -56,11 +56,11 @@ void getTimes(string name, out ulong access, out ulong modified)
 			throw new Exception("GetFileAttributesExW failed");
 		}
 
-		access = buf.ftLastAccessTime.dwLowDateTime +
-			buf.ftLastAccessTime.dwHighDateTime << 32UL;
+		access = buf.ftLastAccessTime.dwLowDateTime |
+			(buf.ftLastAccessTime.dwHighDateTime << 32UL);
 
-		modified = buf.ftLastWriteTime.dwLowDateTime +
-			buf.ftLastWriteTime.dwHighDateTime << 32UL;
+		modified = buf.ftLastWriteTime.dwLowDateTime |
+			(buf.ftLastWriteTime.dwHighDateTime  << 32UL);
 	}
 }
 
