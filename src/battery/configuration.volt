@@ -53,6 +53,8 @@ public:
 
 	uint hash;
 
+	bool isDebug;
+
 
 public:
 	string buildDirDerived;

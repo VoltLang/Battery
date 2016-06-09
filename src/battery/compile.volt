@@ -44,6 +44,10 @@ string[] buildCmd(Configuration config, Compile c)
 		c.derivedTarget
 	];
 
+	if (config.isDebug) {
+		ret ~= "-d";
+	}
+
 	if (c.library) {
 		ret ~= "-c";
 	}
