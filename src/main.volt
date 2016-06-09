@@ -2,8 +2,10 @@
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 module main;
 
-import watt.io : writefln;
+import core.stdc.stdlib : exit;
+import watt.io : writefln, error;
 import watt.process : getEnv;
+import watt.text.string : endsWith;
 
 import uni = uni.core;
 
@@ -23,8 +25,7 @@ int main(string[] args)
 	}
 
 	if (p.exe is null) {
-		writefln("must call with --exe");
-		return -1;
+		abort("must call with --exe");
 	}
 	doBuild(p.libs, p.exe);
 
@@ -38,29 +39,18 @@ void doBuild(Lib[] libs, Exe exe)
 	config := getHostConfig(path);
 	vrt := getRtCompile(config);
 
-
-	// Transforms Lib and Exe into compiles.
-	Compile[string] store;
+	// Put all of the libraries in the store for lookup.
+	store := new Store();
 	foreach (lib; libs) {
-		store[lib.name] = libToCompile(lib);
+		store.put(lib);
 	}
 
-	foreach (lib; store.values) {
-		foreach (dep; exe.dep) {
-			lib.deps ~= *(dep in store);
-		}
-	}
-
-	c := exeToCompile(exe);
-	c.deps = [vrt];
-	foreach (dep; exe.dep) {
-		c.deps ~= *(dep in store);
-	}
-
+	// Collect all of the deps, defs and various flags into compiles.
+	c := collect(store, config, exe);
+	c.deps = vrt ~ c.deps;
 
 	// Turn the Compile into a command line.
 	ret := buildCmd(config, c);
-
 
 	// Feed that into the solver and have it solve it for us.
 	ins := new uni.Instance();
@@ -77,6 +67,42 @@ void doBuild(Lib[] libs, Exe exe)
 	t.rule.args = ret[1 .. $];
 
 	uni.build(t, 2);
+}
+
+Compile collect(Store store, Configuration config, Exe exe)
+{
+
+	// Set debug.
+	config.isDebug = exe.isDebug;
+
+	Compile[string] added;
+	Compile traverse(Base b, Compile c = null)
+	{
+		// Has this dep allready been added.
+		auto p = b.name in added;
+		if (p !is null) {
+			return *p;
+		}
+
+		if (c is null) {
+			lib := cast(Lib)b;
+			c = libToCompile(lib);
+		}
+		added[b.name] = c;
+
+		foreach (def; b.defs) {
+			config.defs ~= def;
+		}
+
+		foreach (dep; b.deps) {
+			base := store.get(dep);
+			c.deps ~= traverse(store.get(dep));
+		}
+
+		return c;
+	}
+
+	return traverse(exe, exeToCompile(exe));
 }
 
 void printLicense()
@@ -106,23 +132,50 @@ Compile exeToCompile(Exe exe)
 	return c;
 }
 
+class Store
+{
+private:
+	Base[string] mStore;
+
+public:
+	Base get(string v)
+	{
+		assert(v !is null);
+		auto r = v in mStore;
+		if (r is null) {
+			abort("'" ~ v ~ "' not defined as lib or exe");
+		}
+		return *r;
+	}
+
+	void put(Base b)
+	{
+		assert(b.name !is null);
+		if ((b.name in mStore) !is null) {
+			abort("'" ~ b.name ~ "' already added");
+		}
+		mStore[b.name] = b;
+	}
+}
+
 class Base
 {
 	string name;
 	string bin;
 
-	string[] dep;
+	string[] deps;
+	string[] defs;
 
 	string srcDir;
 }
 
 class Lib : Base
 {
-
 }
 
 class Exe : Base
 {
+	bool isDebug;
 	string[] src;
 }
 
@@ -131,10 +184,6 @@ struct ArgParser
 public:
 	Lib[] libs;
 	Exe exe;
-
-	enum Continue = 0;
-	enum Stop = 1;
-	enum Abort = 2;
 
 
 private:
@@ -159,7 +208,7 @@ public:
 		mPos += mPos < mArgs.length;
 	}
 
-	bool isEmpty()
+	bool empty()
 	{
 		return mPos >= mArgs.length;
 	}
@@ -177,11 +226,8 @@ int parse(ref ArgParser ap, string[] args)
 	ap.mPos = 0;
 	ap.mArgs = args;
 
-	for (ap.popFront(); !ap.isEmpty(); ap.popFront()) {
-		ret := ap.parseDefault(ap.front());
-		if (ret == ArgParser.Abort) {
-			return -1;
-		}
+	for (ap.popFront(); !ap.empty(); ap.popFront()) {
+		ap.parseDefault(ap.front());
 	}
 
 	return 0;
@@ -189,37 +235,36 @@ int parse(ref ArgParser ap, string[] args)
 
 string getNext(ref ArgParser ap, string error)
 {
-	if (!ap.isEmpty()) {
+	if (!ap.empty()) {
 		ap.popFront();
 		return ap.front();
 	}
 
-	throw new Exception(error);
+	abort(error);
+	assert(false);
 }
 
-int parseDefault(ref ArgParser ap, string tmp)
+void parseDefault(ref ArgParser ap, string tmp)
 {
 	switch (tmp) {
 	case "--license":
-		printLicense();
-		return ArgParser.Abort;
+		return printLicense();
 	case "--exe":
 		return ap.parseExe();
 	case "--lib":
 		return ap.parseLib();
 	default:
-		writefln("unknown argument '%s'", tmp);
-		return ArgParser.Abort;
+		abort("unknown argument '" ~ tmp ~ "'");
 	}
 }
 
-int parseLib(ref ArgParser ap)
+void parseLib(ref ArgParser ap)
 {
 	lib := new Lib();
 	lib.name = ap.getNext("expected library name");
 	ap.libs ~= lib;
 
-	for (ap.popFront(); !ap.isEmpty(); ap.popFront()) {
+	for (ap.popFront(); !ap.empty(); ap.popFront()) {
 		tmp := ap.front();
 		switch (tmp) {
 		case "-I":
@@ -229,50 +274,60 @@ int parseLib(ref ArgParser ap)
 			lib.bin = ap.getNext("expected binary file");
 			break;
 		case "--dep":
-			lib.dep ~= ap.getNext("expected dependency");
+			lib.deps ~= ap.getNext("expected dependency");
 			break;
 		default:
-			ret := ap.parseDefault(ap.front());
-			if (ret) {
-				return ret;
-			}
+			return ap.parseDefault(ap.front());
 		}
 	}
-
-	return ArgParser.Stop;
 }
 
-int parseExe(ref ArgParser ap)
+void parseExe(ref ArgParser ap)
 {
 	exe := new Exe();
 	exe.name = ap.getNext("expected exe name");
 	ap.exe = exe;
 
-	for (ap.popFront(); !ap.isEmpty(); ap.popFront()) {
+	for (ap.popFront(); !ap.empty(); ap.popFront()) {
 		tmp := ap.front();
 
-		if (tmp.length > 5 && tmp[$ - 5 .. $] == ".volt") {
+		if (endsWith(tmp, ".volt")) {
+			exe.src ~= tmp;
+			continue;
+		}
+
+		if (endsWith(tmp, ".obj")) {
 			exe.src ~= tmp;
 			continue;
 		}
 
 		switch (tmp) {
+		case "-d", "-debug", "--debug":
+			exe.isDebug = true;
+			break;
+		case "-D":
+			exe.defs ~= ap.getNext("expected define");
+			break;
 		case "-I":
 			exe.srcDir = ap.getNext("expected source folder");
 			break;
-		case "--bin":
+		case "--bin", "-o":
 			exe.bin = ap.getNext("expected binary file");
 			break;
 		case "--dep":
-			exe.dep ~= ap.getNext("expected dependency");
+			exe.deps ~= ap.getNext("expected dependency");
 			break;
 		default:
-			ret := ap.parseDefault(ap.front());
-			if (ret) {
-				return ret;
-			}
+			return ap.parseDefault(ap.front());
 		}
 	}
+}
 
-	return ArgParser.Stop;
+/**
+ * Print message and abort.
+ */
+void abort(string msg)
+{
+	error.writefln("battery: " ~ msg);
+	exit(-1);
 }
