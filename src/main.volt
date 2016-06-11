@@ -9,6 +9,7 @@ import watt.text.string : endsWith;
 
 import uni = uni.core;
 
+import battery.driver;
 import battery.license;
 import battery.compile;
 import battery.interfaces;
@@ -19,6 +20,27 @@ import battery.policy.rt : getRtCompile;
 
 int main(string[] args)
 {
+	if (args.length > 1 &&
+	    (args[1] == "config" ||
+	     args[1] == "build")) {
+		drv := new DefaultDriver();
+		exes : Exe[];
+		libs : Lib[];
+
+		ret := drv.process(args);
+		if (ret != 0) {
+			return ret;
+		}
+
+		drv.get(out libs, out exes);
+
+		foreach (exe; exes) {
+			doBuild(libs, exe);
+		}
+
+		return 0;
+	}
+
 	ArgParser p;
 	ret := p.parse(args);
 	if (ret) {
