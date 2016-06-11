@@ -11,6 +11,7 @@ import uni = uni.core;
 
 import battery.license;
 import battery.compile;
+import battery.interfaces;
 import battery.configuration;
 import battery.policy.host : getHostConfig;
 import battery.policy.rt : getRtCompile;
@@ -158,26 +159,7 @@ public:
 	}
 }
 
-class Base
-{
-	string name;
-	string bin;
 
-	string[] deps;
-	string[] defs;
-
-	string srcDir;
-}
-
-class Lib : Base
-{
-}
-
-class Exe : Base
-{
-	bool isDebug;
-	string[] src;
-}
 
 struct ArgParser
 {
