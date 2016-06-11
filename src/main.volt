@@ -267,7 +267,7 @@ void parseLib(ref ArgParser ap)
 	for (ap.popFront(); !ap.empty(); ap.popFront()) {
 		tmp := ap.front();
 		switch (tmp) {
-		case "-I":
+		case "--src-I":
 			lib.srcDir = ap.getNext("expected source folder");
 			break;
 		case "--bin":
@@ -308,7 +308,7 @@ void parseExe(ref ArgParser ap)
 		case "-D":
 			exe.defs ~= ap.getNext("expected define");
 			break;
-		case "-I":
+		case "--src-I":
 			exe.srcDir = ap.getNext("expected source folder");
 			break;
 		case "--bin", "-o":
