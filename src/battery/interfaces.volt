@@ -27,7 +27,10 @@ class Lib : Base
 class Exe : Base
 {
 	bool isDebug;
-	string[] src;
+
+	string[] srcC;
+	string[] srcObj;
+	string[] srcVolt;
 }
 
 abstract class Driver

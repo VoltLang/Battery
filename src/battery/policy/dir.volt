@@ -110,7 +110,7 @@ public:
 		exe := new Exe();
 		exe.name = name;
 		exe.srcDir = pathSrc;
-		exe.src = [pathMain];
+		exe.srcVolt = [pathMain];
 		exe.bin = bin;
 
 		return exe;

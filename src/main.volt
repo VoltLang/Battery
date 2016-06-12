@@ -150,7 +150,7 @@ Compile exeToCompile(Exe exe)
 	c := new Compile();
 	c.name = exe.name;
 	c.srcRoot = exe.srcDir;
-	c.src = exe.src;
+	c.src = exe.srcVolt ~ exe.srcObj;
 	c.derivedTarget = exe.bin is null ? exe.name : exe.bin;
 	return c;
 }
@@ -296,12 +296,12 @@ void parseExe(ref ArgParser ap)
 		tmp := ap.front();
 
 		if (endsWith(tmp, ".volt")) {
-			exe.src ~= tmp;
+			exe.srcVolt ~= tmp;
 			continue;
 		}
 
 		if (endsWith(tmp, ".obj")) {
-			exe.src ~= tmp;
+			exe.srcObj ~= tmp;
 			continue;
 		}
 
