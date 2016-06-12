@@ -20,37 +20,19 @@ import battery.policy.rt : getRtCompile;
 
 int main(string[] args)
 {
-	if (args.length > 1 &&
-	    (args[1] == "config" ||
-	     args[1] == "build")) {
-		drv := new DefaultDriver();
-		exes : Exe[];
-		libs : Lib[];
+	drv := new DefaultDriver();
+	exes : Exe[];
+	libs : Lib[];
 
-		ret := drv.process(args);
-		if (ret != 0) {
-			return ret;
-		}
-
-		drv.get(out libs, out exes);
-
-		foreach (exe; exes) {
-			doBuild(libs, exe);
-		}
-
-		return 0;
-	}
-
-	ArgParser p;
-	ret := p.parse(args);
-	if (ret) {
+	ret := drv.process(args);
+	if (ret != 0) {
 		return ret;
 	}
 
-	if (p.exe is null) {
-		abort("must call with --exe");
+	drv.get(out libs, out exes);
+	foreach (exe; exes) {
+		doBuild(libs, exe);
 	}
-	doBuild(p.libs, p.exe);
 
 	return 0;
 }
@@ -178,152 +160,6 @@ public:
 			abort("'" ~ b.name ~ "' already added");
 		}
 		mStore[b.name] = b;
-	}
-}
-
-
-
-struct ArgParser
-{
-public:
-	Lib[] libs;
-	Exe exe;
-
-
-private:
-	string[] mArgs;
-	size_t mPos;
-
-
-public:
-	/*
-	 *
-	 * Range
-	 *
-	 */
-
-	string front()
-	{
-		return mArgs[mPos];
-	}
-
-	void popFront()
-	{
-		mPos += mPos < mArgs.length;
-	}
-
-	bool empty()
-	{
-		return mPos >= mArgs.length;
-	}
-}
-
-
-/*
- *
- * Parsing functions.
- *
- */
-
-int parse(ref ArgParser ap, string[] args)
-{
-	ap.mPos = 0;
-	ap.mArgs = args;
-
-	for (ap.popFront(); !ap.empty(); ap.popFront()) {
-		ap.parseDefault(ap.front());
-	}
-
-	return 0;
-}
-
-string getNext(ref ArgParser ap, string error)
-{
-	if (!ap.empty()) {
-		ap.popFront();
-		return ap.front();
-	}
-
-	abort(error);
-	assert(false);
-}
-
-void parseDefault(ref ArgParser ap, string tmp)
-{
-	switch (tmp) {
-	case "--license":
-		return printLicense();
-	case "--exe":
-		return ap.parseExe();
-	case "--lib":
-		return ap.parseLib();
-	default:
-		abort("unknown argument '" ~ tmp ~ "'");
-	}
-}
-
-void parseLib(ref ArgParser ap)
-{
-	lib := new Lib();
-	lib.name = ap.getNext("expected library name");
-	ap.libs ~= lib;
-
-	for (ap.popFront(); !ap.empty(); ap.popFront()) {
-		tmp := ap.front();
-		switch (tmp) {
-		case "--src-I":
-			lib.srcDir = ap.getNext("expected source folder");
-			break;
-		case "--bin":
-			lib.bin = ap.getNext("expected binary file");
-			break;
-		case "--dep":
-			lib.deps ~= ap.getNext("expected dependency");
-			break;
-		default:
-			return ap.parseDefault(ap.front());
-		}
-	}
-}
-
-void parseExe(ref ArgParser ap)
-{
-	exe := new Exe();
-	exe.name = ap.getNext("expected exe name");
-	ap.exe = exe;
-
-	for (ap.popFront(); !ap.empty(); ap.popFront()) {
-		tmp := ap.front();
-
-		if (endsWith(tmp, ".volt")) {
-			exe.srcVolt ~= tmp;
-			continue;
-		}
-
-		if (endsWith(tmp, ".obj")) {
-			exe.srcObj ~= tmp;
-			continue;
-		}
-
-		switch (tmp) {
-		case "-d", "-debug", "--debug":
-			exe.isDebug = true;
-			break;
-		case "-D":
-			exe.defs ~= ap.getNext("expected define");
-			break;
-		case "--src-I":
-			exe.srcDir = ap.getNext("expected source folder");
-			break;
-		case "--bin", "-o":
-			exe.bin = ap.getNext("expected binary file");
-			break;
-		case "--dep":
-			exe.deps ~= ap.getNext("expected dependency");
-			break;
-		default:
-			return ap.parseDefault(ap.front());
-		}
 	}
 }
 

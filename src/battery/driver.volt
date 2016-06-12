@@ -12,6 +12,7 @@ import watt.varargs : va_list, va_start, va_end;
 import battery.configuration;
 import battery.interfaces;
 import battery.policy.dir;
+import battery.policy.cmd;
 
 
 class DefaultDriver : Driver
@@ -35,7 +36,7 @@ public:
 		}
 
 		switch (args[1]) {
-		case "config": return scan(args[2 .. $]);
+		case "config": return config(args[2 .. $]);
 		case "build": return build(args[2 .. $]);
 		default: return printUsage();
 		}
@@ -47,6 +48,13 @@ public:
 	{
 		lib = mLib;
 		exe = mExe;
+	}
+
+	int config(string[] args)
+	{
+		arg := new ArgParser(this);
+		arg.parse(args, out mLib, out mExe);
+		return 0;
 	}
 
 	int scan(string[] dirs)
