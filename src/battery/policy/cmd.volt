@@ -8,6 +8,7 @@ module battery.policy.cmd;
 import watt.text.string : endsWith;
 
 import battery.interfaces;
+import battery.policy.dir;
 
 
 /**
@@ -58,23 +59,30 @@ protected:
 	void parseDefault(string tmp)
 	{
 		mArgs.popFront();
+
 		switch (tmp) {
-		case "--exe":
-			exe := new Exe();
-			parse(exe);
-			verify(exe);
-			mExes ~= exe;
-			mCurrent = exe;
-			break;
-		case "--lib":
-			lib := new Lib();
+		case "--exe": mCurrent = new Exe(); break;
+		case "--lib": mCurrent = new Lib(); break;
+		default:
+			if (tmp[0] == '-') {
+				mDrv.abort("unknown argument '%s'", tmp);
+			}
+
+			mCurrent = scanDir(mDrv, tmp);
+		}
+
+		lib := cast(Lib)mCurrent;
+		if (lib !is null) {
 			parse(lib);
 			verify(lib);
 			mLibs ~= lib;
-			mCurrent = lib;
-			break;
-		default:
-			mDrv.abort("unknown argument '%s'", tmp);
+		}
+
+		exe := cast(Exe)mCurrent;
+		if (exe !is null) {
+			parse(exe);
+			verify(exe);
+			mExes ~= exe;
 		}
 	}
 
