@@ -50,6 +50,10 @@ string[] getArgsBase(Base b, string start)
 		ret ~= ["-D", def];
 	}
 
+	foreach (lib; b.libs) {
+		ret ~= ["-l", lib];
+	}
+
 	ret ~= ["--src-I", b.srcDir];
 
 	return ret;
@@ -191,6 +195,9 @@ protected:
 			case "--dep":
 				lib.deps ~= getNext("expected dependency");
 				break;
+			case "-l":
+				lib.libs ~= getNext("expected library name");
+				break;
 			default:
 				return parseDefault(tmp);
 			}
@@ -224,6 +231,12 @@ protected:
 			case "--src-I":
 				exe.srcDir = mPath ~ getNext("expected source folder");
 				break;
+			case "--dep":
+				exe.deps ~= getNext("expected dependency");
+				break;
+			case "-l":
+				exe.libs ~= getNext("expected library name");
+				break;
 			case "-d", "-debug", "--debug":
 				exe.isDebug = true;
 				break;
@@ -232,9 +245,6 @@ protected:
 				break;
 			case "--bin", "-o":
 				exe.bin = mPath ~ getNext("expected binary file");
-				break;
-			case "--dep":
-				exe.deps ~= getNext("expected dependency");
 				break;
 			default:
 				return parseDefault(tmp);

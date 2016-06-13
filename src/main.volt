@@ -119,6 +119,7 @@ Compile libToCompile(Lib lib)
 	c.library = true;
 	c.name = lib.name;
 	c.srcRoot = lib.srcDir;
+	c.libs = lib.libs;
 
 	return c;
 }
@@ -128,6 +129,7 @@ Compile exeToCompile(Exe exe)
 	c := new Compile();
 	c.name = exe.name;
 	c.srcRoot = exe.srcDir;
+	c.libs = exe.libs;
 	c.src = exe.srcVolt ~ exe.srcObj;
 	c.derivedTarget = exe.bin is null ? exe.name : exe.bin;
 	version (Windows) if (!endsWith(c.derivedTarget, ".exe")) {
