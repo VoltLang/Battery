@@ -88,6 +88,9 @@ public:
 	Lib[] mLibs;
 	Exe[] mExes;
 
+	///< Additional path to add to files.
+	string mPath;
+
 	Base mCurrent;
 
 public:
@@ -104,6 +107,23 @@ public:
 
 		libs = mLibs;
 		exes = mExes;
+		mPath = null;
+		mLibs = null;
+		mExes = null;
+		mCurrent = null;
+	}
+
+	void parse(string[] args, string path, Base lib, out Lib[] libs, out Exe[] exes)
+	{
+		mArgs.setup(args);
+		mPath = path;
+		mCurrent = lib;
+
+		processCurrent();
+
+		libs = mLibs;
+		exes = mExes;
+		mPath = null;
 		mLibs = null;
 		mExes = null;
 		mCurrent = null;
@@ -133,9 +153,14 @@ protected:
 				mDrv.abort("unknown argument '%s'", tmp);
 			}
 
-			mCurrent = scanDir(mDrv, tmp);
+			mCurrent = scanDir(mDrv, mPath ~ tmp);
 		}
 
+		processCurrent();
+	}
+
+	void processCurrent()
+	{
 		lib := cast(Lib)mCurrent;
 		if (lib !is null) {
 			parse(lib);
@@ -161,7 +186,7 @@ protected:
 				lib.name = getNext("expected name");
 				break;
 			case "--src-I":
-				lib.srcDir = getNext("expected source folder");
+				lib.srcDir = mPath ~ getNext("expected source folder");
 				break;
 			case "--dep":
 				lib.deps ~= getNext("expected dependency");
@@ -178,17 +203,17 @@ protected:
 			tmp := mArgs.front();
 
 			if (endsWith(tmp, ".c")) {
-				exe.srcC ~= tmp;
+				exe.srcC ~= mPath ~ tmp;
 				continue;
 			}
 
 			if (endsWith(tmp, ".volt")) {
-				exe.srcVolt ~= tmp;
+				exe.srcVolt ~= mPath ~ tmp;
 				continue;
 			}
 
 			if (endsWith(tmp, ".o", ".obj")) {
-				exe.srcObj ~= tmp;
+				exe.srcObj ~= mPath ~ tmp;
 				continue;
 			}
 
@@ -197,7 +222,7 @@ protected:
 				exe.name = getNext("expected name");
 				break;
 			case "--src-I":
-				exe.srcDir = getNext("expected source folder");
+				exe.srcDir = mPath ~ getNext("expected source folder");
 				break;
 			case "-d", "-debug", "--debug":
 				exe.isDebug = true;
@@ -206,7 +231,7 @@ protected:
 				exe.defs ~= getNext("expected define");
 				break;
 			case "--bin", "-o":
-				exe.bin = getNext("expected binary file");
+				exe.bin = mPath ~ getNext("expected binary file");
 				break;
 			case "--dep":
 				exe.deps ~= getNext("expected dependency");

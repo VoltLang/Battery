@@ -15,14 +15,18 @@ import watt.conv : toLower;
 import battery.interfaces;
 import battery.configuration;
 import battery.util.path;
+import battery.util.file : getLinesFromFile;
+import battery.policy.cmd : ArgParser;
 
 
-enum PathSrc = "src";
-enum PathRes = "res";
-enum PathMain = "src/main.volt";
+enum PathSrc        = "src";
+enum PathRes        = "res";
+enum PathMain       = "src/main.volt";
+enum PathBatteryCmd = "battery.cmd";
 
-
-
+/**
+ * Scan a directory and see what it holds.
+ */
 Base scanDir(Driver drv, string path)
 {
 	Scanner s;
@@ -47,13 +51,25 @@ Base scanDir(Driver drv, string path)
 	}
 
 	// Create exectuable or library.
+	ret : Base;
 	if (s.hasMain) {
 		drv.info("scanned '%s' found executable", s.path);
-		return s.buildExe();
+		ret = s.buildExe();
 	} else {
 		drv.info("scanned '%s' found library", s.path);
-		return s.buildLib();
+		ret = s.buildLib();
 	}
+
+	if (s.hasBatteryCmd) {
+		libs : Lib[];
+		exes : Exe[];
+		args : string[];
+		getLinesFromFile(s.pathBatteryCmd, ref args);
+		ap := new ArgParser(drv);
+		ap.parse(args, path ~ dirSeparator, ret, out libs, out exes);
+	}
+
+	return ret;
 }
 
 struct Scanner
@@ -68,14 +84,20 @@ public:
 	bool hasRes;
 	bool hasPath;
 	bool hasMain;
+	bool hasBatteryCmd;
 
 	string path;
 	string pathSrc;
 	string pathRes;
 	string pathMain;
+	string pathBatteryCmd;
 
 	string[] filesC;
 	string[] filesVolt;
+
+
+public:
+
 
 
 public:
@@ -84,15 +106,17 @@ public:
 		this.drv = drv;
 		this.path = path;
 
-		name     = toLower(baseName(path));
-		pathSrc  = path ~ dirSeparator ~ PathSrc;
-		pathRes  = path ~ dirSeparator ~ PathRes;
-		pathMain = path ~ dirSeparator ~ PathMain;
+		name           = toLower(baseName(path));
+		pathSrc        = path ~ dirSeparator ~ PathSrc;
+		pathRes        = path ~ dirSeparator ~ PathRes;
+		pathMain       = path ~ dirSeparator ~ PathMain;
+		pathBatteryCmd = path ~ dirSeparator ~ PathBatteryCmd;
 
-		hasPath  = isDir(path);
-		hasSrc   = isDir(pathSrc);
-		hasRes   = isDir(pathRes);
-		hasMain  = exists(pathMain);
+		hasPath        = isDir(path);
+		hasSrc         = isDir(pathSrc);
+		hasRes         = isDir(pathRes);
+		hasMain        = exists(pathMain);
+		hasBatteryCmd  = exists(pathBatteryCmd);
 
 		if (!hasSrc) {
 			return;
