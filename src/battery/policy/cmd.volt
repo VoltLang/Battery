@@ -12,6 +12,71 @@ import battery.policy.dir;
 
 
 /**
+ * Turn Libs and Exes into command line arguments.
+ */
+string[] getArgs(Lib[] libs, Exe[] exes)
+{
+	string[] ret;
+
+	foreach (lib; libs) {
+		ret ~= getArgsLib(lib);
+	}
+
+	foreach (exe; exes) {
+		ret ~= getArgsExe(exe);
+	}
+
+	return ret;
+}
+
+string[] getArgsBase(Base b, string start)
+{
+	ret := ["#",
+		"# " ~ b.name,
+		start,
+		"--name",
+		b.name
+	];
+
+	foreach (dep; b.deps) {
+		ret ~= ["--dep", dep];
+	}
+
+	if (b.bin !is null) {
+		ret ~= ["-o", b.bin];
+	}
+
+	foreach (def; b.defs) {
+		ret ~= ["-D", def];
+	}
+
+	ret ~= ["--src-I", b.srcDir];
+
+	return ret;
+}
+
+string[] getArgsLib(Lib l)
+{
+	return getArgsBase(l, "--lib");
+}
+
+string[] getArgsExe(Exe e)
+{
+	ret := getArgsBase(e, "--exe");
+
+	if (e.isDebug) {
+		ret ~= "-debug";
+	}
+
+	ret ~= e.srcC;
+	ret ~= e.srcObj;
+	ret ~= e.srcVolt;
+
+	return ret;
+}
+
+
+/**
  * Parser args and turns them into Libs and Exes.
  */
 class ArgParser
