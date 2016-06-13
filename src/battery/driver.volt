@@ -64,6 +64,11 @@ public:
 		}
 		ofs.flush();
 		ofs.close();
+
+
+		// Hack for now.
+		mLib = null;
+		mExe = null;
 	}
 
 	void build(string [] args)
