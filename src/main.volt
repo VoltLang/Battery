@@ -62,12 +62,32 @@ void doBuild(Lib[] libs, Exe exe)
 		t.deps[i] = ins.file(src);
 	}
 
+	foreach (src; exe.srcC) {
+		obj := makeTargetC(config, ins, src);
+		t.deps ~= obj;
+		ret ~= obj.name;
+	}
+
 	t.rule = new uni.Rule();
 	t.rule.cmd = ret[0];
-	t.rule.print = "  VOLTA  " ~ c.derivedTarget;
+	t.rule.print = "  VOLTA    " ~ c.derivedTarget;
 	t.rule.args = ret[1 .. $];
 
 	uni.build(t, 2);
+}
+
+uni.Target makeTargetC(Configuration config, uni.Instance ins, string src)
+{
+	obj := ".bin/" ~ src ~ ".o";
+
+	tc := ins.fileNoRule(obj);
+	tc.deps = [ins.file(src)];
+	tc.rule = new uni.Rule();
+	tc.rule.cmd = config.cc.cmd;
+	tc.rule.args = [src, "-c", "-o", obj];
+	tc.rule.print = "  GCC      " ~ obj;
+
+	return tc;
 }
 
 Compile collect(Store store, Configuration config, Exe exe)
