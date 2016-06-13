@@ -7,6 +7,7 @@ module battery.driver;
 
 import core.stdc.stdlib : exit;
 import io = watt.io;
+import watt.io.streams : OutputFileStream;
 import watt.varargs : va_list, va_start, va_end;
 
 import battery.configuration;
@@ -54,6 +55,15 @@ public:
 	{
 		arg := new ArgParser(this);
 		arg.parse(args, out mLib, out mExe);
+		ret := getArgs(mLib, mExe);
+
+		ofs := new OutputFileStream(".battery.cmd")
+		foreach (r; ret) {
+			ofs.write(r);
+			ofs.put('\n');
+		}
+		ofs.flush();
+		ofs.close();
 	}
 
 	void build(string [] args)
