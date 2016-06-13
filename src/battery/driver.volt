@@ -37,7 +37,7 @@ public:
 
 		switch (args[1]) {
 		case "config": return config(args[2 .. $]);
-		case "build": return build(args[2 .. $]);
+		case "build": abort("not implement use config instead"); return 0;
 		default: return printUsage();
 		}
 
@@ -57,45 +57,11 @@ public:
 		return 0;
 	}
 
-	int scan(string[] dirs)
-	{
-		foreach (dir; dirs) {
-
-			ret := scanDir(this, dir);
-			exe := cast(Exe)ret;
-			lib := cast(Lib)ret;
-
-			if (exe !is null) {
-				mExe ~= exe;
-			} else if (lib !is null) {
-				mLib ~= lib;
-			} else {
-				abort("internal error");
-			}
-		}
-
-		foreach (exe; mExe) {
-			foreach (lib; mLib) {
-				exe.deps ~= lib.name;
-			}
-		}
-
-		return 0;
-	}
-
-	int build(string[] args)
-	{
-		// TODO save config to disk and read here.
-		scan(args);
-
-		return 0;
-	}
-
 	int printUsage()
 	{
 		info("Battery, a package and build system for Volt pramming language.");
 		info("");
-		info("\tconfig [dirs]");
+		info("\tconfig [args]");
 		info("\tbuild");
 		return 0;
 	}
