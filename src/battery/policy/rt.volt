@@ -2,7 +2,7 @@
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 module battery.policy.rt;
 
-import battery.compile;
+import battery.backend.compile;
 import battery.configuration;
 
 

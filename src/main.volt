@@ -11,11 +11,11 @@ import uni = uni.core;
 
 import battery.driver;
 import battery.license;
-import battery.compile;
 import battery.interfaces;
 import battery.configuration;
 import battery.policy.host : getHostConfig;
 import battery.policy.rt : getRtCompile;
+import battery.backend.compile : buildCmd, Compile;
 
 
 int main(string[] args)

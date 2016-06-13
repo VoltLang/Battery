@@ -1,6 +1,6 @@
 // Copyright © 2016, Jakob Bornecrantz.  All rights reserved.
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
-module battery.compile;
+module battery.backend.compile;
 
 import battery.defines;
 import battery.configuration;
