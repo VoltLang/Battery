@@ -12,7 +12,7 @@ version (Windows) {
 	import core.posix.sys.types : pid_t;
 	alias ProcessHandle = pid_t;
 }
-import core.stdc.stdio : FILE, fileno;
+import core.stdc.stdio : FILE, fileno, stdin, stdout, stderr;
 
 
 /**
@@ -110,17 +110,16 @@ public:
 				throw new Exception("Wait one failed to many times");
 			}
 		}
+		pid := spawnProcess(cmd, args, null, log, log);
+
 		version (Windows) {
 
-			hProcess := spawnProcessWindows(cmd, args, null, log, log);
-			newCmd(cmd, args, dg, hProcess);
+			newCmd(cmd, args, dg, pid._handle);
 			waiting++;
 
 		} else version(Posix) {
 
-			logfd := log is null ? 0 : fileno(log);
-			pid := spawnProcessPosix(cmd, args, 0, logfd, logfd);
-			newCmd(cmd, args, dg, pid);
+			newCmd(cmd, args, dg, pid._pid);
 			waiting++;
 
 		} else {
