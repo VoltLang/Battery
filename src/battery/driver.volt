@@ -13,6 +13,7 @@ import battery.configuration;
 import battery.interfaces;
 import battery.policy.dir;
 import battery.policy.cmd;
+import battery.util.file : getLinesFromFile;
 
 
 class DefaultDriver : Driver
@@ -29,19 +30,18 @@ public:
 
 	}
 
-	int process(string[] args)
+	void process(string[] args)
 	{
-		if (args.length < 2) {
-			printUsage();
+		switch (args.length) {
+		case 1: return build(null);
+		default:
 		}
 
 		switch (args[1]) {
 		case "config": return config(args[2 .. $]);
-		case "build": abort("not implement use config instead"); return 0;
+		case "build": return build(args[2 .. $]);
 		default: return printUsage();
 		}
-
-		return 0;
 	}
 
 	void get(out Lib[] lib, out Exe[] exe)
@@ -50,20 +50,29 @@ public:
 		exe = mExe;
 	}
 
-	int config(string[] args)
+	void config(string[] args)
 	{
 		arg := new ArgParser(this);
 		arg.parse(args, out mLib, out mExe);
-		return 0;
 	}
 
-	int printUsage()
+	void build(string [] args)
+	{
+		args = null;
+		if (!getLinesFromFile(".battery.cmd", ref args)) {
+			return abort("must first run the 'config' command");
+		}
+
+		arg := new ArgParser(this);
+		arg.parse(args, out mLib, out mExe);
+	}
+
+	void printUsage()
 	{
 		info("Battery, a package and build system for Volt pramming language.");
 		info("");
 		info("\tconfig [args]");
 		info("\tbuild");
-		return 0;
 	}
 
 
