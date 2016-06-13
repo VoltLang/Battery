@@ -131,6 +131,7 @@ public:
 		exe := new Exe();
 		exe.name = name;
 		exe.srcDir = pathSrc;
+		exe.srcC = filesC;
 		exe.srcVolt = [pathMain];
 		exe.bin = bin;
 

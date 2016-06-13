@@ -14,6 +14,11 @@ version (MSVC) {
 	enum HostPlatform = Platform.MSVC;
 } else version (Linux) {
 	enum VoltaCommand = "volt";
+
+	enum HostCCompilerCommand = "gcc";
+	enum HostCCompilerFlag = "--cc";
+	enum HostCCompilerKind = CCompiler.Kind.GCC;
+
 	enum HostLinkerCommand = "gcc";
 	enum HostLinkerFlag = "--cc";
 	enum HostPlatform = Platform.Linux;
@@ -38,11 +43,13 @@ Configuration getHostConfig(string path)
 {
 	volta := getVolta(path);
 	linker := getHostLinker(path);
+	cc := getHostCCompiler(path);
 
 	c := new Configuration();
 	c.path = path;
 	c.volta = volta;
 	c.linker = linker;
+	c.cc = cc;
 	c.arch = HostArch;
 	c.platform = HostPlatform;
 
@@ -56,4 +63,14 @@ Linker getHostLinker(string path)
 	linker.flag = HostLinkerFlag;
 
 	return linker;
+}
+
+CCompiler getHostCCompiler(string path)
+{
+	cc := new CCompiler();
+	cc.cmd = searchPath(HostCCompilerCommand, path);
+	cc.flag = HostCCompilerFlag;
+	cc.kind = HostCCompilerKind;
+
+	return cc;
 }

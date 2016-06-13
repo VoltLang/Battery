@@ -31,6 +31,29 @@ class Linker
 }
 
 /**
+ * Holds information about the C compiler.
+ */
+class CCompiler
+{
+public:
+	enum Kind
+	{
+		CL,    // MSVC
+		GCC,   // GCC
+		Clang, // LLVM Clang
+	}
+
+	/// Type of compiler.
+	Kind kind;
+
+	/// Fully qualified command.
+	string cmd;
+
+	/// How to give the cmd to Volta, --cc.
+	string flag;
+}
+
+/**
  * A build configuration for one or more builds.
  *
  * This can be shared between multiple builds. When cross-compiling there will
@@ -41,6 +64,7 @@ class Configuration
 public:
 	Volta volta;
 	Linker linker;
+	CCompiler cc;
 
 	Arch arch;
 	Platform platform;
