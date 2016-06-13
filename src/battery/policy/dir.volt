@@ -44,9 +44,6 @@ Base scanDir(Driver drv, string path)
 	// Setup binary name.
 	if (s.hasMain) {
 		s.bin = s.path ~ dirSeparator ~ s.name;
-		version (Windows) {
-			s.bin ~= ".exe";
-		}
 	}
 
 	// Create exectuable or library.
