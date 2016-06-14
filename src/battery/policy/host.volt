@@ -9,6 +9,11 @@ import battery.policy.volta : getVolta;
 
 version (MSVC) {
 	enum VoltaCommand = "volt.exe";
+
+	enum HostCCompilerCommand = "cl.exe";
+	enum HostCCompilerFlag = "--cl";
+	enum HostCCompilerKind = CCompiler.Kind.CL;
+
 	enum HostLinkerCommand = "link.exe";
 	enum HostLinkerFlag = "--link";
 	enum HostPlatform = Platform.MSVC;

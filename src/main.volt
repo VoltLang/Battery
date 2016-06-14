@@ -6,6 +6,7 @@ import core.stdc.stdlib : exit;
 import watt.io : writefln, error;
 import watt.process : getEnv;
 import watt.text.string : endsWith;
+import watt.path : dirSeparator;
 
 import uni = uni.core;
 
@@ -78,14 +79,27 @@ void doBuild(Lib[] libs, Exe exe)
 
 uni.Target makeTargetC(Configuration config, uni.Instance ins, string src)
 {
-	obj := ".bin/" ~ src ~ ".o";
+	obj := ".bin" ~ dirSeparator ~ src ~ ".o";
 
 	tc := ins.fileNoRule(obj);
 	tc.deps = [ins.file(src)];
-	tc.rule = new uni.Rule();
-	tc.rule.cmd = config.cc.cmd;
-	tc.rule.args = [src, "-c", "-o", obj];
-	tc.rule.print = "  GCC      " ~ obj;
+
+	switch (config.cc.kind) with (CCompiler.Kind) {
+	case GCC:
+		tc.rule = new uni.Rule();
+		tc.rule.cmd = config.cc.cmd;
+		tc.rule.args = [src, "-c", "-o", obj];
+		tc.rule.print = "  GCC      " ~ obj;
+		break;
+	case CL:
+		tc.rule = new uni.Rule();
+		tc.rule.cmd = config.cc.cmd;
+		tc.rule.args = [src, "/c", "/Fo" ~ obj];
+		tc.rule.print = "  MSVC     " ~ obj;
+		break;
+	default:
+		abort("unknown C compiler");
+	}
 
 	return tc;
 }
