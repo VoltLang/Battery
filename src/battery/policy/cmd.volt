@@ -95,7 +95,6 @@ public:
 	///< Additional path to add to files.
 	string mPath;
 
-	Base mCurrent;
 
 public:
 	this(Driver drv)
@@ -114,23 +113,20 @@ public:
 		mPath = null;
 		mLibs = null;
 		mExes = null;
-		mCurrent = null;
 	}
 
-	void parse(string[] args, string path, Base lib, out Lib[] libs, out Exe[] exes)
+	void parse(string[] args, string path, Base base, out Lib[] libs, out Exe[] exes)
 	{
 		mArgs.setup(args);
 		mPath = path;
-		mCurrent = lib;
 
-		processCurrent();
+		process(base);
 
 		libs = mLibs;
 		exes = mExes;
 		mPath = null;
 		mLibs = null;
 		mExes = null;
-		mCurrent = null;
 	}
 
 protected:
@@ -148,31 +144,32 @@ protected:
 	void parseDefault(string tmp)
 	{
 		mArgs.popFront();
+		Base base;
 
 		switch (tmp) {
-		case "--exe": mCurrent = new Exe(); break;
-		case "--lib": mCurrent = new Lib(); break;
+		case "--exe": base = new Exe(); break;
+		case "--lib": base = new Lib(); break;
 		default:
 			if (tmp[0] == '-') {
 				mDrv.abort("unknown argument '%s'", tmp);
 			}
 
-			mCurrent = scanDir(mDrv, mPath ~ tmp);
+			base = scanDir(mDrv, mPath ~ tmp);
 		}
 
-		processCurrent();
+		process(base);
 	}
 
-	void processCurrent()
+	void process(Base base)
 	{
-		lib := cast(Lib)mCurrent;
+		lib := cast(Lib)base;
 		if (lib !is null) {
 			parse(lib);
 			verify(lib);
 			mLibs ~= lib;
 		}
 
-		exe := cast(Exe)mCurrent;
+		exe := cast(Exe)base;
 		if (exe !is null) {
 			parse(exe);
 			verify(exe);
@@ -181,7 +178,7 @@ protected:
 	}
 
 	void parse(Lib lib)
-	{	
+	{
 		for (; !mArgs.empty(); mArgs.popFront()) {
 			tmp := mArgs.front();
 
