@@ -29,6 +29,11 @@ version (MSVC) {
 	enum HostPlatform = Platform.Linux;
 } else version (OSX) {
 	enum VoltaCommand = "volt";
+
+	enum HostCCompilerCommand = "clang";
+	enum HostCCompilerFlag = "--cc";
+	enum HostCCompilerKind = CCompiler.Kind.GCC;
+
 	enum HostLinkerCommand = "clang";
 	enum HostLinkerFlag = "--cc";
 	enum HostPlatform = Platform.OSX;
