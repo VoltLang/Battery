@@ -219,7 +219,7 @@ protected:
 				continue;
 			}
 
-			if (endsWith(tmp, ".o", ".obj")) {
+			if (endsWith(tmp, ".o", ".obj", ".lib")) {
 				exe.srcObj ~= mPath ~ tmp;
 				continue;
 			}
