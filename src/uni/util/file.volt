@@ -35,7 +35,7 @@ void getTimes(string name, out ulong access, out ulong modified)
 		wchar[512] tmp;
 
 		int numChars = MultiByteToWideChar(
-			CP_UTF8, 0, name.ptr, -1, null, 0);
+			CP_UTF8, 0, name.ptr, cast(int)name.length, null, 0);
 
 		if (numChars < 0) {
 			throw new Exception("invalid filename");
@@ -46,7 +46,7 @@ void getTimes(string name, out ulong access, out ulong modified)
 		}
 
 		numChars = MultiByteToWideChar(
-			CP_UTF8, 0, name.ptr, -1, tmp.ptr, numChars);
+			CP_UTF8, 0, name.ptr, cast(int)name.length, tmp.ptr, numChars);
 		tmp[numChars] = '\0';
 
 		int ret = GetFileAttributesExW(
