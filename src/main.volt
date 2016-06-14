@@ -26,10 +26,6 @@ int main(string[] args)
 	libs : Lib[];
 
 	drv.process(args);
-	drv.get(out libs, out exes);
-	foreach (exe; exes) {
-		doBuild(libs, exe);
-	}
 
 	return 0;
 }
