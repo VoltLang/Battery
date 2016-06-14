@@ -31,7 +31,8 @@ protected:
 public:
 	this()
 	{
-
+		arch = HostArch;
+		platform = HostPlatform;
 	}
 
 	void process(string[] args)

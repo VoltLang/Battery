@@ -36,6 +36,9 @@ class Exe : Base
 
 abstract class Driver
 {
+	Arch arch;
+	Platform platform;
+
 	alias Fmt = watt.text.sink.SinkArg;
 
 	/**
