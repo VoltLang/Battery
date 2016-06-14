@@ -142,6 +142,10 @@ public:
 
 			added[b.name] = b;
 
+			foreach (lib; b.libs) {
+				ret ~= ["-l", lib];
+			}
+
 			foreach (def; b.defs) {
 				ret ~= ["-D", def];
 			}
