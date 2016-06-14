@@ -1,5 +1,6 @@
 
 SRC=\
+	src/battery/backend/*.volt \
 	src/battery/policy/*.volt \
 	src/battery/util/*.volt \
 	src/battery/*.volt \
