@@ -153,7 +153,7 @@ Compile exeToCompile(Exe exe)
 	c.src = exe.srcVolt ~ exe.srcObj;
 	c.derivedTarget = exe.bin is null ? exe.name : exe.bin;
 	version (Windows) if (!endsWith(c.derivedTarget, ".exe")) {
-		c.derivedTarget ~ ".exe";
+		c.derivedTarget ~= ".exe";
 	}
 	return c;
 }
