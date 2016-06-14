@@ -111,6 +111,7 @@ public:
 		va_start(vl);
 		io.output.write("  BATTERY  ");
 		io.output.vwritefln(fmt, ref _typeids, ref vl);
+		io.output.flush();
 		va_end(vl);
 	}
 
@@ -119,6 +120,7 @@ public:
 		va_list vl;
 		va_start(vl);
 		io.output.vwritefln(fmt, ref _typeids, ref vl);
+		io.output.flush();
 		va_end(vl);
 	}
 
@@ -128,6 +130,7 @@ public:
 		va_start(vl);
 		io.output.write("error: ");
 		io.output.vwritefln(fmt, ref _typeids, ref vl);
+		io.output.flush();
 		va_end(vl);
 		exit(-1);
 	}
