@@ -22,6 +22,10 @@ import battery.backend.build;
 
 class DefaultDriver : Driver
 {
+public:
+	enum BatteryConfigFile = ".battery.config.txt";
+
+
 protected:
 	Configuration mHostConfig;
 	Exe[] mExe;
@@ -61,7 +65,7 @@ public:
 		arg.parse(args, out mLib, out mExe);
 		ret := getArgs(mLib, mExe);
 
-		ofs := new OutputFileStream(".battery.cmd")
+		ofs := new OutputFileStream(BatteryConfigFile)
 		foreach (r; ret) {
 			ofs.write(r);
 			ofs.put('\n');
@@ -78,7 +82,7 @@ public:
 	void build(string [] args)
 	{
 		args = null;
-		if (!getLinesFromFile(".battery.cmd", ref args)) {
+		if (!getLinesFromFile(BatteryConfigFile, ref args)) {
 			return abort("must first run the 'config' command");
 		}
 
