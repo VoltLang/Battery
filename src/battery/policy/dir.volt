@@ -22,7 +22,7 @@ import battery.policy.cmd : ArgParser;
 enum PathSrc        = "src";
 enum PathRes        = "res";
 enum PathMain       = "src/main.volt";
-enum PathBatteryCmd = "battery.cmd";
+enum PathBatteryTxt = "battery.txt";
 
 /**
  * Scan a directory and see what it holds.
@@ -64,7 +64,7 @@ Base scanDir(Driver drv, string path)
 		libs : Lib[];
 		exes : Exe[];
 		args : string[];
-		getLinesFromFile(s.pathBatteryCmd, ref args);
+		getLinesFromFile(s.pathBatteryTxt, ref args);
 		ap := new ArgParser(drv);
 		ap.parse(args, path ~ dirSeparator, ret, out libs, out exes);
 	}
@@ -90,7 +90,7 @@ public:
 	string pathSrc;
 	string pathRes;
 	string pathMain;
-	string pathBatteryCmd;
+	string pathBatteryTxt;
 
 	string[] filesC;
 	string[] filesVolt;
@@ -110,13 +110,13 @@ public:
 		pathSrc        = path ~ dirSeparator ~ PathSrc;
 		pathRes        = path ~ dirSeparator ~ PathRes;
 		pathMain       = path ~ dirSeparator ~ PathMain;
-		pathBatteryCmd = path ~ dirSeparator ~ PathBatteryCmd;
+		pathBatteryTxt = path ~ dirSeparator ~ PathBatteryTxt;
 
 		hasPath        = isDir(path);
 		hasSrc         = isDir(pathSrc);
 		hasRes         = isDir(pathRes);
 		hasMain        = exists(pathMain);
-		hasBatteryCmd  = exists(pathBatteryCmd);
+		hasBatteryCmd  = exists(pathBatteryTxt);
 
 		if (!hasSrc) {
 			return;
