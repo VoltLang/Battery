@@ -5,7 +5,7 @@
  */
 module battery.policy.cmd;
 
-import watt.text.string : endsWith;
+import watt.text.string : startsWith, endsWith;
 
 import battery.interfaces;
 import battery.policy.dir;
@@ -297,6 +297,15 @@ struct ToArgs
 
 		for (mArgs.setup(args); !mArgs.empty(); mArgs.popFront()) {
 			tmp := mArgs.front();
+
+			// Deal with arguments that are compacted.
+			if (tmp.length > 2 &&
+			    startsWith(tmp, "-l", "-L", "-o", "-D")) {
+			    	mArgs.popFront();
+				mArgs.insertFront(tmp[0 .. 2], tmp[2 .. $]);
+				tmp = mArgs.front();
+			}
+
 			switch (tmp) with (Arg.Kind) {
 			case "--exe": arg(Exe); continue;
 			case "--lib": arg(Lib); continue;
@@ -306,8 +315,8 @@ struct ToArgs
 			case "-l": argNext(Library, "expected library name"); continue;
 			case "-L": argNext(LibraryPath, "expected library path"); continue;
 			case "-d", "-debug", "--debug": arg(Debug); continue;
-			case "--bin", "-o": argNextPath(Output, "expected binary file"); continue;
 			case "-D": argNext(Identifier, "expected version identifier"); continue;
+			case "-o", "--bin": argNextPath(Output, "expected binary file"); continue;
 			case "--if-linux": setCondP(Platform.Linux); continue;
 			case "--if-osx": setCondP(Platform.OSX); continue;
 			case "--if-msvc": setCondP(Platform.MSVC); continue;
@@ -351,6 +360,10 @@ public:
 		mArgs = args;
 	}
 
+	void insertFront(string[] args...)
+	{
+		mArgs = args ~ mArgs;
+	}
 
 public:
 	/*
