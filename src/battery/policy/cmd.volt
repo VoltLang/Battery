@@ -6,6 +6,7 @@
 module battery.policy.cmd;
 
 import watt.process;
+import watt.text.path : normalizePath;
 import watt.text.string : startsWith, endsWith;
 
 import battery.interfaces;
@@ -302,7 +303,7 @@ struct ToArgs
 
 		Arg argPath(Arg.Kind kind) {
 			a := arg(kind);
-			a.extra = mPath ~ a.flag;
+			a.extra = normalizePath(mPath ~ a.flag);
 			return a;
 		}
 
@@ -314,7 +315,7 @@ struct ToArgs
 
 		Arg argNextPath(Arg.Kind kind, string error) {
 			a := argNext(kind, error);
-			a.extra = mPath ~ a.extra;
+			a.extra = normalizePath(mPath ~ a.extra);
 			return a;
 		}
 

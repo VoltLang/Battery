@@ -7,6 +7,7 @@
 module uni.core.target;
 
 import watt.io.file : exists;
+import watt.text.string : indexOf;
 import watt.text.format : format;
 import uni.util.file : getTimes;
 
@@ -23,6 +24,11 @@ private:
 public:
 	Target file(string name)
 	{
+		// Make sure they all have the same path.
+		version (Windows) {
+			assert(indexOf(name, '/') < 0, name);
+		}
+
 		test := name in targets;
 		if (test !is null) {
 			return *test;

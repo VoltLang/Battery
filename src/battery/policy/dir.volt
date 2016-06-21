@@ -9,6 +9,7 @@ module battery.policy.dir;
 import io = watt.io;
 import watt.io.file : exists, searchDir, isDir;
 import watt.path : baseName, dirName, dirSeparator;
+import watt.text.path : normalizePath;
 import watt.text.string : endsWith, replace;
 import watt.conv : toLower;
 
@@ -21,7 +22,7 @@ import battery.policy.cmd : ArgParser;
 
 enum PathSrc        = "src";
 enum PathRes        = "res";
-enum PathMain       = "src/main.volt";
+enum PathMain       = "main.volt";
 enum PathBatteryTxt = "battery.txt";
 
 /**
@@ -31,7 +32,7 @@ Base scanDir(Driver drv, string path)
 {
 	Scanner s;
 
-	s.scan(drv, fixPath(path));
+	s.scan(drv, normalizePath(path));
 
 	if (!s.hasPath) {
 		drv.abort("path '%s' not found", s.path);
@@ -111,7 +112,7 @@ public:
 		name           = toLower(baseName(path));
 		pathSrc        = path ~ dirSeparator ~ PathSrc;
 		pathRes        = path ~ dirSeparator ~ PathRes;
-		pathMain       = path ~ dirSeparator ~ PathMain;
+		pathMain       = pathSrc ~ dirSeparator ~ PathMain;
 		pathBatteryTxt = path ~ dirSeparator ~ PathBatteryTxt;
 
 		hasPath        = isDir(path);
@@ -172,13 +173,4 @@ string[] deepScan(Driver drv, string path, string ending)
 	searchDir(path, "*", hit);
 
 	return ret;
-}
-
-string fixPath(string path)
-{
-	version (Windows) {
-		return replace(path, "/", dirSeparator);
-	} else {
-		return path;
-	}
 }

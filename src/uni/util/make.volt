@@ -2,6 +2,7 @@
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 module uni.util.make;
 
+import watt.text.path;
 import watt.text.sink;
 import watt.text.string;
 import watt.io.file;
@@ -51,8 +52,8 @@ void parseDeps(Instance ins, SinkArg filename, SinkArg text)
 		throw new object.Exception("Invalid dep file: " ~ filename);
 	}
 
-	f := ins.file(ret[0][0 .. $-1]);
+	f := ins.file(normalizePath(ret[0][0 .. $-1]));
 	foreach (d; ret[1 .. $]) {
-		f.deps ~= ins.file(d);
+		f.deps ~= ins.file(normalizePath(d));
 	}
 }
