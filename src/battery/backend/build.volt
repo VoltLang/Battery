@@ -142,6 +142,10 @@ public:
 
 			added[b.name] = b;
 
+			foreach (path; b.libPaths) {
+				ret ~= ["-L", path];
+			}
+
 			foreach (lib; b.libs) {
 				ret ~= ["-l", lib];
 			}

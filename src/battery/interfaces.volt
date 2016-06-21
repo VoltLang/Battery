@@ -15,6 +15,7 @@ class Base
 	string bin;
 
 	string[] libs;
+	string[] libPaths;
 	string[] deps;
 	string[] defs;
 

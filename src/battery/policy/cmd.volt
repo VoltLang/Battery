@@ -51,6 +51,10 @@ string[] getArgsBase(Base b, string start)
 		ret ~= ["-D", def];
 	}
 
+	foreach (path; b.libPaths) {
+		ret ~= ["-L", path];
+	}
+
 	foreach (lib; b.libs) {
 		ret ~= ["-l", lib];
 	}
@@ -172,6 +176,7 @@ protected:
 			case SrcDir: lib.srcDir = arg.extra; break;
 			case Dep: lib.deps ~= arg.extra; break;
 			case Library: lib.libs ~= arg.extra; break;
+			case LibraryPath: lib.libPaths ~= arg.extra; break;
 			default:
 				return parseDefault();
 			}
@@ -187,6 +192,7 @@ protected:
 			case SrcDir: exe.srcDir = arg.extra; break;
 			case Dep: exe.deps ~= arg.extra; break;
 			case Library: exe.libs ~= arg.extra; break;
+			case LibraryPath: exe.libPaths ~= arg.extra; break;
 			case Debug: exe.isDebug = true; break;
 			case Output: exe.bin = arg.extra; break;
 			case Identifier: exe.defs ~= arg.extra; break;
