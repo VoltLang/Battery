@@ -25,6 +25,8 @@ public:
 		Dep,
 		SrcDir,
 
+		Command,
+
 		Library,
 		LibraryPath,
 

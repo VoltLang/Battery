@@ -5,6 +5,7 @@
  */
 module battery.policy.cmd;
 
+import watt.process;
 import watt.text.string : startsWith, endsWith;
 
 import battery.interfaces;
@@ -177,6 +178,7 @@ protected:
 			case Dep: lib.deps ~= arg.extra; break;
 			case Library: lib.libs ~= arg.extra; break;
 			case LibraryPath: lib.libPaths ~= arg.extra; break;
+			case Command: handleCommand(arg.extra); break;
 			default:
 				return parseDefault();
 			}
@@ -199,6 +201,7 @@ protected:
 			case FileC: exe.srcC ~= arg.extra; break;
 			case FileObj: exe.srcObj ~= arg.extra; break;
 			case FileVolt: exe.srcVolt ~= arg.extra; break;
+			case Command: handleCommand(arg.extra); break;
 			default:
 				return parseDefault();
 			}
@@ -229,6 +232,27 @@ protected:
 		if (exe.bin is null) {
 			mDrv.abort("executable not given a output file '-o'");
 		}
+	}
+
+	void handleCommand(string cmd)
+	{
+		args := parseArguments(cmd);
+		if (args.length == 0) {
+			return;
+		}
+
+		str := getOutput(args[0], args[1 .. $]);
+
+		args = parseArguments(str);
+
+		if (args.length == 0) {
+			return;
+		}
+
+		ToArgs toArgs;
+		res := toArgs.process(mDrv, null, args);
+		filterArgs(ref res, mDrv.arch, mDrv.platform);
+		mArgs = mArgs[0 .. mPos+1] ~ res ~ mArgs[mPos+1 .. $];
 	}
 }
 
@@ -311,6 +335,7 @@ struct ToArgs
 			case "--name": argNext(Name, "expected name"); continue;
 			case "--dep": argNext(Dep, "expected dependency"); continue;
 			case "--src-I": argNextPath(SrcDir, "expected source directory"); continue;
+			case "--cmd": argNext(Command, "expected command"); continue;
 			case "-l": argNext(Library, "expected library name"); continue;
 			case "-L": argNext(LibraryPath, "expected library path"); continue;
 			case "-d", "-debug", "--debug": arg(Debug); continue;
