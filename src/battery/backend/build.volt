@@ -6,6 +6,8 @@ import watt.text.string : endsWith;
 import watt.path : dirSeparator;
 
 import uni = uni.core;
+import uni.util.make;
+
 import battery.interfaces;
 import battery.configuration;
 
@@ -63,8 +65,10 @@ public:
 		version (Windows) if (!endsWith(name, ".exe")) {
 			name ~= ".exe";
 		}
+		dep := ".bin" ~ dirSeparator ~ name ~ ".d";
 
 		t := ins.fileNoRule(name);
+		d := ins.file(dep);
 		t.deps = new uni.Target[](exe.srcVolt.length);
 
 		// Do dependancy tracking on source.
@@ -74,7 +78,7 @@ public:
 
 		// Get all of the arguments.
 		args := voltArgs ~ collect(exe) ~
-			["-o", name] ~ exe.srcVolt;
+			["-o", name, "--dep", dep] ~ exe.srcVolt;
 
 		// Setup C targets.
 		foreach (src; exe.srcC) {
@@ -89,11 +93,14 @@ public:
 			args ~= obj;
 		}
 
+		importDepFile(ins, dep);
+
 		// Make the rule.
 		t.rule = new uni.Rule();
 		t.rule.cmd = config.volta.cmd;
 		t.rule.print = "  VOLTA    " ~ name;
 		t.rule.args = args;
+		t.rule.outputs = [t, d];
 
 		return t;
 	}
@@ -111,12 +118,14 @@ public:
 			tc.rule.cmd = config.cc.cmd;
 			tc.rule.args = [src, "-c", "-o", obj];
 			tc.rule.print = "  GCC      " ~ obj;
+			tc.rule.outputs = [tc];
 			break;
 		case CL:
 			tc.rule = new uni.Rule();
 			tc.rule.cmd = config.cc.cmd;
 			tc.rule.args = [src, "/c", "/Fo" ~ obj];
 			tc.rule.print = "  MSVC     " ~ obj;
+			tc.rule.outputs = [tc];
 			break;
 		default:
 			mDrv.abort("unknown C compiler");

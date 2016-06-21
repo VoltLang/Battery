@@ -127,4 +127,15 @@ public:
 
 	/// When the rule is running these targets will be locked.
 	Target[] outputs;
+
+public:
+	/**
+	 * Called by the solver when the target has been built.
+	 */
+	void built(int ret)
+	{
+		foreach (o; outputs) {
+			o.built(ret);
+		}
+	}
 }

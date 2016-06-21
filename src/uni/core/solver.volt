@@ -84,15 +84,17 @@ private bool build(Target t, CmdGroup g)
 	}
 
 	// Make sure the directory exist.
-	mkdirP(dirName(t.name));
+	foreach (o; t.rule.outputs) {
+		mkdirP(dirName(o.name));
+		o.status = Target.BUILDING;
+	}
 
 	// Print to console what we do.
 	output.writefln(t.rule.print);
 	output.flush();
 
 	// The business end of the solver.
-	t.status = Target.BUILDING;
-	g.run(t.rule.cmd, t.rule.args, t.built, null);
+	g.run(t.rule.cmd, t.rule.args, t.rule.built, null);
 
 	return true;
 }
