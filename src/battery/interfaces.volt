@@ -41,6 +41,12 @@ abstract class Driver
 
 	alias Fmt = watt.text.sink.SinkArg;
 
+	/// Add a executable
+	abstract void add(Exe exe);
+
+	/// Add a library
+	abstract void add(Lib lib);
+
 	/**
 	 * Prints a action string.
 	 *

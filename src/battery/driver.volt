@@ -62,7 +62,7 @@ public:
 	void config(string[] args)
 	{
 		arg := new ArgParser(this);
-		arg.parse(args, out mLib, out mExe);
+		arg.parse(args);
 		ret := getArgs(mLib, mExe);
 
 		ofs := new OutputFileStream(BatteryConfigFile)
@@ -72,11 +72,6 @@ public:
 		}
 		ofs.flush();
 		ofs.close();
-
-
-		// Hack for now.
-		mLib = null;
-		mExe = null;
 	}
 
 	void build(string [] args)
@@ -87,7 +82,7 @@ public:
 		}
 
 		arg := new ArgParser(this);
-		arg.parse(args, out mLib, out mExe);
+		arg.parse(args);
 
 		path := getEnv("PATH");
 		config := getHostConfig(path);
@@ -109,6 +104,16 @@ public:
 	 * Driver functions.
 	 *
 	 */
+
+	override void add(Lib lib)
+	{
+		mLib ~= lib;
+	}
+
+	override void add(Exe exe)
+	{
+		mExe ~= exe;
+	}
 
 	override void action(Fmt fmt, ...)
 	{

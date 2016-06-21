@@ -54,19 +54,21 @@ Base scanDir(Driver drv, string path)
 	ret : Base;
 	if (s.hasMain) {
 		drv.info("scanned '%s' found executable", s.path);
-		ret = s.buildExe();
+		exe := s.buildExe();
+		drv.add(exe);
+		ret = exe;
 	} else {
 		drv.info("scanned '%s' found library", s.path);
-		ret = s.buildLib();
+		lib := s.buildLib();
+		drv.add(lib);
+		ret = lib;
 	}
 
 	if (s.hasBatteryCmd) {
-		libs : Lib[];
-		exes : Exe[];
 		args : string[];
 		getLinesFromFile(s.pathBatteryTxt, ref args);
 		ap := new ArgParser(drv);
-		ap.parse(args, path ~ dirSeparator, ret, out libs, out exes);
+		ap.parse(args, path ~ dirSeparator, ret);
 	}
 
 	return ret;

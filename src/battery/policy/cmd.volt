@@ -91,9 +91,6 @@ public:
 	Arg[] mArgs;
 	size_t mPos;
 
-	Lib[] mLibs;
-	Exe[] mExes;
-
 
 public:
 	this(Driver drv)
@@ -101,7 +98,7 @@ public:
 		mDrv = drv;
 	}
 
-	void parse(string[] args, out Lib[] libs, out Exe[] exes)
+	void parse(string[] args)
 	{
 		ToArgs toArgs;
 		mPos = 0;
@@ -111,14 +108,9 @@ public:
 		for (; mPos < mArgs.length; mPos++) {
 			parseDefault();
 		}
-
-		libs = mLibs;
-		exes = mExes;
-		mLibs = null;
-		mExes = null;
 	}
 
-	void parse(string[] args, string path, Base base, out Lib[] libs, out Exe[] exes)
+	void parse(string[] args, string path, Base base)
 	{
 		ToArgs toArgs;
 		mPos = 0;
@@ -126,11 +118,6 @@ public:
 		filterArgs(ref mArgs, mDrv.arch, mDrv.platform);
 
 		process(base);
-
-		libs = mLibs;
-		exes = mExes;
-		mLibs = null;
-		mExes = null;
 	}
 
 
@@ -144,8 +131,16 @@ protected:
 		Base base;
 		arg := mArgs[mPos++];
 		switch (arg.kind) with (Arg.Kind) {
-		case Exe: base = new Exe(); break;
-		case Lib: base = new Lib(); break;
+		case Exe:
+			exe := new Exe();
+			mDrv.add(exe);
+			base = exe;
+			break;
+		case Lib:
+			lib := new Lib();
+			mDrv.add(lib);
+			base = lib;
+			break;
 		case Directory: base = scanDir(mDrv, arg.extra); break;
 		default: mDrv.abort("unknown argument '%s'", arg.flag);
 		}
@@ -159,14 +154,12 @@ protected:
 		if (lib !is null) {
 			parse(lib);
 			verify(lib);
-			mLibs ~= lib;
 		}
 
 		exe := cast(Exe)base;
 		if (exe !is null) {
 			parse(exe);
 			verify(exe);
-			mExes ~= exe;
 		}
 	}
 
