@@ -65,6 +65,18 @@ string[] getArgsBase(Base b, string start)
 		ret ~= ["-l", lib];
 	}
 
+	foreach (arg; b.xcc) {
+		ret ~= ["--Xcc", arg];
+	}
+
+	foreach (arg; b.xcc) {
+		ret ~= ["--Xlink", arg];
+	}
+
+	foreach (arg; b.xlinker) {
+		ret ~= ["--Xlinker", arg];
+	}
+
 	ret ~= ["--src-I", b.srcDir];
 
 	return ret;
@@ -184,6 +196,10 @@ protected:
 			case Library: lib.libs ~= arg.extra; break;
 			case LibraryPath: lib.libPaths ~= arg.extra; break;
 			case StringPath: lib.stringPaths ~= arg.extra; break;
+			case ArgLD: lib.xld ~= arg.extra; break;
+			case ArgCC: lib.xcc ~= arg.extra; break;
+			case ArgLink: lib.xlink ~= arg.extra; break;
+			case ArgLinker: lib.xlinker ~= arg.extra; break;
 			case Command: handleCommand(arg.extra); break;
 			default:
 				return parseDefault();
@@ -208,6 +224,10 @@ protected:
 			case FileC: exe.srcC ~= arg.extra; break;
 			case FileObj: exe.srcObj ~= arg.extra; break;
 			case FileVolt: exe.srcVolt ~= arg.extra; break;
+			case ArgLD: exe.xld ~= arg.extra; break;
+			case ArgCC: exe.xcc ~= arg.extra; break;
+			case ArgLink: exe.xlink ~= arg.extra; break;
+			case ArgLinker: exe.xlinker ~= arg.extra; break;
 			case Command: handleCommand(arg.extra); break;
 			default:
 				return parseDefault();
@@ -348,6 +368,10 @@ struct ToArgs
 			case "-J": argNextPath(StringPath, "expected string path"); continue;
 			case "-d", "-debug", "--debug": arg(Debug); continue;
 			case "-D": argNext(Identifier, "expected version identifier"); continue;
+			case "-Xld", "--Xld": argNext(ArgLD, "expected ld arg"); continue;
+			case "-Xcc", "--Xcc": argNext(ArgCC, "expected cc arg"); continue;
+			case "-Xlink", "--Xlink": argNext(ArgLink, "expected link arg"); continue;
+			case "-Xlinker", "--Xlinker": argNext(ArgLinker, "expected linker arg"); continue;
 			case "-o", "--bin": argNextPath(Output, "expected binary file"); continue;
 			case "--if-linux": setCondP(Platform.Linux); continue;
 			case "--if-osx": setCondP(Platform.OSX); continue;

@@ -167,6 +167,18 @@ public:
 				ret ~= ["-D", def];
 			}
 
+			foreach (arg; b.xcc) {
+				ret ~= ["--Xcc", arg];
+			}
+
+			foreach (arg; b.xlink) {
+				ret ~= ["--Xlink", arg];
+			}
+
+			foreach (arg; b.xlinker) {
+				ret ~= ["--Xlinker", arg];
+			}
+
 			foreach (dep; b.deps) {
 				base := dep in store;
 				traverse(*base);

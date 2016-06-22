@@ -39,6 +39,11 @@ public:
 		FileC,
 		FileObj,
 		FileVolt,
+
+		ArgLD,
+		ArgCC,
+		ArgLink,
+		ArgLinker,
 	}
 
 	string flag;

@@ -20,6 +20,11 @@ class Base
 	string[] defs;
 	string[] stringPaths;
 
+	string[] xld;
+	string[] xcc;
+	string[] xlink;
+	string[] xlinker;
+
 	string srcDir;
 }
 
