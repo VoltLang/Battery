@@ -155,6 +155,10 @@ public:
 				ret ~= ["-L", path];
 			}
 
+			foreach (path; b.stringPaths) {
+				ret ~= ["-J", path];
+			}
+
 			foreach (lib; b.libs) {
 				ret ~= ["-l", lib];
 			}

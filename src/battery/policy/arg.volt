@@ -30,6 +30,8 @@ public:
 		Library,
 		LibraryPath,
 
+		StringPath,
+
 		Debug,
 		Identifier,
 		Output,

@@ -18,6 +18,7 @@ class Base
 	string[] libPaths;
 	string[] deps;
 	string[] defs;
+	string[] stringPaths;
 
 	string srcDir;
 }

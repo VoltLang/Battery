@@ -57,6 +57,10 @@ string[] getArgsBase(Base b, string start)
 		ret ~= ["-L", path];
 	}
 
+	foreach (path; b.stringPaths) {
+		ret ~= ["-J", path];
+	}
+
 	foreach (lib; b.libs) {
 		ret ~= ["-l", lib];
 	}
@@ -179,6 +183,7 @@ protected:
 			case Dep: lib.deps ~= arg.extra; break;
 			case Library: lib.libs ~= arg.extra; break;
 			case LibraryPath: lib.libPaths ~= arg.extra; break;
+			case StringPath: lib.stringPaths ~= arg.extra; break;
 			case Command: handleCommand(arg.extra); break;
 			default:
 				return parseDefault();
@@ -196,6 +201,7 @@ protected:
 			case Dep: exe.deps ~= arg.extra; break;
 			case Library: exe.libs ~= arg.extra; break;
 			case LibraryPath: exe.libPaths ~= arg.extra; break;
+			case StringPath: exe.stringPaths ~= arg.extra; break;
 			case Debug: exe.isDebug = true; break;
 			case Output: exe.bin = arg.extra; break;
 			case Identifier: exe.defs ~= arg.extra; break;
@@ -339,6 +345,7 @@ struct ToArgs
 			case "--cmd": argNext(Command, "expected command"); continue;
 			case "-l": argNext(Library, "expected library name"); continue;
 			case "-L": argNext(LibraryPath, "expected library path"); continue;
+			case "-J": argNextPath(StringPath, "expected string path"); continue;
 			case "-d", "-debug", "--debug": arg(Debug); continue;
 			case "-D": argNext(Identifier, "expected version identifier"); continue;
 			case "-o", "--bin": argNextPath(Output, "expected binary file"); continue;
