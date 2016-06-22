@@ -65,11 +65,15 @@ string[] getArgsBase(Base b, string start)
 		ret ~= ["-l", lib];
 	}
 
+	foreach (arg; b.xld) {
+		ret ~= ["--Xld", arg];
+	}
+
 	foreach (arg; b.xcc) {
 		ret ~= ["--Xcc", arg];
 	}
 
-	foreach (arg; b.xcc) {
+	foreach (arg; b.xlink) {
 		ret ~= ["--Xlink", arg];
 	}
 
