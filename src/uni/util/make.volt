@@ -2,6 +2,8 @@
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 module uni.util.make;
 
+static import object;
+
 import watt.text.path;
 import watt.text.sink;
 import watt.text.string;
