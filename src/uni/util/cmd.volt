@@ -2,6 +2,7 @@
 // See copyright notice in src/battery/license.d (BOOST ver. 1.0).
 module uni.util.cmd;
 
+import core.exception;
 import watt.conv;
 import watt.process;
 

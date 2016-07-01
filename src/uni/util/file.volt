@@ -6,6 +6,8 @@
  */
 module uni.util.file;
 
+import core.exception;
+
 version (Linux || OSX) {
 	import core.posix.sys.stat : stat_t, stat;
 } else {

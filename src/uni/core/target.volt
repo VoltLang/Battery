@@ -6,6 +6,7 @@
  */
 module uni.core.target;
 
+import core.exception;
 import watt.io.file : exists;
 import watt.text.string : indexOf;
 import watt.text.format : format;
