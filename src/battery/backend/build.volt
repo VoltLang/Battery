@@ -28,6 +28,9 @@ public:
 	uni.Target mega;
 	uni.Instance ins;
 
+	string rtSrcDir;
+	uni.Target rtBin;
+	uni.Target voltaBin;
 
 public:
 	this(Driver drv)
@@ -43,6 +46,9 @@ public:
 		this.ins = new uni.Instance();
 		this.mega = ins.fileNoRule("__all");
 
+		voltaBin = ins.fileNoRule(config.volta.cmd);
+		rtBin = ins.fileNoRule(config.volta.rtBin);
+		rtSrcDir = config.volta.rtDir;
 		setupVoltArgs();
 
 		// Make the libraries searchable.
@@ -76,6 +82,9 @@ public:
 			t.deps[i] = ins.file(src);
 		}
 
+		// Depend on the compiler and runtime.
+		t.deps ~= [voltaBin, rtBin];
+
 		// Get all of the arguments.
 		args := voltArgs ~ collect(exe) ~
 			["-o", name, "--dep", dep] ~ exe.srcVolt;
@@ -97,7 +106,7 @@ public:
 
 		// Make the rule.
 		t.rule = new uni.Rule();
-		t.rule.cmd = config.volta.cmd;
+		t.rule.cmd = voltaBin.name;
 		t.rule.print = "  VOLTA    " ~ name;
 		t.rule.args = args;
 		t.rule.outputs = [t, d];
@@ -205,9 +214,9 @@ public:
 			.toString(config.arch),
 			getLinkerFlag(config),
 			config.linker.cmd,
-			config.volta.rtBin,
+			rtBin.name,
 			"--lib-I",
-			config.volta.rtDir
+			rtSrcDir,
 		];
 
 		foreach (lib; config.volta.rtLibs[config.platform]) {
