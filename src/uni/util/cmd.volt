@@ -2,18 +2,11 @@
 // See copyright notice in src/battery/license.d (BOOST ver. 1.0).
 module uni.util.cmd;
 
+import core.stdc.stdio : FILE, fileno, stdin, stdout, stderr;
 import core.exception;
+
 import watt.conv;
 import watt.process;
-
-version (Windows) {
-	import core.windows.windows;
-	alias ProcessHandle = HANDLE;
-} else {
-	import core.posix.sys.types : pid_t;
-	alias ProcessHandle = pid_t;
-}
-import core.stdc.stdio : FILE, fileno, stdin, stdout, stderr;
 
 
 /**
@@ -29,7 +22,7 @@ private:
 	Cmd[] cmdStore;
 
 	/// For Windows waitOne, to avoid unneeded allocations.
-	version (Windows) ProcessHandle[] __handles;
+	version (Windows) Pid.NativeID[] __handles;
 
 	/// Number of simultanious jobs.
 	uint maxWaiting;
@@ -40,7 +33,7 @@ private:
 	/**
 	 * Small container representing a executed command, is recycled.
 	 */
-	class Cmd
+	static class Cmd
 	{
 	public:
 		/// Executable.
@@ -53,7 +46,7 @@ private:
 		DoneDg done;
 
 		/// System specific process handle.
-		ProcessHandle handle;
+		Pid.NativeID handle;
 
 		/// In use.
 		bool used;
@@ -63,7 +56,7 @@ private:
 		/**
 		 * Initialize all the fields.
 		 */
-		void set(string cmd, string[] args, DoneDg dg, ProcessHandle handle)
+		void set(string cmd, string[] args, DoneDg dg, Pid.NativeID handle)
 		{
 			used = true;
 			this.cmd = cmd;
@@ -94,8 +87,9 @@ public:
 	{
 		waiting = 0;
 		this.maxWaiting = maxWaiting;
+
 		cmdStore = new Cmd[](maxWaiting);
-		version (Windows) __handles = new ProcessHandle[](maxWaiting);
+		version (Windows) __handles = new Pid.NativeID[](maxWaiting);
 
 		foreach (ref cmd; cmdStore) {
 			cmd = new Cmd();
@@ -224,7 +218,7 @@ public:
 	}
 
 private:
-	Cmd newCmd(string cmd, string[] args, DoneDg dg, ProcessHandle handle)
+	Cmd newCmd(string cmd, string[] args, DoneDg dg, Pid.NativeID handle)
 	{
 		foreach (c; cmdStore) {
 			if (c is null) {
@@ -268,96 +262,5 @@ class CmdException : Exception
 			cmd ~= " " ~ a;
 		}
 		this(cmd, result);
-	}
-}
-
-/**
- * Run the given command and read back the output into a string.
- * Waits for the command to complete before returning.
- *
- * XXX: Currently limited max read data.
- */
-string getOutput(string cmd, string[] args)
-{
-	version(Windows) {
-
-		saAttr : SECURITY_ATTRIBUTES;
-		hOut, hIn, hProcess : HANDLE;
-		uRet : uint;
-		bRet : bool;
-
-		saAttr.nLength = cast(uint)typeid(saAttr).size;
-		saAttr.bInheritHandle = true;
-		saAttr.lpSecurityDescriptor = null;
-
-		bRet = cast(bool)CreatePipe(&hIn, &hOut, &saAttr, 0);
-		if (!bRet) {
-			throw new CmdException(cmd, args, "Could not create pipe");
-		}
-
-		scope(exit) {
-			CloseHandle(hIn);
-			CloseHandle(hOut);
-		}
-
-
-		// Ensure the read handle to the pipe for STDOUT is not inherited.
-		bRet = cast(bool)SetHandleInformation(hIn, HANDLE_FLAG_INHERIT, 0);
-		if (!bRet) {
-			throw new CmdException(cmd, args, "Failed to set hIn info");
-		}
-
-		hProcess = spawnProcessWindows(cmd, args, null, hOut, hOut);
-		scope(exit) {
-			CloseHandle(hProcess);
-		}
-
-
-		// Wait for the process to close.
-		uRet = WaitForSingleObject(hProcess, cast(DWORD)(-1));
-		if (uRet) {
-			throw new CmdException(cmd, args, "Failed to wait for program");
-		}
-
-		sizeHigh : DWORD;
-		sizeLow := GetFileSize(hIn, &sizeHigh);
-		if (sizeHigh) {
-			throw new CmdException(cmd, args, "output is way to big");
-		}
-
-		data := new void[](sizeLow);
-
-		// Read data from file.
-		bRet = cast(bool)ReadFile(
-			hIn, data.ptr, cast(uint)data.length, &uRet, null);
-		size := cast(size_t)uRet;
-
-		// Check result of read.
-		if (!bRet || size != data.length) {
-			throw new CmdException(cmd, args, "Failed to read from output file");
-		}
-
-		return cast(string)data;
-
-	} else version(Posix) {
-
-/*
-		auto cmdPtr = toArgsPosix(stack, cmd, args);
-		auto f = popen(cmdPtr, "r");
-		if (f is null) {
-			throw new CmdException(cmd, args, "Failed to launch the program");
-		}
-
-		size = cast(size_t)fread(stack.ptr, 1, stack.length, f);
-		if (size == stack.length) {
-			throw new CmdException(cmd, args, "To much data to read");
-		}
-
-		ret = stack[0 .. size].idup;
-*/
-		throw new CmdException(cmd, args, "not supported yet");
-
-	} else {
-		static assert(false);
 	}
 }
