@@ -203,7 +203,7 @@ public:
 			.toString(config.platform),
 			"--arch",
 			.toString(config.arch),
-			config.linker.flag,
+			getLinkerFlag(config),
 			config.linker.cmd,
 			config.volta.rtBin,
 			"--lib-I",
@@ -212,6 +212,16 @@ public:
 
 		foreach (lib; config.volta.rtLibs[config.platform]) {
 			voltArgs ~= ["-l", lib];
+		}
+	}
+
+	string getLinkerFlag(Configuration config)
+	{
+		final switch (config.linker.kind) {
+		case Linker.Kind.LD: return "--ld";
+		case Linker.Kind.GCC: return "--cc";
+		case Linker.Kind.Link: return "--link";
+		case Linker.Kind.Clang: return "--cc";
 		}
 	}
 }

@@ -24,11 +24,19 @@ class Volta
  */
 class Linker
 {
+	enum Kind
+	{
+		LD,    // LD
+		GCC,   // GCC
+		Link,  // MSVC
+		Clang, // LLVM Clang
+	}
+
+	/// Type of compiler.
+	Kind kind;
+
 	/// Fully qualified command.
 	string cmd;
-
-	/// How to give the cmd to Volta, --link, --cc, --ld.
-	string flag;
 }
 
 /**
@@ -49,9 +57,6 @@ public:
 
 	/// Fully qualified command.
 	string cmd;
-
-	/// How to give the cmd to Volta, --cc.
-	string flag;
 }
 
 /**

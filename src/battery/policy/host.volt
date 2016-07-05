@@ -12,31 +12,28 @@ version (MSVC) {
 	enum VoltaCommand = "volt.exe";
 
 	enum HostCCompilerCommand = "cl.exe";
-	enum HostCCompilerFlag = "--cl";
 	enum HostCCompilerKind = CCompiler.Kind.CL;
 
 	enum HostLinkerCommand = "link.exe";
-	enum HostLinkerFlag = "--link";
+	enum HostLinkerKind = Linker.Kind.Link;
 	enum HostPlatform = Platform.MSVC;
 } else version (Linux) {
 	enum VoltaCommand = "volt";
 
 	enum HostCCompilerCommand = "gcc";
-	enum HostCCompilerFlag = "--cc";
 	enum HostCCompilerKind = CCompiler.Kind.GCC;
 
 	enum HostLinkerCommand = "gcc";
-	enum HostLinkerFlag = "--cc";
+	enum HostLinkerKind = Linker.Kind.GCC;
 	enum HostPlatform = Platform.Linux;
 } else version (OSX) {
 	enum VoltaCommand = "volt";
 
 	enum HostCCompilerCommand = "clang";
-	enum HostCCompilerFlag = "--cc";
 	enum HostCCompilerKind = CCompiler.Kind.GCC;
 
 	enum HostLinkerCommand = "clang";
-	enum HostLinkerFlag = "--cc";
+	enum HostLinkerKind = Linker.Kind.Clang;
 	enum HostPlatform = Platform.OSX;
 } else {
 	static assert(false, "native platform not supported");
@@ -76,8 +73,8 @@ Configuration getHostConfig()
 Linker getHostLinker(string path)
 {
 	linker := new Linker();
+	linker.kind = HostLinkerKind;
 	linker.cmd = searchPath(HostLinkerCommand, path);
-	linker.flag = HostLinkerFlag;
 
 	return linker;
 }
@@ -85,9 +82,8 @@ Linker getHostLinker(string path)
 CCompiler getHostCCompiler(string path)
 {
 	cc := new CCompiler();
-	cc.cmd = searchPath(HostCCompilerCommand, path);
-	cc.flag = HostCCompilerFlag;
 	cc.kind = HostCCompilerKind;
+	cc.cmd = searchPath(HostCCompilerCommand, path);
 
 	return cc;
 }
