@@ -71,16 +71,4 @@ public:
 
 	Arch arch;
 	Platform platform;
-
-	string[] defs;
-
-	string buildDir;
-
-	uint hash;
-
-	bool isDebug;
-
-
-public:
-	string buildDirDerived;
 }
