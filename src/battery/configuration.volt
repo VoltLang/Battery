@@ -2,6 +2,7 @@
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 module battery.configuration;
 
+import watt.process : Environment;
 public import battery.defines;
 
 
@@ -62,6 +63,8 @@ public:
 class Configuration
 {
 public:
+	Environment env;
+
 	Volta volta;
 	Linker linker;
 	CCompiler cc;
@@ -72,8 +75,6 @@ public:
 	string[] defs;
 
 	string buildDir;
-
-	string path;
 
 	uint hash;
 

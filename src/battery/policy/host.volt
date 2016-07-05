@@ -2,6 +2,7 @@
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 module battery.policy.host;
 
+import watt.process : retriveEnvironment, Environment;
 import battery.configuration;
 import battery.util.path : searchPath;
 import battery.policy.volta : getVolta;
@@ -49,14 +50,20 @@ version (X86_64) {
 	static assert(false, "native arch not supported");
 }
 
-Configuration getHostConfig(string path)
+Configuration getHostConfig()
 {
+	outside := retriveEnvironment();
+	path := outside.getOrNull("PATH");
+
+	env := new Environment();
+	env.set("PATH", path);
+
 	volta := getVolta(path);
 	linker := getHostLinker(path);
 	cc := getHostCCompiler(path);
 
 	c := new Configuration();
-	c.path = path;
+	c.env = env;
 	c.volta = volta;
 	c.linker = linker;
 	c.cc = cc;

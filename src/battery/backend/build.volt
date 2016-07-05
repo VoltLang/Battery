@@ -56,7 +56,7 @@ public:
 		}
 
 		// Do the build.
-		uni.build(mega, 4, null);
+		uni.build(mega, 4, config.env);
 	}
 
 	uni.Target makeTargetExe(Exe exe)

@@ -9,7 +9,6 @@ import core.stdc.stdlib : exit;
 import io = watt.io;
 import watt.io.streams : OutputFileStream;
 import watt.varargs : va_list, va_start, va_end;
-import watt.process : getEnv;
 
 import battery.configuration;
 import battery.interfaces;
@@ -84,8 +83,7 @@ public:
 		arg := new ArgParser(this);
 		arg.parse(args);
 
-		path := getEnv("PATH");
-		config := getHostConfig(path);
+		config := getHostConfig();
 		builder := new Builder(this);
 		builder.build(config, mLib, mExe);
 	}
