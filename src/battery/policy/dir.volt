@@ -21,7 +21,8 @@ import battery.policy.cmd : ArgParser;
 
 enum PathSrc        = "src";
 enum PathRes        = "res";
-enum PathMain       = "main.volt";
+enum PathMainD      = "main.d";
+enum PathMainVolt   = "main.volt";
 enum PathBatteryTxt = "battery.txt";
 
 /**
@@ -46,13 +47,13 @@ Base scanDir(Driver drv, string path)
 	}
 
 	// Setup binary name.
-	if (s.hasMain) {
+	if (s.hasMainVolt) {
 		s.bin = s.path ~ dirSeparator ~ s.name;
 	}
 
 	// Create exectuable or library.
 	ret : Base;
-	if (s.hasMain) {
+	if (s.hasMainVolt) {
 		drv.info("scanned '%s' found executable", s.path);
 		exe := s.buildExe();
 		drv.add(exe);
@@ -85,21 +86,19 @@ public:
 	bool hasSrc;
 	bool hasRes;
 	bool hasPath;
-	bool hasMain;
+	bool hasMainD;
+	bool hasMainVolt;
 	bool hasBatteryCmd;
 
 	string path;
 	string pathSrc;
 	string pathRes;
-	string pathMain;
+	string pathMainD;
+	string pathMainVolt;
 	string pathBatteryTxt;
 
 	string[] filesC;
 	string[] filesVolt;
-
-
-public:
-
 
 
 public:
@@ -111,13 +110,15 @@ public:
 		name           = toLower(baseName(path));
 		pathSrc        = path ~ dirSeparator ~ PathSrc;
 		pathRes        = path ~ dirSeparator ~ PathRes;
-		pathMain       = pathSrc ~ dirSeparator ~ PathMain;
+		pathMainD      = pathSrc ~ dirSeparator ~ PathMainD;
+		pathMainVolt   = pathSrc ~ dirSeparator ~ PathMainVolt;
 		pathBatteryTxt = path ~ dirSeparator ~ PathBatteryTxt;
 
 		hasPath        = isDir(path);
 		hasSrc         = isDir(pathSrc);
 		hasRes         = isDir(pathRes);
-		hasMain        = exists(pathMain);
+		hasMainD       = exists(pathMainD);
+		hasMainVolt    = exists(pathMainVolt);
 		hasBatteryCmd  = exists(pathBatteryTxt);
 
 		if (!hasSrc) {
@@ -134,7 +135,7 @@ public:
 		exe.name = name;
 		exe.srcDir = pathSrc;
 		exe.srcC = filesC;
-		exe.srcVolt = [pathMain];
+		exe.srcVolt = [pathMainVolt];
 		exe.bin = bin;
 
 		return exe;
