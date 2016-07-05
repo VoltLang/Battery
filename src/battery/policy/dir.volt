@@ -15,7 +15,6 @@ import watt.conv : toLower;
 
 import battery.interfaces;
 import battery.configuration;
-import battery.util.path;
 import battery.util.file : getLinesFromFile;
 import battery.policy.cmd : ArgParser;
 

@@ -2,9 +2,8 @@
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 module battery.policy.host;
 
-import watt.process : retriveEnvironment, Environment;
+import watt.process : retriveEnvironment, Environment, searchPath;
 import battery.configuration;
-import battery.util.path : searchPath;
 import battery.policy.volta : getVolta;
 
 
