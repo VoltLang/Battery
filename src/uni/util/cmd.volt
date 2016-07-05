@@ -21,6 +21,9 @@ public:
 private:
 	Cmd[] cmdStore;
 
+	/// Environment to launch all processes in.
+	Environment env;
+
 	/// For Windows waitOne, to avoid unneeded allocations.
 	version (Windows) Pid.NativeID[] __handles;
 
@@ -83,9 +86,9 @@ private:
 	}
 
 public:
-	this(uint maxWaiting)
+	this(Environment env, uint maxWaiting)
 	{
-		waiting = 0;
+		this.env = env;
 		this.maxWaiting = maxWaiting;
 
 		cmdStore = new Cmd[](maxWaiting);
@@ -105,7 +108,8 @@ public:
 				throw new Exception("Wait one failed to many times");
 			}
 		}
-		pid := spawnProcess(cmd, args, null, log, log);
+
+		pid := spawnProcess(cmd, args, null, log, log, env);
 
 		version (Windows) {
 

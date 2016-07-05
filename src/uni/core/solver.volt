@@ -10,7 +10,7 @@ module uni.core.solver;
 
 import watt.io : output;
 import watt.path : mkdirP, dirName;
-
+import watt.process;
 
 import uni.core.target : Target, Rule;
 import uni.util.cmd : CmdGroup;
@@ -19,9 +19,9 @@ import uni.util.cmd : CmdGroup;
 /**
  * Builds a target, will throw exceptions on build failure.
  */
-void build(Target t, uint numJobs)
+void build(Target t, uint numJobs, Environment env)
 {
-	g := new CmdGroup(numJobs);
+	g := new CmdGroup(env, numJobs);
 	built := build(t, g);
 	if (built) {
 		g.waitAll();
