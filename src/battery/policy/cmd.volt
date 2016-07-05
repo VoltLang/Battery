@@ -132,7 +132,7 @@ public:
 		filterArgs(ref mArgs, mDrv.arch, mDrv.platform);
 
 		for (; mPos < mArgs.length; mPos++) {
-			parseDefault();
+			parseDefault(mArgs[mPos]);
 		}
 	}
 
@@ -148,30 +148,29 @@ public:
 
 
 protected:
-	void parseDefault()
+	void parseDefault(Arg arg)
 	{
 		if (mPos >= mArgs.length) {
 			return;
 		}
 
-		Base base;
-		arg := mArgs[mPos++];
 		switch (arg.kind) with (Arg.Kind) {
 		case Exe:
+			mPos++;
 			exe := new Exe();
 			mDrv.add(exe);
-			base = exe;
-			break;
+			return process(exe);
 		case Lib:
+			mPos++;
 			lib := new Lib();
 			mDrv.add(lib);
-			base = lib;
-			break;
-		case Directory: base = scanDir(mDrv, arg.extra); break;
+			return process(lib);
+		case Directory:
+			mPos++;
+			base := scanDir(mDrv, arg.extra);
+			return process(base);
 		default: mDrv.abort("unknown argument '%s'", arg.flag);
 		}
-
-		process(base);
 	}
 
 	void process(Base base)
@@ -206,7 +205,7 @@ protected:
 			case ArgLinker: lib.xlinker ~= arg.extra; break;
 			case Command: handleCommand(arg.extra); break;
 			default:
-				return parseDefault();
+				return parseDefault(arg);
 			}
 		}
 	}
@@ -234,7 +233,7 @@ protected:
 			case ArgLinker: exe.xlinker ~= arg.extra; break;
 			case Command: handleCommand(arg.extra); break;
 			default:
-				return parseDefault();
+				return parseDefault(arg);
 			}
 		}
 	}
