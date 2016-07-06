@@ -54,6 +54,9 @@ abstract class Driver
 	/// Add a library
 	abstract void add(Lib lib);
 
+	/// Found Volta directory
+	abstract void foundVolta(string path);
+
 	/**
 	 * Prints a action string.
 	 *

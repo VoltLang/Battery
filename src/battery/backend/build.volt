@@ -3,6 +3,7 @@
 module battery.backend.build;
 
 import watt.text.string : endsWith;
+import watt.process;
 import watt.path : dirSeparator;
 
 import uni = uni.core;
@@ -10,6 +11,7 @@ import uni.util.make;
 
 import battery.interfaces;
 import battery.configuration;
+import battery.policy.dir;
 
 
 class Builder
@@ -38,7 +40,7 @@ public:
 		this.mDrv = drv;
 	}
 
-	void build(Configuration config, Lib[] libs, Exe[] exes)
+	void build(Configuration config, string voltaDir, Lib[] libs, Exe[] exes)
 	{
 		this.config = config;
 		this.libs = libs;
@@ -46,9 +48,17 @@ public:
 		this.ins = new uni.Instance();
 		this.mega = ins.fileNoRule("__all");
 
-		voltaBin = ins.fileNoRule(config.volta.cmd);
-		rtBin = ins.fileNoRule(config.volta.rtBin);
-		rtSrcDir = config.volta.rtDir;
+		if (voltaDir is null) {
+			voltaBin = ins.fileNoRule(config.volta.cmd);
+			rtBin = ins.fileNoRule(config.volta.rtBin);
+			rtSrcDir = config.volta.rtDir;
+		} else {
+			rtSrcDir = voltaDir ~ dirSeparator ~
+				"rt" ~ dirSeparator ~ "src";
+			voltaBin = makeTargetVolta(voltaDir);
+			rtBin = makeTargetVoltLibrary("librt", rtSrcDir);
+		}
+
 		setupVoltArgs();
 
 		// Make the libraries searchable.
@@ -141,6 +151,86 @@ public:
 		}
 
 		return tc;
+	}
+
+	uni.Target makeTargetVolta(string dir)
+	{
+		srcDir := dir ~ dirSeparator ~ "src";
+		mainFile := srcDir ~ dirSeparator ~ "main.d";
+		files := deepScan(mDrv, srcDir, ".d");
+		name := ".bin" ~ dirSeparator ~ "volted";
+		version (Windows) if (!endsWith(name, ".exe")) {
+			name ~= ".exe";
+		}
+
+		t := ins.fileNoRule(name);
+		t.deps = new uni.Target[](files.length);
+		foreach (i, file; files) {
+			t.deps[i] = ins.file(file);
+		}
+
+		t.rule = new uni.Rule();
+
+		args := [
+			"--build-only",
+			"--compiler=" ~ config.rdmd.dmd,
+			"-I" ~ srcDir,
+			"-of" ~ t.name
+		];
+
+		str := getOutput("llvm-config",
+			["--system-libs",
+			"--ldflags",
+			"--libs",
+			"core",
+			"bitwriter",
+			"bitreader",
+			"linker",
+			"target",
+			"x86codegen",
+			"engine"]);
+
+		foreach (arg; parseArguments(str)) {
+			args ~= ("-L" ~ arg);
+		}
+		args ~= "-L-lstdc++";
+		args ~= mainFile;
+
+		t.rule.outputs = [t];
+		t.rule.cmd = config.rdmd.rdmd;
+		t.rule.args = args;
+		t.rule.print = "  RDMD     " ~ t.name;
+
+		return t;
+	}
+
+	uni.Target makeTargetVoltLibrary(string name, string dir)
+	{
+		obj := ".bin" ~ dirSeparator ~ name ~ ".o";
+		files := deepScan(mDrv, dir, ".volt");
+
+		t := ins.fileNoRule(obj);
+		t.deps = new uni.Target[](files.length);
+		foreach (i, file; files) {
+			t.deps[i] = ins.file(file);
+		}
+
+		args := ["--no-stdlib",
+			"--platform", .toString(config.platform),
+			"--arch", .toString(config.arch),
+			"-c", "-o", obj] ~ files;
+
+		// Depend on the compiler.
+		t.deps ~= voltaBin;
+
+		// Make the rule.
+		t.rule = new uni.Rule();
+		t.rule.cmd = voltaBin.name;
+		t.rule.print = "  VOLTA    " ~ t.name;
+		t.rule.args = args;
+		t.rule.outputs = [t];
+
+		return t;
 	}
 
 	string[] collect(Exe exe)

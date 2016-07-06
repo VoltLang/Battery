@@ -34,6 +34,12 @@ Base scanDir(Driver drv, string path)
 
 	s.scan(drv, normalizePath(path));
 
+	if (s.name == "volta" && s.hasMainD) {
+		drv.info("scanned '%s' found Volta", s.path);
+		drv.foundVolta(s.path);
+		return null;
+	}
+
 	if (!s.hasPath) {
 		drv.abort("path '%s' not found", s.path);
 	}
