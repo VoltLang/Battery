@@ -5,6 +5,7 @@ module battery.policy.host;
 import watt.process : retriveEnvironment, Environment, searchPath;
 import battery.configuration;
 import battery.policy.volta : getVolta;
+import battery.policy.d : getRdmd;
 
 
 version (MSVC) {
@@ -57,12 +58,14 @@ Configuration getHostConfig()
 	volta := getVolta(path);
 	linker := getHostLinker(path);
 	cc := getHostCCompiler(path);
+	rdmd := getRdmd(path);
 
 	c := new Configuration();
 	c.env = env;
 	c.volta = volta;
 	c.linker = linker;
 	c.cc = cc;
+	c.rdmd = rdmd;
 	c.arch = HostArch;
 	c.platform = HostPlatform;
 

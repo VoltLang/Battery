@@ -60,6 +60,16 @@ public:
 }
 
 /**
+ * Holds information about the rdmd command.
+ */
+class Rdmd
+{
+public:
+	string rdmd;
+	string dmd;
+}
+
+/**
  * A build configuration for one or more builds.
  *
  * This can be shared between multiple builds. When cross-compiling there will
@@ -72,6 +82,7 @@ public:
 
 	Volta volta;
 	Linker linker;
+	Rdmd rdmd;
 	CCompiler cc;
 
 	Arch arch;
