@@ -114,8 +114,8 @@ These are the available commands:
 	build            Build current config.
 	config [args]    Configures a build.
 
-Normal usecase:
-	$ battery config path/to/volta path/to/watt myproject
+Normal usecase when standing in a project directory.
+	$ battery config path/to/volta path/to/watt .
 	$ battery build`);
 	}
 
