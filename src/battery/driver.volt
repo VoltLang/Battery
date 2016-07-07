@@ -52,12 +52,6 @@ public:
 		}
 	}
 
-	void get(out Lib[] lib, out Exe[] exe)
-	{
-		lib = mLib;
-		exe = mExe;
-	}
-
 	void config(string[] args)
 	{
 		arg := new ArgParser(this);
