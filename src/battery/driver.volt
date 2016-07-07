@@ -46,8 +46,9 @@ public:
 		}
 
 		switch (args[1]) {
-		case "config": return config(args[2 .. $]);
+		case "help": return help(args[2 .. $]);
 		case "build": return build(args[2 .. $]);
+		case "config": return config(args[2 .. $]);
 		default: return printUsage();
 		}
 	}
@@ -84,13 +85,44 @@ public:
 		builder.build(config, mLib, mExe);
 	}
 
+	void help(string[] args)
+	{
+		if (args.length <= 0) {
+			return printUsage();
+		}
+
+		switch (args[0]) {
+		case "help": printHelpUsage(); break;
+		case "build": printBuildUsage(); break;
+		case "config": printConfigUsage(); break;
+		default: info("unknown command '%s'", args[0]);
+		}
+	}
+
 	void printUsage()
 	{
 		info("Battery, a package and build system for Volt pramming language.");
 		info("");
-		info("\tconfig [args]");
+		info("\thelp <command>");
+		info("\tconfig [directories|args]");
 		info("\tbuild");
 	}
+
+	void printHelpUsage()
+	{
+		info("This is where the help for 'help' goes.");
+	}
+
+	void printBuildUsage()
+	{
+		info("This is where the help for 'build' goes.");
+	}
+
+	void printConfigUsage()
+	{
+		info("This is where the help for 'config' goes.");
+	}
+
 
 
 	/*
