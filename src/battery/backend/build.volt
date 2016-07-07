@@ -328,10 +328,8 @@ public:
 	{
 		voltaArgs = [
 			"--no-stdlib",
-			"--platform",
-			.toString(config.platform),
-			"--arch",
-			.toString(config.arch),
+			"--platform", platformStr,
+			"--arch", archStr,
 			getLinkerFlag(config),
 			config.linker.cmd,
 		];
