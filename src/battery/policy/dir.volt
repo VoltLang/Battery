@@ -35,10 +35,8 @@ Base scanDir(Driver drv, string path)
 
 	s.scan(drv, normalizePath(path));
 
-	if (s.name == "volta" && s.hasMainD) {
-		drv.info("scanned '%s' found Volta", s.path);
-		drv.foundVolta(s.path);
-		return null;
+	if (s.name == "volta") {
+		return scanVolta(drv, ref s);
 	}
 
 	if (!s.hasPath) {
@@ -72,14 +70,49 @@ Base scanDir(Driver drv, string path)
 		ret = lib;
 	}
 
+	processBatteryCmd(drv, ret, ref s);
+
+	return ret;
+}
+
+Base scanVolta(Driver drv, ref Scanner s)
+{
+	if (!s.hasRt) {
+		drv.abort("volta needs a 'rt' folder");
+	}
+
+	if (!s.hasMainD) {
+		drv.abort("volta needs 'src/main.d'");
+	}
+
+	drv.info("scanned '%s' found Volta", s.path);
+
+	// Scan the runtime.
+	rt := scanDir(drv, s.pathRt);
+
+	// Setup binary name.
+	s.bin = s.path ~ dirSeparator ~ s.name;
+
+	exe := new Exe();
+	exe.name = s.name;
+	exe.srcDir = s.pathSrc;
+	exe.bin = s.bin;
+
+	drv.add(exe);
+
+	processBatteryCmd(drv, exe, ref s);
+
+	return exe;
+}
+
+void processBatteryCmd(Driver drv, Base b, ref Scanner s)
+{
 	if (s.hasBatteryCmd) {
 		args : string[];
 		getLinesFromFile(s.pathBatteryTxt, ref args);
 		ap := new ArgParser(drv);
-		ap.parse(args, path ~ dirSeparator, ret);
+		ap.parse(args, s.path ~ dirSeparator, b);
 	}
-
-	return ret;
 }
 
 struct Scanner

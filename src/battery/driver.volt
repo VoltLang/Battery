@@ -29,7 +29,6 @@ protected:
 	Configuration mHostConfig;
 	Exe[] mExe;
 	Lib[] mLib;
-	string mVoltaDir;
 
 
 public:
@@ -65,7 +64,7 @@ public:
 		arg.parse(args);
 
 		config := getHostConfig();
-		ret := getArgs(mVoltaDir, mLib, mExe);
+		ret := getArgs(mLib, mExe);
 
 		ofs := new OutputFileStream(BatteryConfigFile)
 		foreach (r; ret) {
@@ -88,7 +87,7 @@ public:
 
 		config := getHostConfig();
 		builder := new Builder(this);
-		builder.build(config, mVoltaDir, mLib, mExe);
+		builder.build(config, mLib, mExe);
 	}
 
 	void printUsage()
@@ -114,11 +113,6 @@ public:
 	override void add(Exe exe)
 	{
 		mExe ~= exe;
-	}
-
-	override void foundVolta(string path)
-	{
-		mVoltaDir = path;
 	}
 
 	override void action(Fmt fmt, ...)

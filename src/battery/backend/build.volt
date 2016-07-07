@@ -26,13 +26,26 @@ public:
 
 	Lib[string] store;
 
-	string[] voltArgs;
+	string archStr;
+	string platformStr;
+
+	string buildDir;
+
 	uni.Target mega;
 	uni.Instance ins;
 
-	string rtSrcDir;
-	uni.Target rtBin;
+	string gccPrint   = "  GCC      ";
+	string rdmdPrint  = "  RDMD     ";
+	string msvcPrint  = "  MSVC     ";
+	string voltaPrint = "  VOLTA    ";
+
+	Exe voltaExe;
+	string[] voltaArgs;
 	uni.Target voltaBin;
+	uni.Target voltedBin;
+
+	Lib rtLib;
+	uni.Target rtBin;
 
 public:
 	this(Driver drv)
@@ -40,31 +53,25 @@ public:
 		this.mDrv = drv;
 	}
 
-	void build(Configuration config, string voltaDir, Lib[] libs, Exe[] exes)
+	void build(Configuration config, Lib[] libs, Exe[] exes)
 	{
 		this.config = config;
 		this.libs = libs;
 		this.exes = exes;
 		this.ins = new uni.Instance();
 		this.mega = ins.fileNoRule("__all");
-
-		if (voltaDir is null) {
-			voltaBin = ins.fileNoRule(config.volta.cmd);
-			rtBin = ins.fileNoRule(config.volta.rtBin);
-			rtSrcDir = config.volta.rtDir;
-		} else {
-			rtSrcDir = voltaDir ~ dirSeparator ~
-				"rt" ~ dirSeparator ~ "src";
-			voltaBin = makeTargetVolta(voltaDir);
-			rtBin = makeTargetVoltLibrary("librt", rtSrcDir);
-		}
-
-		setupVoltArgs();
+		this.archStr = .toString(config.arch);
+		this.platformStr = .toString(config.platform);
+		this.buildDir = ".bin" ~ dirSeparator ~ archStr ~ "-" ~
+			platformStr;
 
 		// Make the libraries searchable.
 		foreach (lib; libs) {
 			store[lib.name] = lib;
 		}
+
+		setupVolta(ref exes);
+		setupVoltaArgs();
 
 		// Generate rules for all the executables.
 		foreach (exe; exes) {
@@ -81,7 +88,7 @@ public:
 		version (Windows) if (!endsWith(name, ".exe")) {
 			name ~= ".exe";
 		}
-		dep := ".bin" ~ dirSeparator ~ name ~ ".d";
+		dep := buildDir ~ dirSeparator ~ name ~ ".d";
 
 		t := ins.fileNoRule(name);
 		d := ins.file(dep);
@@ -96,7 +103,7 @@ public:
 		t.deps ~= [voltaBin, rtBin];
 
 		// Get all of the arguments.
-		args := voltArgs ~ collect(exe) ~
+		args := voltaArgs ~ collect(exe) ~
 			["-o", name, "--dep", dep] ~ exe.srcVolt;
 
 		// Setup C targets.
@@ -117,7 +124,7 @@ public:
 		// Make the rule.
 		t.rule = new uni.Rule();
 		t.rule.cmd = voltaBin.name;
-		t.rule.print = "  VOLTA    " ~ name;
+		t.rule.print = voltaPrint ~ name;
 		t.rule.args = args;
 		t.rule.outputs = [t, d];
 
@@ -126,7 +133,7 @@ public:
 
 	uni.Target makeTargetC(string src)
 	{
-		obj := ".bin" ~ dirSeparator ~ src ~ ".o";
+		obj := buildDir ~ dirSeparator ~ src ~ ".o";
 
 		tc := ins.fileNoRule(obj);
 		tc.deps = [ins.file(src)];
@@ -136,14 +143,14 @@ public:
 			tc.rule = new uni.Rule();
 			tc.rule.cmd = config.cc.cmd;
 			tc.rule.args = [src, "-c", "-o", obj];
-			tc.rule.print = "  GCC      " ~ obj;
+			tc.rule.print = gccPrint ~ obj;
 			tc.rule.outputs = [tc];
 			break;
 		case CL:
 			tc.rule = new uni.Rule();
 			tc.rule.cmd = config.cc.cmd;
 			tc.rule.args = [src, "/c", "/Fo" ~ obj];
-			tc.rule.print = "  MSVC     " ~ obj;
+			tc.rule.print = msvcPrint ~ obj;
 			tc.rule.outputs = [tc];
 			break;
 		default:
@@ -153,12 +160,12 @@ public:
 		return tc;
 	}
 
-	uni.Target makeTargetVolta(string dir)
+	uni.Target makeTargetVolted()
 	{
-		srcDir := dir ~ dirSeparator ~ "src";
+		srcDir := voltaExe.srcDir;
 		mainFile := srcDir ~ dirSeparator ~ "main.d";
 		files := deepScan(mDrv, srcDir, ".d");
-		name := ".bin" ~ dirSeparator ~ "volted";
+		name := buildDir ~ dirSeparator ~ "volted";
 		version (Windows) if (!endsWith(name, ".exe")) {
 			name ~= ".exe";
 		}
@@ -178,47 +185,40 @@ public:
 			"-of" ~ t.name
 		];
 
-		str := getOutput("llvm-config",
-			["--system-libs",
-			"--ldflags",
-			"--libs",
-			"core",
-			"bitwriter",
-			"bitreader",
-			"linker",
-			"target",
-			"x86codegen",
-			"engine"]);
-
-		foreach (arg; parseArguments(str)) {
+		foreach (arg; voltaExe.libPaths) {
+			args ~= ("-L-L" ~ arg);
+		}
+		foreach (arg; voltaExe.libs) {
+			args ~= ("-L-l" ~ arg);
+		}
+		foreach (arg; voltaExe.xlinker) {
 			args ~= ("-L" ~ arg);
 		}
-		args ~= "-L-lstdc++";
 		args ~= mainFile;
 
 		t.rule.outputs = [t];
 		t.rule.cmd = config.rdmd.rdmd;
 		t.rule.args = args;
-		t.rule.print = "  RDMD     " ~ t.name;
+		t.rule.print = rdmdPrint ~ t.name;
 
 		return t;
 	}
 
-	uni.Target makeTargetVoltLibrary(string name, string dir)
+	uni.Target makeTargetVoltLibrary(Lib lib)
 	{
-		obj := ".bin" ~ dirSeparator ~ name ~ ".o";
-		files := deepScan(mDrv, dir, ".volt");
+		lib.bin = buildDir ~ dirSeparator ~ lib.name ~ ".o";
+		files := deepScan(mDrv, lib.srcDir, ".volt");
 
-		t := ins.fileNoRule(obj);
+		t := ins.fileNoRule(lib.bin);
 		t.deps = new uni.Target[](files.length);
 		foreach (i, file; files) {
 			t.deps[i] = ins.file(file);
 		}
 
 		args := ["--no-stdlib",
-			"--platform", .toString(config.platform),
-			"--arch", .toString(config.arch),
-			"-c", "-o", obj] ~ files;
+			"--arch", archStr,
+			"--platform", platformStr,
+			"-c", "-o", lib.bin] ~ files;
 
 		// Depend on the compiler.
 		t.deps ~= voltaBin;
@@ -226,7 +226,7 @@ public:
 		// Make the rule.
 		t.rule = new uni.Rule();
 		t.rule.cmd = voltaBin.name;
-		t.rule.print = "  VOLTA    " ~ t.name;
+		t.rule.print = voltaPrint ~ t.name;
 		t.rule.args = args;
 		t.rule.outputs = [t];
 
@@ -238,7 +238,7 @@ public:
 		ret : string[];
 
 		Base[string] added;
-		void traverse(Base b)
+		void traverse(Base b, bool first = false)
 		{
 			// Has this dep allready been added.
 			auto p = b.name in added;
@@ -246,7 +246,12 @@ public:
 				return;
 			}
 
-			ret ~= ["--src-I", b.srcDir];
+			if (first || b.bin is null) {
+				ret ~= ["--src-I", b.srcDir];
+			} else {
+				ret ~= b.bin;
+				ret ~= ["--lib-I", b.srcDir];
+			}
 
 			added[b.name] = b;
 
@@ -284,7 +289,10 @@ public:
 			}
 		}
 
-		traverse(exe);
+		traverse(exe, true);
+
+		// Implictly add rt as a dependancy
+		traverse(rtLib);
 
 		// Set debug.
 		if (exe.isDebug) {
@@ -294,9 +302,31 @@ public:
 		return ret;
 	}
 
-	void setupVoltArgs()
+	void setupVolta(ref Exe[] exes)
 	{
-		voltArgs = [
+		// Filter out the volta exe.
+		pos : size_t;
+		foreach (i, exe; exes) {
+			if (exe.name == "volta") {
+				voltaExe = exe;
+				continue;
+			}
+			exes[pos++] = exe;
+		}
+		if (voltaExe !is null) {
+			exes = exes[0 .. $-1];
+		}
+
+		// Assume driver have checked that it exsits.
+		rtLib = store["rt"];
+
+		voltaBin = voltedBin = makeTargetVolted();
+		rtBin = makeTargetVoltLibrary(rtLib);
+	}
+
+	void setupVoltaArgs()
+	{
+		voltaArgs = [
 			"--no-stdlib",
 			"--platform",
 			.toString(config.platform),
@@ -304,14 +334,7 @@ public:
 			.toString(config.arch),
 			getLinkerFlag(config),
 			config.linker.cmd,
-			rtBin.name,
-			"--lib-I",
-			rtSrcDir,
 		];
-
-		foreach (lib; config.volta.rtLibs[config.platform]) {
-			voltArgs ~= ["-l", lib];
-		}
 	}
 
 	string getLinkerFlag(Configuration config)

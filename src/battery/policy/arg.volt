@@ -20,7 +20,6 @@ public:
 
 		Exe,
 		Lib,
-		VoltaDir,
 
 		Name,
 		Dep,

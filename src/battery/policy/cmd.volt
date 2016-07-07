@@ -18,13 +18,9 @@ import battery.policy.arg;
 /**
  * Turn Libs and Exes into command line arguments.
  */
-string[] getArgs(string voltaDir, Lib[] libs, Exe[] exes)
+string[] getArgs(Lib[] libs, Exe[] exes)
 {
 	string[] ret;
-
-	if (voltaDir !is null) {
-		ret ~= ["--volta-dir", voltaDir];
-	}
 
 	foreach (lib; libs) {
 		ret ~= getArgsLib(lib);
@@ -174,8 +170,6 @@ protected:
 			mPos++;
 			base := scanDir(mDrv, arg.extra);
 			return process(base);
-		case VoltaDir:
-			return mDrv.foundVolta(arg.extra);
 		default: mDrv.abort("unknown argument '%s'", arg.flag);
 		}
 	}
@@ -369,7 +363,6 @@ struct ToArgs
 			switch (tmp) with (Arg.Kind) {
 			case "--exe": arg(Exe); continue;
 			case "--lib": arg(Lib); continue;
-			case "--volta-dir": argNextPath(VoltaDir, "expected volta dir"); continue;
 			case "--name": argNext(Name, "expected name"); continue;
 			case "--dep": argNext(Dep, "expected dependency"); continue;
 			case "--src-I": argNextPath(SrcDir, "expected source directory"); continue;
