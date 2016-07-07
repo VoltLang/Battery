@@ -55,10 +55,14 @@ public:
 
 	void config(string[] args)
 	{
+		// Get host config
+		config := getHostConfig();
+
 		arg := new ArgParser(this);
 		arg.parse(args);
 
-		config := getHostConfig();
+		verifyConfig();
+
 		ret := getArgs(mLib, mExe);
 
 		ofs := new OutputFileStream(BatteryConfigFile)
@@ -123,6 +127,16 @@ public:
 		info("This is where the help for 'config' goes.");
 	}
 
+
+	/*
+	 *
+	 * Verifying the condig.
+	 *
+	 */
+
+	void verifyConfig()
+	{
+	}
 
 
 	/*
