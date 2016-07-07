@@ -4,11 +4,11 @@ module battery.policy.host;
 
 import watt.process : retriveEnvironment, Environment, searchPath;
 import battery.configuration;
-import battery.policy.volta : getVolta;
-import battery.policy.d : getRdmd;
 
 
 version (MSVC) {
+	enum HostPlatform = Platform.MSVC;
+
 	enum VoltaCommand = "volt.exe";
 
 	enum HostCCompilerCommand = "cl.exe";
@@ -16,8 +16,12 @@ version (MSVC) {
 
 	enum HostLinkerCommand = "link.exe";
 	enum HostLinkerKind = Linker.Kind.Link;
-	enum HostPlatform = Platform.MSVC;
+
+	enum RdmdCommand = "rdmd";
+	enum DmdCommand = "dmd";
 } else version (Linux) {
+	enum HostPlatform = Platform.Linux;
+
 	enum VoltaCommand = "volt";
 
 	enum HostCCompilerCommand = "gcc";
@@ -25,8 +29,12 @@ version (MSVC) {
 
 	enum HostLinkerCommand = "gcc";
 	enum HostLinkerKind = Linker.Kind.GCC;
-	enum HostPlatform = Platform.Linux;
+
+	enum RdmdCommand = "rdmd";
+	enum DmdCommand = "dmd";
 } else version (OSX) {
+	enum HostPlatform = Platform.OSX;
+
 	enum VoltaCommand = "volt";
 
 	enum HostCCompilerCommand = "clang";
@@ -34,10 +42,13 @@ version (MSVC) {
 
 	enum HostLinkerCommand = "clang";
 	enum HostLinkerKind = Linker.Kind.Clang;
-	enum HostPlatform = Platform.OSX;
+
+	enum RdmdCommand = "rdmd.exe";
+	enum DmdCommand = "dmd.exe";
 } else {
 	static assert(false, "native platform not supported");
 }
+
 
 version (X86_64) {
 	enum Arch HostArch = Arch.X86_64;
@@ -72,6 +83,19 @@ Configuration getHostConfig()
 	return c;
 }
 
+Volta getVolta(string path)
+{
+	volta := new Volta();
+	volta.cmd = searchPath(VoltaCommand, path);
+	volta.rtBin = "%@execdir%/rt/libvrt-%@arch%-%@platform%.o";
+	volta.rtDir = "%@execdir%/rt/src";
+	volta.rtLibs[Platform.Linux] = ["gc", "dl", "rt"];
+	volta.rtLibs[Platform.MSVC] = ["advapi32.lib"];
+	volta.rtLibs[Platform.OSX] = ["gc"];
+
+	return volta;
+}
+
 Linker getHostLinker(string path)
 {
 	linker := new Linker();
@@ -88,4 +112,12 @@ CCompiler getHostCCompiler(string path)
 	cc.cmd = searchPath(HostCCompilerCommand, path);
 
 	return cc;
+}
+
+Rdmd getRdmd(string path)
+{
+	rdmd := new Rdmd();
+	rdmd.rdmd = searchPath(RdmdCommand, path);
+	rdmd.dmd = searchPath(DmdCommand, path);
+	return rdmd;
 }
