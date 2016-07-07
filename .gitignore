@@ -1,2 +1,5 @@
 /battery
 /battery.*
+/self
+/self.*
+/perf.cvs
