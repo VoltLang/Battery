@@ -57,7 +57,7 @@ public:
 	void config(string[] args)
 	{
 		// Get host config
-		config := getHostConfig();
+		mHostConfig := getHostConfig();
 
 		arg := new ArgParser(this);
 		arg.parse(args);
@@ -85,9 +85,9 @@ public:
 		arg := new ArgParser(this);
 		arg.parse(args);
 
-		config := getHostConfig();
+		mHostConfig := getHostConfig();
 		builder := new Builder(this);
-		builder.build(config, mLib, mExe);
+		builder.build(mHostConfig, mLib, mExe);
 	}
 
 	void help(string[] args)
@@ -137,6 +137,27 @@ public:
 
 	void verifyConfig()
 	{
+		rt := mStore.get("rt", null);
+		volta := mStore.get("volta", null);
+		if (volta is null) {
+			abort("Must specify a Volta directory (for now).");
+		}
+		if (rt is null) {
+			abort("Must specify a Volta directory (for now).");
+		}
+
+		if (mHostConfig.linker.cmd is null) {
+			abort("No system linker found.");
+		}
+		if (mHostConfig.cc.cmd is null) {
+			abort("No system c compiler found.");
+		}
+		if (mHostConfig.rdmd.rdmd is null) {
+			abort("No rdmd found (needed right now for Volta).");
+		}
+		if (mHostConfig.rdmd.dmd is null) {
+			abort("No dmd found (needed right now for Volta).");
+		}
 	}
 
 
