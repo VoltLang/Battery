@@ -27,6 +27,7 @@ public:
 
 protected:
 	Configuration mHostConfig;
+	Base[string] mStore;
 	Exe[] mExe;
 	Lib[] mLib;
 
@@ -147,12 +148,22 @@ public:
 
 	override void add(Lib lib)
 	{
+		if (mStore.get(lib.name, null) !is null) {
+			abort("Executable or Library with name '%s' already defined.", lib.name);
+		}
+
 		mLib ~= lib;
+		mStore[lib.name] = lib;
 	}
 
 	override void add(Exe exe)
 	{
+		if (mStore.get(exe.name, null) !is null) {
+			abort("Executable or Library with name '%s' already defined.", exe.name);
+		}
+
 		mExe ~= exe;
+		mStore[exe.name] = exe;
 	}
 
 	override void action(Fmt fmt, ...)
