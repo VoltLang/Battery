@@ -19,6 +19,7 @@ import battery.util.file : getLinesFromFile;
 import battery.policy.cmd : ArgParser;
 
 
+enum PathRt         = "rt";
 enum PathSrc        = "src";
 enum PathRes        = "res";
 enum PathMainD      = "main.d";
@@ -89,6 +90,7 @@ public:
 	string bin;
 	string name;
 
+	bool hasRt;
 	bool hasSrc;
 	bool hasRes;
 	bool hasPath;
@@ -97,6 +99,7 @@ public:
 	bool hasBatteryCmd;
 
 	string path;
+	string pathRt;
 	string pathSrc;
 	string pathRes;
 	string pathMainD;
@@ -114,6 +117,7 @@ public:
 		this.path = path;
 
 		name           = toLower(baseName(path));
+		pathRt         = path ~ dirSeparator ~ PathRt;
 		pathSrc        = path ~ dirSeparator ~ PathSrc;
 		pathRes        = path ~ dirSeparator ~ PathRes;
 		pathMainD      = pathSrc ~ dirSeparator ~ PathMainD;
@@ -121,6 +125,7 @@ public:
 		pathBatteryTxt = path ~ dirSeparator ~ PathBatteryTxt;
 
 		hasPath        = isDir(path);
+		hasRt          = isDir(pathRt);
 		hasSrc         = isDir(pathSrc);
 		hasRes         = isDir(pathRes);
 		hasMainD       = exists(pathMainD);
