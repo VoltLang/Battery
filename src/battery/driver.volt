@@ -57,7 +57,7 @@ public:
 	void config(string[] args)
 	{
 		// Get host config
-		mHostConfig := getHostConfig();
+		mHostConfig = getHostConfig();
 
 		arg := new ArgParser(this);
 		arg.parse(args);
@@ -85,7 +85,7 @@ public:
 		arg := new ArgParser(this);
 		arg.parse(args);
 
-		mHostConfig := getHostConfig();
+		mHostConfig = getHostConfig();
 		builder := new Builder(this);
 		builder.build(mHostConfig, mLib, mExe);
 	}
