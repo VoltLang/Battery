@@ -125,7 +125,39 @@ public:
 
 	void printConfigUsage()
 	{
-		info("This is where the help for 'config' goes.");
+		info("");
+		info("The three following arguments create a new target.");
+		info("");
+		info("\tpath             Scan directory for executable or library target.");
+		info("\t--exe            Create a new executable target.");
+		info("\t--lib            Create a new library target.");
+		info("");
+		info("");
+		info("All of the following arguments apply to the last target given.");
+		info("");
+		info("\t--name name      Name the current target.");
+		info("\t--dep depname    Add a target as dependency.");
+		info("\t--src-I dir      Set the current targets source dir.");
+		info("\t--cmd command    Run the command and processes output as arguments.");
+		info("\t-l lib           Add a library.");
+		info("\t-L path          Add a library path.");
+		info("\t-J path          Define a path for string import to look for files.");
+		info("\t-D ident         Define a new version flag.");
+		info("\t-o outputname    Set output to outputname.");
+		info("\t--debug          Set debug mode.");
+		info("\t--Xld            Add an argument when inoking the ld linker.");
+		info("\t--Xcc            Add an argument when inoking the cc linker.");
+		info("\t--Xlink          Add an argument when inoking the MSVC link linker.");
+		info("\t--Xlinker        Add an argument when inoking all different linkers.");
+		info("");
+		info("");
+		info("These arguments are used to create optional arch & platform arguments.");
+		info("");
+		info("\t--if-'platform'  Only apply the following argument if platform is this.");
+		info("\t--if-'arch'      Only apply the following argument if arch is this.");
+		info("\t                 (The if args are cumulative so that multiple");
+		info("\t                  arch & platforms or togther, like so:");
+		info("\t                  ('arch' || 'arch') && 'platform')");
 	}
 
 
