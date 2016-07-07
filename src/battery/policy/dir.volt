@@ -9,7 +9,6 @@ module battery.policy.dir;
 import io = watt.io;
 import watt.io.file : exists, searchDir, isDir;
 import watt.path : baseName, dirName, dirSeparator;
-import watt.text.path : normalizePath;
 import watt.text.string : endsWith, replace;
 import watt.conv : toLower;
 
@@ -33,37 +32,32 @@ Base scanDir(Driver drv, string path)
 {
 	Scanner s;
 
-	s.scan(drv, normalizePath(path));
+	s.scan(drv, path);
 
 	if (s.name == "volta") {
 		return scanVolta(drv, ref s);
 	}
 
 	if (!s.hasPath) {
-		drv.abort("path '%s' not found", s.path);
+		drv.abort("path '%s' not found", s.inputPath);
 	}
 
 	if (!s.hasSrc) {
-		drv.abort("path '%s' does not have a '%s' folder", s.path, PathSrc);
+		drv.abort("path '%s' does not have a '%s' folder", s.inputPath, PathSrc);
 	}
 
 	if (s.filesVolt is null) {
 		drv.abort("path '%s' has no volt files", s.pathSrc);
 	}
 
-	// Setup binary name.
-	if (s.hasMainVolt) {
-		s.bin = s.path ~ dirSeparator ~ s.name;
-	}
-
 	// Create exectuable or library.
 	ret : Base;
 	if (s.hasMainVolt) {
-		drv.info("scanned '%s' found executable", s.path);
+		drv.info("scanned '%s' found executable", s.inputPath);
 		exe := s.buildExe();
 		ret = exe;
 	} else {
-		drv.info("scanned '%s' found library", s.path);
+		drv.info("scanned '%s' found library", s.inputPath);
 		lib := s.buildLib();
 		ret = lib;
 	}
@@ -83,22 +77,19 @@ Base scanVolta(Driver drv, ref Scanner s)
 		drv.abort("volta needs 'src/main.d'");
 	}
 
-	drv.info("scanned '%s' found Volta", s.path);
+	drv.info("scanned '%s' found Volta", s.inputPath);
 
 	// Scan the runtime.
-	rt := cast(Lib)scanDir(drv, s.pathRt);
+	rt := cast(Lib)scanDir(drv, s.inputPath ~ dirSeparator ~ PathRt);
 	if (rt is null) {
-		drv.abort("Volta '%s' runtime must be a library", s.path);
+		drv.abort("Volta '%s' runtime must be a library", s.inputPath);
 	}
 	drv.add(rt);
-
-	// Setup binary name.
-	s.bin = s.path ~ dirSeparator ~ s.name;
 
 	exe := new Exe();
 	exe.name = s.name;
 	exe.srcDir = s.pathSrc;
-	exe.bin = s.bin;
+	exe.bin = s.pathDerivedBin;
 
 	processBatteryCmd(drv, exe, ref s);
 
@@ -119,8 +110,8 @@ struct Scanner
 {
 public:
 	Driver drv;
+	string inputPath;
 
-	string bin;
 	string name;
 
 	bool hasRt;
@@ -138,24 +129,31 @@ public:
 	string pathMainD;
 	string pathMainVolt;
 	string pathBatteryTxt;
+	string pathDerivedBin;
 
 	string[] filesC;
 	string[] filesVolt;
 
 
 public:
-	void scan(Driver drv, string path)
+	void scan(Driver drv, string inputPath)
 	{
 		this.drv = drv;
-		this.path = path;
+		this.inputPath = inputPath;
+		this.path = drv.normalizePath(inputPath);
+
+		if (path is null) {
+			return;
+		}
 
 		name           = toLower(baseName(path));
-		pathRt         = path ~ dirSeparator ~ PathRt;
-		pathSrc        = path ~ dirSeparator ~ PathSrc;
-		pathRes        = path ~ dirSeparator ~ PathRes;
+		pathRt         = getInPath(PathRt);
+		pathSrc        = getInPath(PathSrc);
+		pathRes        = getInPath(PathRes);
 		pathMainD      = pathSrc ~ dirSeparator ~ PathMainD;
 		pathMainVolt   = pathSrc ~ dirSeparator ~ PathMainVolt;
-		pathBatteryTxt = path ~ dirSeparator ~ PathBatteryTxt;
+		pathBatteryTxt = getInPath(PathBatteryTxt);
+		pathDerivedBin = getInPath(name);
 
 		hasPath        = isDir(path);
 		hasRt          = isDir(pathRt);
@@ -173,6 +171,12 @@ public:
 		filesVolt = drv.deepScan(pathSrc, "volt");
 	}
 
+	string getInPath(string file)
+	{
+		return drv.removeWorkingDirectoryPrefix(
+			path ~ dirSeparator ~ file);
+	}
+
 	Exe buildExe()
 	{
 		exe := new Exe();
@@ -180,7 +184,7 @@ public:
 		exe.srcDir = pathSrc;
 		exe.srcC = filesC;
 		exe.srcVolt = [pathMainVolt];
-		exe.bin = bin;
+		exe.bin = pathDerivedBin;
 
 		return exe;
 	}

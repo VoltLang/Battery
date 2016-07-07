@@ -9,6 +9,7 @@ import core.stdc.stdlib : exit;
 import io = watt.io;
 import watt.io.streams : OutputFileStream;
 import watt.varargs : va_list, va_start, va_end;
+import watt.path : fullPath, dirSeparator;
 
 import battery.configuration;
 import battery.interfaces;
@@ -30,6 +31,7 @@ protected:
 	Base[string] mStore;
 	Exe[] mExe;
 	Lib[] mLib;
+	string mPwd;
 
 
 public:
@@ -37,6 +39,7 @@ public:
 	{
 		arch = HostArch;
 		platform = HostPlatform;
+		mPwd = fullPath(".") ~ dirSeparator;
 	}
 
 	void process(string[] args)
@@ -205,6 +208,24 @@ Normal usecase when standing in a project directory.
 	 * Driver functions.
 	 *
 	 */
+
+	override string normalizePath(string path)
+	{
+		version (Windows) path = normalizePathWindows(path);
+		return removeWorkingDirectoryPrefix(fullPath(path));
+	}
+
+	override string removeWorkingDirectoryPrefix(string path)
+	{
+		info("%s %s", mPwd, path);
+
+		if (path.length > mPwd.length &&
+			path[0 .. mPwd.length] == mPwd) {
+			path = path[mPwd.length .. $];
+		}
+
+		return path;
+	}
 
 	override void add(Lib lib)
 	{

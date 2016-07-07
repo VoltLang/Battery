@@ -43,10 +43,20 @@ class Exe : Base
 
 abstract class Driver
 {
+public:
+	/// Helper alias
+	alias Fmt = watt.text.sink.SinkArg;
+
+
+public:
 	Arch arch;
 	Platform platform;
 
-	alias Fmt = watt.text.sink.SinkArg;
+	/// Normalize a path, target must exsist.
+	abstract string normalizePath(string path);
+
+	/// As the function name imples.
+	abstract string removeWorkingDirectoryPrefix(string path);
 
 	/// Add a executable
 	abstract void add(Exe exe);
