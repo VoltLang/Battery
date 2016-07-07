@@ -61,12 +61,10 @@ Base scanDir(Driver drv, string path)
 	if (s.hasMainVolt) {
 		drv.info("scanned '%s' found executable", s.path);
 		exe := s.buildExe();
-		drv.add(exe);
 		ret = exe;
 	} else {
 		drv.info("scanned '%s' found library", s.path);
 		lib := s.buildLib();
-		drv.add(lib);
 		ret = lib;
 	}
 
@@ -88,7 +86,11 @@ Base scanVolta(Driver drv, ref Scanner s)
 	drv.info("scanned '%s' found Volta", s.path);
 
 	// Scan the runtime.
-	rt := scanDir(drv, s.pathRt);
+	rt := cast(Lib)scanDir(drv, s.pathRt);
+	if (rt is null) {
+		drv.abort("Volta '%s' runtime must be a library", s.path);
+	}
+	drv.add(rt);
 
 	// Setup binary name.
 	s.bin = s.path ~ dirSeparator ~ s.name;
@@ -97,8 +99,6 @@ Base scanVolta(Driver drv, ref Scanner s)
 	exe.name = s.name;
 	exe.srcDir = s.pathSrc;
 	exe.bin = s.bin;
-
-	drv.add(exe);
 
 	processBatteryCmd(drv, exe, ref s);
 

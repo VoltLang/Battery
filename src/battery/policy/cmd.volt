@@ -159,17 +159,25 @@ protected:
 		case Exe:
 			mPos++;
 			exe := new Exe();
+			process(exe);
 			mDrv.add(exe);
-			return process(exe);
+			return;
 		case Lib:
 			mPos++;
 			lib := new Lib();
+			process(lib);
 			mDrv.add(lib);
-			return process(lib);
+			return;
 		case Directory:
 			mPos++;
 			base := scanDir(mDrv, arg.extra);
-			return process(base);
+			process(base);
+			if (auto lib = cast(Lib)base) {
+				mDrv.add(lib);
+			} else if (auto exe = cast(Exe)base) {
+				mDrv.add(exe);
+			}
+			return;
 		default: mDrv.abort("unknown argument '%s'", arg.flag);
 		}
 	}
