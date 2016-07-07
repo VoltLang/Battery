@@ -9,8 +9,6 @@ import battery.configuration;
 version (MSVC) {
 	enum HostPlatform = Platform.MSVC;
 
-	enum VoltaCommand = "volt.exe";
-
 	enum HostCCompilerCommand = "cl.exe";
 	enum HostCCompilerKind = CCompiler.Kind.CL;
 
@@ -22,8 +20,6 @@ version (MSVC) {
 } else version (Linux) {
 	enum HostPlatform = Platform.Linux;
 
-	enum VoltaCommand = "volt";
-
 	enum HostCCompilerCommand = "gcc";
 	enum HostCCompilerKind = CCompiler.Kind.GCC;
 
@@ -34,8 +30,6 @@ version (MSVC) {
 	enum DmdCommand = "dmd";
 } else version (OSX) {
 	enum HostPlatform = Platform.OSX;
-
-	enum VoltaCommand = "volt";
 
 	enum HostCCompilerCommand = "clang";
 	enum HostCCompilerKind = CCompiler.Kind.GCC;
@@ -66,14 +60,12 @@ Configuration getHostConfig()
 	env := new Environment();
 	env.set("PATH", path);
 
-	volta := getVolta(path);
 	linker := getHostLinker(path);
 	cc := getHostCCompiler(path);
 	rdmd := getRdmd(path);
 
 	c := new Configuration();
 	c.env = env;
-	c.volta = volta;
 	c.linker = linker;
 	c.cc = cc;
 	c.rdmd = rdmd;
@@ -81,19 +73,6 @@ Configuration getHostConfig()
 	c.platform = HostPlatform;
 
 	return c;
-}
-
-Volta getVolta(string path)
-{
-	volta := new Volta();
-	volta.cmd = searchPath(VoltaCommand, path);
-	volta.rtBin = "%@execdir%/rt/libvrt-%@arch%-%@platform%.o";
-	volta.rtDir = "%@execdir%/rt/src";
-	volta.rtLibs[Platform.Linux] = ["gc", "dl", "rt"];
-	volta.rtLibs[Platform.MSVC] = ["advapi32.lib"];
-	volta.rtLibs[Platform.OSX] = ["gc"];
-
-	return volta;
 }
 
 Linker getHostLinker(string path)

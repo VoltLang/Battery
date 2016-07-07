@@ -7,19 +7,6 @@ public import battery.defines;
 
 
 /**
- * Holds information about the Volta compiler and runtime.
- */
-class Volta
-{
-	string cmd;
-
-	string rtBin;
-	string rtDir;
-
-	string[][4] rtLibs;
-}
-
-/**
  * Holds information about linker.
  */
 class Linker
@@ -80,7 +67,6 @@ class Configuration
 public:
 	Environment env;
 
-	Volta volta;
 	Linker linker;
 	Rdmd rdmd;
 	CCompiler cc;
