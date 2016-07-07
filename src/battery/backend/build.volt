@@ -73,6 +73,8 @@ public:
 		setupVolta(ref exes);
 		setupVoltaArgs();
 
+		mega.deps = [voltaBin, rtBin];
+
 		// Generate rules for all the executables.
 		foreach (exe; exes) {
 			mega.deps ~= makeTargetExe(exe);
