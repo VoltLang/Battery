@@ -42,7 +42,7 @@ public:
 	void process(string[] args)
 	{
 		switch (args.length) {
-		case 1: return build(null);
+		case 1: return printUsage();
 		default:
 		}
 
@@ -106,11 +106,17 @@ public:
 
 	void printUsage()
 	{
-		info("Battery, a package and build system for Volt pramming language.");
-		info("");
-		info("\thelp <command>");
-		info("\tconfig [directories|args]");
-		info("\tbuild");
+		info(`
+usage: battery <command>
+
+These are the available commands:
+	help <command>   Prints more help about a command.
+	build            Build current config.
+	config [args]    Configures a build.
+
+Normal usecase:
+	$ battery config path/to/volta path/to/watt myproject
+	$ battery build`);
 	}
 
 	void printHelpUsage()
@@ -186,6 +192,10 @@ public:
 		}
 		if (mHostConfig.rdmdCmd is null) {
 			abort("No rdmd found (needed right now for Volta).");
+		}
+
+		if (mExe.length == 1) {
+			info("warning: Didn't specify any executables, will not do anything.");
 		}
 	}
 
