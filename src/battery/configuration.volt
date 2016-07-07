@@ -6,44 +6,21 @@ import watt.process : Environment;
 public import battery.defines;
 
 
-/**
- * Holds information about linker.
- */
-class Linker
+enum LinkerKind
 {
-	enum Kind
-	{
-		LD,    // LD
-		GCC,   // GCC
-		Link,  // MSVC
-		Clang, // LLVM Clang
-	}
-
-	/// Type of compiler.
-	Kind kind;
-
-	/// Fully qualified command.
-	string cmd;
+	Invalid,
+	LD,    // LD
+	GCC,   // GCC
+	Link,  // MSVC
+	Clang, // LLVM Clang
 }
 
-/**
- * Holds information about the C compiler.
- */
-class CCompiler
+enum CCKind
 {
-public:
-	enum Kind
-	{
-		CL,    // MSVC
-		GCC,   // GCC
-		Clang, // LLVM Clang
-	}
-
-	/// Type of compiler.
-	Kind kind;
-
-	/// Fully qualified command.
-	string cmd;
+	Invalid,
+	CL,    // MSVC
+	GCC,   // GCC
+	Clang, // LLVM Clang
 }
 
 /**
@@ -67,10 +44,15 @@ class Configuration
 public:
 	Environment env;
 
-	Linker linker;
-	Rdmd rdmd;
-	CCompiler cc;
-
 	Arch arch;
 	Platform platform;
+
+	string linkerCmd;
+	LinkerKind linkerKind;
+
+	string ccCmd;
+	CCKind ccKind;
+
+	string rdmdCmd;
+	string dmd;
 }

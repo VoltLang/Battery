@@ -178,17 +178,14 @@ public:
 			abort("Must specify a Volta directory (for now).");
 		}
 
-		if (mHostConfig.linker.cmd is null) {
+		if (mHostConfig.linkerCmd is null) {
 			abort("No system linker found.");
 		}
-		if (mHostConfig.cc.cmd is null) {
+		if (mHostConfig.ccCmd is null) {
 			abort("No system c compiler found.");
 		}
-		if (mHostConfig.rdmd.rdmd is null) {
+		if (mHostConfig.rdmdCmd is null) {
 			abort("No rdmd found (needed right now for Volta).");
-		}
-		if (mHostConfig.rdmd.dmd is null) {
-			abort("No dmd found (needed right now for Volta).");
 		}
 	}
 

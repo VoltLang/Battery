@@ -138,17 +138,17 @@ public:
 		tc := ins.fileNoRule(obj);
 		tc.deps = [ins.file(src)];
 
-		switch (config.cc.kind) with (CCompiler.Kind) {
+		switch (config.ccKind) with (CCKind) {
 		case GCC:
 			tc.rule = new uni.Rule();
-			tc.rule.cmd = config.cc.cmd;
+			tc.rule.cmd = config.ccCmd;
 			tc.rule.args = [src, "-c", "-o", obj];
 			tc.rule.print = gccPrint ~ obj;
 			tc.rule.outputs = [tc];
 			break;
 		case CL:
 			tc.rule = new uni.Rule();
-			tc.rule.cmd = config.cc.cmd;
+			tc.rule.cmd = config.ccCmd;
 			tc.rule.args = [src, "/c", "/Fo" ~ obj];
 			tc.rule.print = msvcPrint ~ obj;
 			tc.rule.outputs = [tc];
@@ -180,7 +180,6 @@ public:
 
 		args := [
 			"--build-only",
-			"--compiler=" ~ config.rdmd.dmd,
 			"-I" ~ srcDir,
 			"-of" ~ t.name
 		];
@@ -197,7 +196,7 @@ public:
 		args ~= mainFile;
 
 		t.rule.outputs = [t];
-		t.rule.cmd = config.rdmd.rdmd;
+		t.rule.cmd = config.rdmdCmd;
 		t.rule.args = args;
 		t.rule.print = rdmdPrint ~ t.name;
 
@@ -331,17 +330,18 @@ public:
 			"--platform", platformStr,
 			"--arch", archStr,
 			getLinkerFlag(config),
-			config.linker.cmd,
+			config.linkerCmd,
 		];
 	}
 
 	string getLinkerFlag(Configuration config)
 	{
-		final switch (config.linker.kind) {
-		case Linker.Kind.LD: return "--ld";
-		case Linker.Kind.GCC: return "--cc";
-		case Linker.Kind.Link: return "--link";
-		case Linker.Kind.Clang: return "--cc";
+		final switch (config.linkerKind) with (LinkerKind) {
+		case LD: return "--ld";
+		case GCC: return "--cc";
+		case Link: return "--link";
+		case Clang: return "--cc";
+		case Invalid: assert(false);
 		}
 	}
 }

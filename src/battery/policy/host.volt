@@ -10,10 +10,10 @@ version (MSVC) {
 	enum HostPlatform = Platform.MSVC;
 
 	enum HostCCompilerCommand = "cl.exe";
-	enum HostCCompilerKind = CCompiler.Kind.CL;
+	enum HostCCompilerKind = CCKind.CL;
 
 	enum HostLinkerCommand = "link.exe";
-	enum HostLinkerKind = Linker.Kind.Link;
+	enum HostLinkerKind = LinkerKind.Link;
 
 	enum RdmdCommand = "rdmd";
 	enum DmdCommand = "dmd";
@@ -21,10 +21,10 @@ version (MSVC) {
 	enum HostPlatform = Platform.Linux;
 
 	enum HostCCompilerCommand = "gcc";
-	enum HostCCompilerKind = CCompiler.Kind.GCC;
+	enum HostCCompilerKind = CCKind.GCC;
 
 	enum HostLinkerCommand = "gcc";
-	enum HostLinkerKind = Linker.Kind.GCC;
+	enum HostLinkerKind = LinkerKind.GCC;
 
 	enum RdmdCommand = "rdmd";
 	enum DmdCommand = "dmd";
@@ -32,17 +32,16 @@ version (MSVC) {
 	enum HostPlatform = Platform.OSX;
 
 	enum HostCCompilerCommand = "clang";
-	enum HostCCompilerKind = CCompiler.Kind.GCC;
+	enum HostCCompilerKind = CCKind.GCC;
 
 	enum HostLinkerCommand = "clang";
-	enum HostLinkerKind = Linker.Kind.Clang;
+	enum HostLinkerKind = LinkerKind.Clang;
 
 	enum RdmdCommand = "rdmd.exe";
 	enum DmdCommand = "dmd.exe";
 } else {
 	static assert(false, "native platform not supported");
 }
-
 
 version (X86_64) {
 	enum Arch HostArch = Arch.X86_64;
@@ -60,43 +59,43 @@ Configuration getHostConfig()
 	env := new Environment();
 	env.set("PATH", path);
 
-	linker := getHostLinker(path);
-	cc := getHostCCompiler(path);
-	rdmd := getRdmd(path);
-
 	c := new Configuration();
+	c.setupHostCCompiler(path);
+	c.setupHostLinker(path);
+	c.setupHostRdmd(path);
 	c.env = env;
-	c.linker = linker;
-	c.cc = cc;
-	c.rdmd = rdmd;
 	c.arch = HostArch;
 	c.platform = HostPlatform;
 
 	return c;
 }
 
-Linker getHostLinker(string path)
+void setupHostCCompiler(Configuration config, string path)
 {
-	linker := new Linker();
-	linker.kind = HostLinkerKind;
-	linker.cmd = searchPath(HostLinkerCommand, path);
-
-	return linker;
+	config.ccKind = HostCCompilerKind;
+	config.ccCmd = searchPath(HostCCompilerCommand, path);
 }
 
-CCompiler getHostCCompiler(string path)
+void setupHostLinker(Configuration config, string path)
 {
-	cc := new CCompiler();
-	cc.kind = HostCCompilerKind;
-	cc.cmd = searchPath(HostCCompilerCommand, path);
+	// Can we reuse the ccompiler as linker.
+	final switch (config.ccKind) with (CCKind) {
+	case Clang:
+		config.linkerKind = LinkerKind.Clang;
+		config.linkerCmd = config.ccCmd;
+		return;
+	case GCC:
+		config.linkerKind = LinkerKind.GCC;
+		config.linkerCmd = config.ccCmd;
+		return;
+	case CL, Invalid: break;
+	}
 
-	return cc;
+	config.linkerKind = HostLinkerKind;
+	config.linkerCmd = searchPath(HostLinkerCommand, path);
 }
 
-Rdmd getRdmd(string path)
+void setupHostRdmd(Configuration config, string path)
 {
-	rdmd := new Rdmd();
-	rdmd.rdmd = searchPath(RdmdCommand, path);
-	rdmd.dmd = searchPath(DmdCommand, path);
-	return rdmd;
+	config.rdmdCmd = searchPath(RdmdCommand, path);
 }
