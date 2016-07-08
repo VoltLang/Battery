@@ -69,7 +69,7 @@ public:
 
 		ret := getArgs(mLib, mExe);
 
-		ofs := new OutputFileStream(BatteryConfigFile)
+		ofs := new OutputFileStream(BatteryConfigFile);
 		foreach (r; ret) {
 			ofs.write(r);
 			ofs.put('\n');
