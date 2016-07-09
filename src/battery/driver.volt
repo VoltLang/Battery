@@ -217,8 +217,6 @@ Normal usecase when standing in a project directory.
 
 	override string removeWorkingDirectoryPrefix(string path)
 	{
-		info("%s %s", mPwd, path);
-
 		if (path.length > mPwd.length &&
 			path[0 .. mPwd.length] == mPwd) {
 			path = path[mPwd.length .. $];
