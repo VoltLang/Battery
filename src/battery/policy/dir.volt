@@ -53,11 +53,11 @@ Base scanDir(Driver drv, string path)
 	// Create exectuable or library.
 	ret : Base;
 	if (s.hasMainVolt) {
-		drv.info("scanned '%s' found executable", s.inputPath);
+		drv.info("detected executable project in folder '%s'", s.inputPath);
 		exe := s.buildExe();
 		ret = exe;
 	} else {
-		drv.info("scanned '%s' found library", s.inputPath);
+		drv.info("detected library project in folder '%s'", s.inputPath);
 		lib := s.buildLib();
 		ret = lib;
 	}
@@ -77,7 +77,7 @@ Base scanVolta(Driver drv, ref Scanner s)
 		drv.abort("volta needs 'src/main.d'");
 	}
 
-	drv.info("scanned '%s' found Volta", s.inputPath);
+	drv.info("detected Volta compiler in folder '%s'", s.inputPath);
 
 	// Scan the runtime.
 	rt := cast(Lib)scanDir(drv, s.inputPath ~ dirSeparator ~ PathRt);
