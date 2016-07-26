@@ -5,6 +5,10 @@ module uni.util.cmd;
 import core.stdc.stdio : FILE, fileno, stdin, stdout, stderr;
 import core.exception;
 
+version(Windows) {
+	import core.windows.windows;
+}
+
 import watt.conv;
 import watt.process;
 
@@ -135,13 +139,13 @@ public:
 					__handles[hCount++] = cmd.handle;
 				}
 			}
-			ptr := cast(HANDLE*)__handles.ptr;
+			ptr := __handles.ptr;
 			uRet := WaitForMultipleObjects(hCount, ptr, FALSE, cast(uint)-1);
 			if (uRet == cast(DWORD)-1 || uRet >= hCount) {
 				throw new Exception("Wait failed with error code " ~ .toString(cast(int)GetLastError()));
 			}
 
-			hProcess := cast(HANDLE)__handles[uRet];
+			hProcess := __handles[uRet];
 
 			// Retrieve the command for the returned wait, and remove it from the lists.
 			Cmd c;

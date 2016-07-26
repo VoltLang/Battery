@@ -7,6 +7,7 @@ module battery.driver;
 
 import core.stdc.stdlib : exit;
 import io = watt.io;
+import watt.text.path;
 import watt.io.streams : OutputFileStream;
 import watt.varargs : va_list, va_start, va_end;
 import watt.path : fullPath, dirSeparator;
