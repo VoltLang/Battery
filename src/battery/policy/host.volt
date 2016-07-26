@@ -15,8 +15,8 @@ version (MSVC) {
 	enum HostLinkerCommand = "link.exe";
 	enum HostLinkerKind = LinkerKind.Link;
 
-	enum RdmdCommand = "rdmd";
-	enum DmdCommand = "dmd";
+	enum RdmdCommand = "rdmd.exe";
+	enum DmdCommand = "dmd.exe";
 } else version (Linux) {
 	enum HostPlatform = Platform.Linux;
 
