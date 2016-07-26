@@ -186,6 +186,14 @@ public:
 			"-of" ~ t.name
 		];
 
+		final switch (config.arch) with (Arch) {
+		case X86: args ~= "-m32"; break;
+		case X86_64: args ~= "-m64"; break;
+		}
+
+		foreach (arg; voltaExe.srcObj) {
+			args ~= arg;
+		}
 		foreach (arg; voltaExe.libPaths) {
 			args ~= ("-L-L" ~ arg);
 		}
