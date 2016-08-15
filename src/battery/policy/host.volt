@@ -57,7 +57,27 @@ Configuration getHostConfig()
 	path := outside.getOrNull("PATH");
 
 	env := new Environment();
+	// Needed for all.
 	env.set("PATH", path);
+
+	version (Windows) {
+		// Volta needs the temp dir.
+		env.set("TEMP", outside.getOrNull("TEMP"));
+
+		// CL and Link needs these.
+		env.set("LIB", outside.getOrNull("LIB"));
+		env.set("LIBPATH", outside.getOrNull("LIBPATH"));
+
+		// CL need these.
+		env.set("INCLUDE", outside.getOrNull("INCLUDE"));
+		env.set("SYSTEMROOT", outside.getOrNull("SYSTEMROOT"));
+
+		// Only needed for RDMD if it isn't installed properly.
+		//env.set("VCINSTALLDIR", outside.getOrNull("VCINSTALLDIR"));
+		//env.set("WindowsSdkDir", outside.getOrNull("WindowsSdkDir"));
+		//env.set("UniversalCRTSdkDir", outside.getOrNull("UniversalCRTSdkDir"));
+		//env.set("UCRTVersion", outside.getOrNull("UCRTVersion"));
+	}
 
 	c := new Configuration();
 	c.setupHostCCompiler(path);
