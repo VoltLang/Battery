@@ -63,12 +63,12 @@ private:
 		/**
 		 * Initialize all the fields.
 		 */
-		void set(string cmd, string[] args, DoneDg dg, Pid.NativeID handle)
+		void set(string cmd, string[] args, DoneDg dgt, Pid.NativeID handle)
 		{
 			used = true;
 			this.cmd = cmd;
 			this.args = args;
-			this.done = dg;
+			this.done = dgt;
 			this.handle = handle;
 		}
 
@@ -103,7 +103,7 @@ public:
 		}
 	}
 
-	void run(string cmd, string[] args, DoneDg dg, FILE* log)
+	void run(string cmd, string[] args, DoneDg dgt, FILE* log)
 	{
 		count : int;
 		while (waiting >= maxWaiting) {
@@ -117,12 +117,12 @@ public:
 
 		version (Windows) {
 
-			newCmd(cmd, args, dg, pid._handle);
+			newCmd(cmd, args, dgt, pid._handle);
 			waiting++;
 
 		} else version(Posix) {
 
-			newCmd(cmd, args, dg, pid._pid);
+			newCmd(cmd, args, dgt, pid._pid);
 			waiting++;
 
 		} else {
@@ -207,14 +207,14 @@ public:
 			static assert(false);
 		}
 
-		// But also reset it before calling the dg
-		dg := c.done;
+		// But also reset it before calling the dgt
+		dgt := c.done;
 
 		c.reset();
 		waiting--;
 
-		if ((dg !is null)) {
-			dg(result);
+		if ((dgt !is null)) {
+			dgt(result);
 		}
 	}
 
@@ -226,14 +226,14 @@ public:
 	}
 
 private:
-	Cmd newCmd(string cmd, string[] args, DoneDg dg, Pid.NativeID handle)
+	Cmd newCmd(string cmd, string[] args, DoneDg dgt, Pid.NativeID handle)
 	{
 		foreach (c; cmdStore) {
 			if (c is null) {
 				throw new Exception("null cmdStore.");
 			}
 			if (!c.used) {
-				c.set(cmd, args, dg, handle);
+				c.set(cmd, args, dgt, handle);
 				return c;
 			}
 		}
