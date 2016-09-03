@@ -12,14 +12,28 @@ public:
 	libs: Lib[];
 	exes: Exe[];
 	store: Lib[string];
+	voltaArgs: string[];
+	archStr: string;
+	platformStr: string;
 
 
 public:
-	fn setup(libs: Lib[], exes: Exe[])
+	fn setup(config: Configuration, libs: Lib[], exes: Exe[])
 	{
 		this.libs = libs;
 		this.exes = exes;
 		this.store = [];
+
+		this.archStr = .toString(config.arch);
+		this.platformStr = .toString(config.platform);
+
+		this.voltaArgs = [
+			"--no-stdlib",
+			"--platform", platformStr,
+			"--arch", archStr,
+			getLinkerFlag(config),
+			config.linkerCmd,
+		];
 
 		foreach (lib; libs) {
 			store[lib.name] = lib;
@@ -29,8 +43,10 @@ public:
 	fn genCommandLine(base: Base) string[]
 	{
 		added: Base[string];
-		ret: string[];
 		exe := cast(Exe)base;
+
+		// Copy the default command line.
+		ret := voltaArgs;
 
 		fn traverse(b: Base, first: bool = false)
 		{
@@ -94,5 +110,18 @@ public:
 		}
 
 		return ret;
+	}
+
+
+private:
+	fn getLinkerFlag(config: Configuration) string
+	{
+		final switch (config.linkerKind) with (LinkerKind) {
+		case LD: return "--ld";
+		case GCC: return "--cc";
+		case Link: return "--link";
+		case Clang: return "--cc";
+		case Invalid: assert(false);
+		}
 	}
 }

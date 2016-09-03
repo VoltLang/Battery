@@ -22,9 +22,6 @@ public:
 
 	Configuration config;
 
-	string archStr;
-	string platformStr;
-
 	string buildDir;
 
 	uni.Target mega;
@@ -36,7 +33,6 @@ public:
 	string voltaPrint = "  VOLTA    ";
 
 	Exe voltaExe;
-	string[] voltaArgs;
 	uni.Target voltaBin;
 	uni.Target voltedBin;
 
@@ -57,15 +53,13 @@ public:
 		this.config = config;
 		this.ins = new uni.Instance();
 		this.mega = ins.fileNoRule("__all");
-		this.archStr = .toString(config.arch);
-		this.platformStr = .toString(config.platform);
-		this.buildDir = ".bin" ~ dirSeparator ~ archStr ~ "-" ~
-			platformStr;
 
-		gen.setup(libs, exes);
+		gen.setup(config, libs, exes);
+
+		this.buildDir = ".bin" ~ dirSeparator ~ gen.archStr ~ "-" ~
+			gen.platformStr;
 
 		setupVolta(ref exes);
-		setupVoltaArgs();
 
 		mega.deps = [voltaBin, rtBin];
 
@@ -99,8 +93,9 @@ public:
 		t.deps ~= [voltaBin, rtBin];
 
 		// Get all of the arguments.
-		args := voltaArgs ~ gen.genCommandLine(exe) ~
-			["-o", name, "--dep", dep] ~ exe.srcVolt;
+		args := gen.genCommandLine(exe) ~
+			["-o", name, "--dep", dep] ~
+			exe.srcVolt;
 
 		// Setup C targets.
 		foreach (src; exe.srcC) {
@@ -219,8 +214,8 @@ public:
 		}
 
 		args := ["--no-stdlib",
-			"--arch", archStr,
-			"--platform", platformStr,
+			"--arch", gen.archStr,
+			"--platform", gen.platformStr,
 			"-c", "-o", lib.bin] ~ files;
 
 		// Depend on the compiler.
@@ -256,27 +251,5 @@ public:
 
 		voltaBin = voltedBin = makeTargetVolted();
 		rtBin = makeTargetVoltLibrary(rtLib);
-	}
-
-	void setupVoltaArgs()
-	{
-		voltaArgs = [
-			"--no-stdlib",
-			"--platform", platformStr,
-			"--arch", archStr,
-			getLinkerFlag(config),
-			config.linkerCmd,
-		];
-	}
-
-	string getLinkerFlag(Configuration config)
-	{
-		final switch (config.linkerKind) with (LinkerKind) {
-		case LD: return "--ld";
-		case GCC: return "--cc";
-		case Link: return "--link";
-		case Clang: return "--cc";
-		case Invalid: assert(false);
-		}
 	}
 }
