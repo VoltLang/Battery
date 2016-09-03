@@ -12,6 +12,7 @@ import uni.util.make;
 import battery.interfaces;
 import battery.configuration;
 import battery.policy.dir;
+import battery.backend.command;
 
 
 class Builder
@@ -20,11 +21,6 @@ public:
 	Driver mDrv;
 
 	Configuration config;
-
-	Lib[] libs;
-	Exe[] exes;
-
-	Lib[string] store;
 
 	string archStr;
 	string platformStr;
@@ -47,6 +43,9 @@ public:
 	Lib rtLib;
 	uni.Target rtBin;
 
+	ArgsGenerator gen;
+
+
 public:
 	this(Driver drv)
 	{
@@ -56,8 +55,6 @@ public:
 	void build(Configuration config, Lib[] libs, Exe[] exes)
 	{
 		this.config = config;
-		this.libs = libs;
-		this.exes = exes;
 		this.ins = new uni.Instance();
 		this.mega = ins.fileNoRule("__all");
 		this.archStr = .toString(config.arch);
@@ -65,10 +62,7 @@ public:
 		this.buildDir = ".bin" ~ dirSeparator ~ archStr ~ "-" ~
 			platformStr;
 
-		// Make the libraries searchable.
-		foreach (lib; libs) {
-			store[lib.name] = lib;
-		}
+		gen.setup(libs, exes);
 
 		setupVolta(ref exes);
 		setupVoltaArgs();
@@ -105,7 +99,7 @@ public:
 		t.deps ~= [voltaBin, rtBin];
 
 		// Get all of the arguments.
-		args := voltaArgs ~ collect(exe) ~
+		args := voltaArgs ~ gen.genCommandLine(exe) ~
 			["-o", name, "--dep", dep] ~ exe.srcVolt;
 
 		// Setup C targets.
@@ -242,75 +236,6 @@ public:
 		return t;
 	}
 
-	string[] collect(Exe exe)
-	{
-		ret : string[];
-
-		Base[string] added;
-		void traverse(Base b, bool first = false)
-		{
-			// Has this dep allready been added.
-			auto p = b.name in added;
-			if (p !is null) {
-				return;
-			}
-
-			if (first || b.bin is null) {
-				ret ~= ["--src-I", b.srcDir];
-			} else {
-				ret ~= b.bin;
-				ret ~= ["--lib-I", b.srcDir];
-			}
-
-			added[b.name] = b;
-
-			foreach (path; b.libPaths) {
-				ret ~= ["-L", path];
-			}
-
-			foreach (path; b.stringPaths) {
-				ret ~= ["-J", path];
-			}
-
-			foreach (lib; b.libs) {
-				ret ~= ["-l", lib];
-			}
-
-			foreach (def; b.defs) {
-				ret ~= ["-D", def];
-			}
-
-			foreach (arg; b.xcc) {
-				ret ~= ["--Xcc", arg];
-			}
-
-			foreach (arg; b.xlink) {
-				ret ~= ["--Xlink", arg];
-			}
-
-			foreach (arg; b.xlinker) {
-				ret ~= ["--Xlinker", arg];
-			}
-
-			foreach (dep; b.deps) {
-				base := dep in store;
-				traverse(*base);
-			}
-		}
-
-		traverse(exe, true);
-
-		// Implictly add rt as a dependancy
-		traverse(rtLib);
-
-		// Set debug.
-		if (exe.isDebug) {
-			ret ~= "-d";
-		}
-
-		return ret;
-	}
-
 	void setupVolta(ref Exe[] exes)
 	{
 		// Filter out the volta exe.
@@ -327,7 +252,7 @@ public:
 		}
 
 		// Assume driver have checked that it exsits.
-		rtLib = store["rt"];
+		rtLib = gen.store["rt"];
 
 		voltaBin = voltedBin = makeTargetVolted();
 		rtBin = makeTargetVoltLibrary(rtLib);
