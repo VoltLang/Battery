@@ -51,7 +51,7 @@ public:
 		this.mDrv = drv;
 	}
 
-	void build(Configuration config, Lib[] libs, Exe[] exes)
+	fn build(config: Configuration, libs: Lib[], exes: Exe[])
 	{
 		this.config = config;
 		this.ins = new uni.Instance();
@@ -85,7 +85,7 @@ public:
 		uni.build(mega, 4, config.env);
 	}
 
-	uni.Target makeTargetExe(Exe exe)
+	fn makeTargetExe(exe: Exe) uni.Target
 	{
 		name := exe.bin is null ? exe.name : exe.bin;
 		version (Windows) if (!endsWith(name, ".exe")) {
@@ -135,7 +135,7 @@ public:
 		return t;
 	}
 
-	uni.Target makeTargetC(string src)
+	fn makeTargetC(src: string) uni.Target
 	{
 		obj := buildDir ~ dirSeparator ~ src ~ ".o";
 
@@ -164,7 +164,7 @@ public:
 		return tc;
 	}
 
-	uni.Target makeTargetVolted()
+	fn makeTargetVolted() uni.Target
 	{
 		srcDir := voltaExe.srcDir;
 		mainFile := srcDir ~ dirSeparator ~ "main.d";
@@ -215,7 +215,7 @@ public:
 		return t;
 	}
 
-	uni.Target makeTargetVoltLibrary(Lib lib)
+	fn makeTargetVoltLibrary(lib: Lib) uni.Target
 	{
 		lib.bin = buildDir ~ dirSeparator ~ lib.name ~ ".o";
 		files := deepScan(mDrv, lib.srcDir, ".volt");
