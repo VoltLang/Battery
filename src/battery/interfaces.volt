@@ -11,21 +11,21 @@ public import battery.defines;
 
 class Base
 {
-	string name;
-	string bin;
+	name: string;
+	bin: string;
 
-	string[] libs;
-	string[] libPaths;
-	string[] deps;
-	string[] defs;
-	string[] stringPaths;
+	libs: string[];
+	libPaths: string[];
+	deps: string[];
+	defs: string[];
+	stringPaths: string[];
 
-	string[] xld;
-	string[] xcc;
-	string[] xlink;
-	string[] xlinker;
+	xld: string[];
+	xcc: string[];
+	xlink: string[];
+	xlinker: string[];
 
-	string srcDir;
+	srcDir: string;
 }
 
 class Lib : Base
@@ -34,11 +34,11 @@ class Lib : Base
 
 class Exe : Base
 {
-	bool isDebug;
+	isDebug: bool;
 
-	string[] srcC;
-	string[] srcObj;
-	string[] srcVolt;
+	srcC: string[];
+	srcObj: string[];
+	srcVolt: string[];
 }
 
 abstract class Driver
@@ -49,20 +49,20 @@ public:
 
 
 public:
-	Arch arch;
-	Platform platform;
+	arch: Arch;
+	platform: Platform;
 
 	/// Normalize a path, target must exsist.
-	abstract string normalizePath(string path);
+	abstract fn normalizePath(path: string) string;
 
 	/// As the function name imples.
-	abstract string removeWorkingDirectoryPrefix(string path);
+	abstract fn removeWorkingDirectoryPrefix(path: string) string;
 
 	/// Add a executable
-	abstract void add(Exe exe);
+	abstract fn add(exe: Exe);
 
 	/// Add a library
-	abstract void add(Lib lib);
+	abstract fn add(lib: Lib);
 
 	/**
 	 * Prints a action string.
@@ -70,17 +70,17 @@ public:
 	 * By default it is formated like this:
 	 * "  BATTERY  <fmt>".
 	 */
-	abstract void action(Fmt fmt, ...);
+	abstract fn action(fmt: Fmt, ...);
 
 	/**
 	 * Prints a info string.
 	 */
-	abstract void info(Fmt fmt, ...);
+	abstract fn info(fmt: Fmt, ...);
 
 	/**
 	 * Error encoutered, print error then abort operation.
 	 *
 	 * May terminate program with exit, or throw an exception to resume.
 	 */
-	abstract void abort(Fmt fmt, ...);
+	abstract fn abort(fmt: Fmt, ...);
 }

@@ -38,7 +38,7 @@ enum Arch
  *
  */
 
-string toString(Arch arch)
+fn toString(arch: Arch) string
 {
 	final switch(arch) with (Arch) {
 	case X86: return "x86";
@@ -46,7 +46,7 @@ string toString(Arch arch)
 	}
 }
 
-string toString(Platform platform)
+fn toString(platform: Platform) string
 {
 	final switch(platform) with (Platform) {
 	case MSVC: return "msvc";

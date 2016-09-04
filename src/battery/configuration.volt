@@ -29,8 +29,8 @@ enum CCKind
 class Rdmd
 {
 public:
-	string rdmd;
-	string dmd;
+	rdmd: string;
+	dmd: string;
 }
 
 /**
@@ -42,17 +42,17 @@ public:
 class Configuration
 {
 public:
-	Environment env;
+	env: Environment;
 
-	Arch arch;
-	Platform platform;
+	arch: Arch;
+	platform: Platform;
 
-	string linkerCmd;
-	LinkerKind linkerKind;
+	linkerCmd: string;
+	linkerKind: LinkerKind;
 
-	string ccCmd;
-	CCKind ccKind;
+	ccCmd: string;
+	ccKind: CCKind;
 
-	string rdmdCmd;
-	string dmd;
+	rdmdCmd: string;
+	dmd: string;
 }

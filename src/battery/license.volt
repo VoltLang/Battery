@@ -34,7 +34,7 @@ ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
 DEALINGS IN THE SOFTWARE.
 `;
 
-global string[] licenseArray;
+global licenseArray: string[];
 
 global this()
 {
