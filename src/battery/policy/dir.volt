@@ -28,10 +28,9 @@ enum PathBatteryTxt = "battery.txt";
 /**
  * Scan a directory and see what it holds.
  */
-Base scanDir(Driver drv, string path)
+fn scanDir(drv: Driver, path: string) Base
 {
-	Scanner s;
-
+	s: Scanner;
 	s.scan(drv, path);
 
 	if (s.name == "volta") {
@@ -51,7 +50,7 @@ Base scanDir(Driver drv, string path)
 	}
 
 	// Create exectuable or library.
-	ret : Base;
+	ret: Base;
 	if (s.hasMainVolt) {
 		drv.info("detected executable project in folder '%s'", s.inputPath);
 		exe := s.buildExe();
@@ -67,7 +66,7 @@ Base scanDir(Driver drv, string path)
 	return ret;
 }
 
-Base scanVolta(Driver drv, ref Scanner s)
+fn scanVolta(drv: Driver, ref s: Scanner) Base
 {
 	if (!s.hasRt) {
 		drv.abort("volta needs a 'rt' folder");
@@ -96,7 +95,7 @@ Base scanVolta(Driver drv, ref Scanner s)
 	return exe;
 }
 
-void processBatteryCmd(Driver drv, Base b, ref Scanner s)
+fn processBatteryCmd(drv: Driver, b: Base, ref s: Scanner)
 {
 	if (s.hasBatteryCmd) {
 		args : string[];
@@ -109,34 +108,34 @@ void processBatteryCmd(Driver drv, Base b, ref Scanner s)
 struct Scanner
 {
 public:
-	Driver drv;
-	string inputPath;
+	drv: Driver;
+	inputPath: string;
 
-	string name;
+	name: string;
 
-	bool hasRt;
-	bool hasSrc;
-	bool hasRes;
-	bool hasPath;
-	bool hasMainD;
-	bool hasMainVolt;
-	bool hasBatteryCmd;
+	hasRt: bool;
+	hasSrc: bool;
+	hasRes: bool;
+	hasPath: bool;
+	hasMainD: bool;
+	hasMainVolt: bool;
+	hasBatteryCmd: bool;
 
-	string path;
-	string pathRt;
-	string pathSrc;
-	string pathRes;
-	string pathMainD;
-	string pathMainVolt;
-	string pathBatteryTxt;
-	string pathDerivedBin;
+	path: string;
+	pathRt: string;
+	pathSrc: string;
+	pathRes: string;
+	pathMainD: string;
+	pathMainVolt: string;
+	pathBatteryTxt: string;
+	pathDerivedBin: string;
 
-	string[] filesC;
-	string[] filesVolt;
+	filesC: string[];
+	filesVolt: string[];
 
 
 public:
-	void scan(Driver drv, string inputPath)
+	fn scan(drv: Driver, inputPath: string)
 	{
 		this.drv = drv;
 		this.inputPath = inputPath;
@@ -171,13 +170,13 @@ public:
 		filesVolt = drv.deepScan(pathSrc, "volt");
 	}
 
-	string getInPath(string file)
+	fn getInPath(file: string) string
 	{
 		return drv.removeWorkingDirectoryPrefix(
 			path ~ dirSeparator ~ file);
 	}
 
-	Exe buildExe()
+	fn buildExe() Exe
 	{
 		exe := new Exe();
 		exe.name = name;
@@ -189,7 +188,7 @@ public:
 		return exe;
 	}
 
-	Lib buildLib()
+	fn buildLib() Lib
 	{
 		lib := new Lib();
 		lib.name = name;
@@ -199,11 +198,11 @@ public:
 	}
 }
 
-string[] deepScan(Driver drv, string path, string ending)
+fn deepScan(drv: Driver, path: string, ending: string) string[]
 {
-	ret : string[];
+	ret: string[];
 
-	void hit(string p) {
+	fn hit(p: string) {
 		switch (p) {
 		case ".", "..": return;
 		default:

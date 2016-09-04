@@ -18,9 +18,9 @@ import battery.policy.arg;
 /**
  * Turn Libs and Exes into command line arguments.
  */
-string[] getArgs(Lib[] libs, Exe[] exes)
+fn getArgs(libs: Lib[], exes: Exe[]) string[]
 {
-	string[] ret;
+	ret: string[];
 
 	foreach (lib; libs) {
 		ret ~= getArgsLib(lib);
@@ -33,7 +33,7 @@ string[] getArgs(Lib[] libs, Exe[] exes)
 	return ret;
 }
 
-string[] getArgsBase(Base b, string start)
+fn getArgsBase(b: Base, start: string) string[]
 {
 	ret := ["#",
 		"# " ~ b.name,
@@ -87,12 +87,12 @@ string[] getArgsBase(Base b, string start)
 	return ret;
 }
 
-string[] getArgsLib(Lib l)
+fn getArgsLib(l: Lib) string[]
 {
 	return getArgsBase(l, "--lib");
 }
 
-string[] getArgsExe(Exe e)
+fn getArgsExe(e: Exe) string[]
 {
 	ret := getArgsBase(e, "--exe");
 
@@ -114,18 +114,18 @@ string[] getArgsExe(Exe e)
 class ArgParser
 {
 public:
-	Driver mDrv;
-	Arg[] mArgs;
-	size_t mPos;
+	mDrv: Driver;
+	mArgs: Arg[];
+	mPos: size_t;
 
 
 public:
-	this(Driver drv)
+	this(drv: Driver)
 	{
 		mDrv = drv;
 	}
 
-	void parse(string[] args)
+	fn parse(args: string[])
 	{
 		ToArgs toArgs;
 		mPos = 0;
@@ -137,7 +137,7 @@ public:
 		}
 	}
 
-	void parse(string[] args, string path, Base base)
+	fn parse(args: string[], path: string, base: Base)
 	{
 		ToArgs toArgs;
 		mPos = 0;
@@ -149,7 +149,7 @@ public:
 
 
 protected:
-	void parseDefault(Arg arg)
+	fn parseDefault(arg: Arg)
 	{
 		if (mPos >= mArgs.length) {
 			return;
@@ -182,7 +182,7 @@ protected:
 		}
 	}
 
-	void process(Base base)
+	fn process(base: Base)
 	{
 		lib := cast(Lib)base;
 		if (lib !is null) {
@@ -197,7 +197,7 @@ protected:
 		}
 	}
 
-	void parse(Lib lib)
+	fn parse(lib: Lib)
 	{
 		for (; mPos < mArgs.length; mPos++) {
 			arg := mArgs[mPos];
@@ -219,7 +219,7 @@ protected:
 		}
 	}
 
-	void parse(Exe exe)
+	fn parse(exe: Exe)
 	{
 		for (; mPos < mArgs.length; mPos++) {
 			arg := mArgs[mPos];
@@ -247,7 +247,7 @@ protected:
 		}
 	}
 
-	void verify(Lib lib)
+	fn verify(lib: Lib)
 	{
 		if (lib.name is null) {
 			mDrv.abort("library not given a name '--name'");
@@ -258,7 +258,7 @@ protected:
 		}
 	}
 
-	void verify(Exe exe)
+	fn verify(exe: Exe)
 	{
 		if (exe.name is null) {
 			mDrv.abort("executable not given a name '--name'");
@@ -273,7 +273,7 @@ protected:
 		}
 	}
 
-	void handleCommand(string cmd)
+	fn handleCommand(cmd: string)
 	{
 		args := parseArguments(cmd);
 		if (args.length == 0) {
@@ -288,7 +288,7 @@ protected:
 			return;
 		}
 
-		ToArgs toArgs;
+		toArgs: ToArgs;
 		res := toArgs.process(mDrv, null, args);
 		filterArgs(ref res, mDrv.arch, mDrv.platform);
 		mArgs = mArgs[0 .. mPos+1] ~ res ~ mArgs[mPos+1 .. $];
@@ -298,24 +298,24 @@ protected:
 
 struct ToArgs
 {
-	Arg[] process(Driver mDrv, string mPath, string[] args)
+	fn process(mDrv: Driver, mPath: string, args: string[]) Arg[]
 	{
-		Range mArgs;
+		ret: Arg[];
+		mArgs: Range;
 		mArgs.setup(args);
 
-		ret : Arg[];
 
 		condArch, condPlatform : int;
 
-		void setCondP(Platform platform) {
+		fn setCondP(platform: Platform) {
 			condPlatform |= 1 << platform;
 		}
 
-		void setCondA(Arch arch) {
+		fn setCondA(arch: Arch) {
 			condArch |= 1 << arch;
 		}
 
-		string getNext(string error)
+		fn getNext(error: string) string
 		{
 			mArgs.popFront();
 			if (!mArgs.empty()) {
@@ -326,32 +326,32 @@ struct ToArgs
 			assert(false);
 		}
 
-		void apply(Arg arg) {
+		fn apply(arg: Arg) {
 			arg.condArch = condArch;
 			arg.condPlatform = condPlatform;
 			condArch = condPlatform = 0;
 		}
 
-		Arg arg(Arg.Kind kind) {
+		fn arg(kind: Arg.Kind) Arg {
 			a : Arg;
 			ret ~= a = new Arg(kind, mArgs.front());
 			apply(a);
 			return a;
 		}
 
-		Arg argPath(Arg.Kind kind) {
+		fn argPath(kind: Arg.Kind) Arg {
 			a := arg(kind);
 			a.extra = normalizePath(mPath ~ a.flag);
 			return a;
 		}
 
-		Arg argNext(Arg.Kind kind, string error) {
+		fn argNext(kind: Arg.Kind, error: string) Arg {
 			a := arg(kind);
 			a.extra = getNext(error);
 			return a;
 		}
 
-		Arg argNextPath(Arg.Kind kind, string error) {
+		fn argNextPath(kind: Arg.Kind, error: string) Arg {
 			a := argNext(kind, error);
 			a.extra = normalizePath(mPath ~ a.extra);
 			return a;
@@ -419,19 +419,20 @@ struct ToArgs
 private struct Range
 {
 private:
-	string[] mArgs;
+	mArgs: string[];
 
 
 public:
-	void setup(string[] args)
+	fn setup(args: string[])
 	{
 		mArgs = args;
 	}
 
-	void insertFront(string[] args...)
+	fn insertFront(args: string[]...)
 	{
 		mArgs = args ~ mArgs;
 	}
+
 
 public:
 	/*
@@ -440,7 +441,7 @@ public:
 	 *
 	 */
 
-	string front()
+	fn front() string
 	{
 		if (mArgs.length > 0) {
 			return mArgs[0];
@@ -449,7 +450,7 @@ public:
 		}
 	}
 
-	void popFront()
+	fn popFront()
 	{
 		if (mArgs.length > 1) {
 			mArgs = mArgs[1 .. $];
@@ -458,7 +459,7 @@ public:
 		}
 	}
 
-	bool empty()
+	fn empty() bool
 	{
 		return mArgs.length == 0;
 	}

@@ -51,7 +51,7 @@ version (X86_64) {
 	static assert(false, "native arch not supported");
 }
 
-Configuration getHostConfig()
+fn getHostConfig() Configuration
 {
 	outside := retriveEnvironment();
 	path := outside.getOrNull("PATH");
@@ -90,13 +90,13 @@ Configuration getHostConfig()
 	return c;
 }
 
-void setupHostCCompiler(Configuration config, string path)
+fn setupHostCCompiler(config: Configuration, path: string)
 {
 	config.ccKind = HostCCompilerKind;
 	config.ccCmd = searchPath(HostCCompilerCommand, path);
 }
 
-void setupHostLinker(Configuration config, string path)
+fn setupHostLinker(config: Configuration, path: string)
 {
 	// Can we reuse the ccompiler as linker.
 	final switch (config.ccKind) with (CCKind) {
@@ -115,7 +115,7 @@ void setupHostLinker(Configuration config, string path)
 	config.linkerCmd = searchPath(HostLinkerCommand, path);
 }
 
-void setupHostRdmd(Configuration config, string path)
+fn setupHostRdmd(config: Configuration, path: string)
 {
 	config.rdmdCmd = searchPath(RdmdCommand, path);
 }

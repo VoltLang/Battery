@@ -46,42 +46,43 @@ public:
 		ArgLinker,
 	}
 
-	string flag;
-	string extra;
+	flag: string;
+	extra: string;
 
-	int condArch;
-	int condPlatform;
+	condArch: int;
+	condPlatform: int;
 
-	Kind kind;
+	kind: Kind;
+
 
 public:
-	this(Kind kind, string flag)
+	this(kind: Kind, flag: string)
 	{
 		this.kind = kind;
 		this.flag = flag;
 	}
 
-	this(Kind kind, string flag, string extra)
+	this(kind: Kind, flag: string, extra: string)
 	{
 		this.kind = kind;
 		this.flag = flag;
 		this.extra = extra;
 	}
 
-	void addArch(int bits)
+	fn addArch(bits: int)
 	{
 		condArch |= bits;
 	}
 
-	void addPlatform(int bits)
+	fn addPlatform(bits: int)
 	{
 		condPlatform |= bits;
 	}
 }
 
-void filterArgs(ref Arg[] args, Arch arch, Platform platform)
+fn filterArgs(ref args: Arg[], arch: Arch, platform: Platform)
 {
-	size_t pos;
+	pos: size_t;
 
 	foreach (arg; args) {
 		if (arg.condArch && !(arg.condArch & (1 << arch))) {
