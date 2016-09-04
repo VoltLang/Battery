@@ -11,7 +11,7 @@ struct ArgsGenerator
 public:
 	libs: Lib[];
 	exes: Exe[];
-	store: Lib[string];
+	store: Base[string];
 	voltaArgs: string[];
 	archStr: string;
 	platformStr: string;
@@ -38,9 +38,16 @@ public:
 		foreach (lib; libs) {
 			store[lib.name] = lib;
 		}
+
+		foreach (exe; exes) {
+			store[exe.name] = exe;
+		}
 	}
 
-	fn genCommandLine(base: Base) string[]
+	/**
+	 * Generates a Volta command line to build a binary.
+	 */
+	fn genVoltaArgs(base: Base) string[]
 	{
 		added: Base[string];
 		exe := cast(Exe)base;

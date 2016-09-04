@@ -33,11 +33,14 @@ public:
 	string voltaPrint = "  VOLTA    ";
 
 	Exe voltaExe;
+	Exe teslaExe;
+	Lib rtLib;
+
 	uni.Target voltaBin;
 	uni.Target voltedBin;
-
-	Lib rtLib;
 	uni.Target rtBin;
+
+	uni.Target teslaBin;
 
 	ArgsGenerator gen;
 
@@ -56,12 +59,22 @@ public:
 
 		gen.setup(config, libs, exes);
 
-		this.buildDir = ".bin" ~ dirSeparator ~ gen.archStr ~ "-" ~
-			gen.platformStr;
+		this.buildDir = ".bin" ~ dirSeparator ~
+			gen.archStr ~ "-" ~ gen.platformStr;
 
-		setupVolta(ref exes);
+		filterExes(ref exes);
+		filterLibs(ref libs);
 
+		// Setup volta and rtBin.
+		voltaBin = voltedBin = makeTargetVolted();
+		rtBin = makeTargetVoltLibrary(rtLib);
 		mega.deps = [voltaBin, rtBin];
+
+		// If Tesla was given, add it as well.
+		if (teslaExe !is null) {
+			teslaBin = makeTargetExe(teslaExe);
+			mega.deps ~= teslaBin;
+		}
 
 		// Generate rules for all the executables.
 		foreach (exe; exes) {
@@ -93,7 +106,7 @@ public:
 		t.deps ~= [voltaBin, rtBin];
 
 		// Get all of the arguments.
-		args := gen.genCommandLine(exe) ~
+		args := gen.genVoltaArgs(exe) ~
 			["-o", name, "--dep", dep] ~
 			exe.srcVolt;
 
@@ -213,10 +226,8 @@ public:
 			t.deps[i] = ins.file(file);
 		}
 
-		args := ["--no-stdlib",
-			"--arch", gen.archStr,
-			"--platform", gen.platformStr,
-			"-c", "-o", lib.bin] ~ files;
+		args := gen.genVoltaArgs(lib) ~
+			["-o", lib.bin, "-c"] ~ files;
 
 		// Depend on the compiler.
 		t.deps ~= voltaBin;
@@ -231,25 +242,42 @@ public:
 		return t;
 	}
 
-	void setupVolta(ref Exe[] exes)
+
+private:
+	/**
+	 * Filters out and sets the voltaExe and teslaExe files.
+	 */
+	fn filterExes(ref exes: Exe[])
 	{
-		// Filter out the volta exe.
+		// Always copy, so we don't modify the origanal storage.
+		exes = new exes[..];
+		
 		pos : size_t;
 		foreach (i, exe; exes) {
-			if (exe.name == "volta") {
-				voltaExe = exe;
-				continue;
+			switch (exe.name) {
+			case "volta": voltaExe = exe; continue;
+			case "tesla": teslaExe = exe; continue;
+			default: exes[pos++] = exe; continue;
 			}
-			exes[pos++] = exe;
 		}
-		if (voltaExe !is null) {
-			exes = exes[0 .. $-1];
+		exes = exes[0 .. pos];
+	}
+
+	/**
+	 * Filter out and sets the rtLib files.
+	 */
+	fn filterLibs(ref libs: Lib[])
+	{
+		// Always copy, so we don't modify the origanal storage.
+		libs = new libs[..];
+
+		pos: size_t;
+		foreach (i, lib; libs) {
+			switch (lib.name) {
+			case "rt": rtLib = lib; continue;
+			default: libs[pos++] = lib; continue;
+			}	
 		}
-
-		// Assume driver have checked that it exsits.
-		rtLib = gen.store["rt"];
-
-		voltaBin = voltedBin = makeTargetVolted();
-		rtBin = makeTargetVoltLibrary(rtLib);
+		libs = libs[0 .. pos];
 	}
 }
