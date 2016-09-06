@@ -51,7 +51,8 @@ fn parseDeps(ins: Instance, filename: SinkArg, text: SinkArg)
 
 	if (ret[0].length < 2 ||
 	    !endsWith(ret[0], ":")) {
-		throw new Exception("Invalid dep file: " ~ filename);
+		err := new string("Invalid dep file: ", filename);
+		throw new Exception(err);
 	}
 
 	f := ins.file(normalizePath(ret[0][0 .. $-1]));

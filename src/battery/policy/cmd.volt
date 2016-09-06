@@ -36,7 +36,7 @@ fn getArgs(libs: Lib[], exes: Exe[]) string[]
 fn getArgsBase(b: Base, start: string) string[]
 {
 	ret := ["#",
-		"# " ~ b.name,
+		new string("# ", b.name),
 		start,
 		"--name",
 		b.name
@@ -341,7 +341,8 @@ struct ToArgs
 
 		fn argPath(kind: Arg.Kind) Arg {
 			a := arg(kind);
-			a.extra = normalizePath(mPath ~ a.flag);
+			path := new string(mPath, a.flag);
+			a.extra = normalizePath(path);
 			return a;
 		}
 
@@ -353,7 +354,8 @@ struct ToArgs
 
 		fn argNextPath(kind: Arg.Kind, error: string) Arg {
 			a := argNext(kind, error);
-			a.extra = normalizePath(mPath ~ a.extra);
+			path := new string(mPath, a.extra);
+			a.extra = normalizePath(path);
 			return a;
 		}
 

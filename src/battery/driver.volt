@@ -40,7 +40,7 @@ public:
 	{
 		arch = HostArch;
 		platform = HostPlatform;
-		mPwd = fullPath(".") ~ dirSeparator;
+		mPwd = new string(fullPath("."), dirSeparator);
 	}
 
 	fn process(args: string[])

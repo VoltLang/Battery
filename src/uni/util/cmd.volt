@@ -249,27 +249,25 @@ class CmdException : Exception
 {
 	this(cmd: string, reason: string)
 	{
-		super("The below command failed due to: " ~ reason ~ "\n" ~ cmd);
+		err := format("The below command failed due to: %s\n%s", reason, cmd);
+		super(err);
 	}
 
 	this(cmd: string, args: string[], reason: string)
 	{
-		foreach (a; args) {
-			cmd ~= " " ~ a;
-		}
-		this(cmd, reason);
+		err := format("The below command failed due to: %s\n%s %s", reason, cmd, args);
+		super(err);
 	}
 
 	this(cmd: string, result: int)
 	{
-		super("The below command returned: " ~ .toString(result) ~ " \n" ~ cmd);
+		err := format("The below command returned: %s\n%s", result, cmd);
+		super(err);
 	}
 
 	this(cmd: string, args: string[], result: int)
 	{
-		foreach (a; args) {
-			cmd ~= " " ~ a;
-		}
-		this(cmd, result);
+		err := format("The below command returned: %s\n%s %s", result, cmd, args);
+		super(err);
 	}
 }
