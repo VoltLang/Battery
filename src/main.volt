@@ -8,7 +8,7 @@ import battery.driver;
 import battery.license;
 
 
-int main(string[] args)
+fn main(args: string[]) int
 {
 	drv := new DefaultDriver();
 	drv.process(args);
@@ -16,7 +16,7 @@ int main(string[] args)
 	return 0;
 }
 
-void printLicense()
+fn printLicense()
 {
 	foreach (l; licenseArray) {
 		writefln(l);

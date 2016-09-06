@@ -20,22 +20,22 @@ import watt.process;
 class CmdGroup
 {
 public:
-	alias DoneDg = void delegate(int);  // Is called with the retval of the completed command.
+	alias DoneDg = dg (int);  // Is called with the retval of the completed command.
 
 private:
-	Cmd[] cmdStore;
+	cmdStore: Cmd[];
 
 	/// Environment to launch all processes in.
-	Environment env;
+	env: Environment;
 
 	/// For Windows waitOne, to avoid unneeded allocations.
-	version (Windows) Pid.NativeID[] __handles;
+	version (Windows) __handles: Pid.NativeID[];
 
 	/// Number of simultanious jobs.
-	uint maxWaiting;
+	maxWaiting: uint;
 
 	/// Number of running jobs at this moment.
-	uint waiting;
+	waiting: uint;
 
 	/**
 	 * Small container representing a executed command, is recycled.
@@ -44,26 +44,27 @@ private:
 	{
 	public:
 		/// Executable.
-		string cmd;
+		cmd: string;
 
 		/// Arguments to be passed.
-		string[] args;
+		args: string[];
 
 		/// Called when command has completed.
-		DoneDg done;
+		done: DoneDg;
 
 		/// System specific process handle.
-		Pid.NativeID handle;
+		handle: Pid.NativeID;
 
 		/// In use.
-		bool used;
+		used: bool;
 
 
 	public:
 		/**
 		 * Initialize all the fields.
 		 */
-		void set(string cmd, string[] args, DoneDg dgt, Pid.NativeID handle)
+		fn set(cmd: string, args: string[], dgt: DoneDg,
+		       handle: Pid.NativeID)
 		{
 			used = true;
 			this.cmd = cmd;
@@ -75,7 +76,7 @@ private:
 		/**
 		 * Reset to a unused state.
 		 */
-		void reset()
+		fn reset()
 		{
 			used = false;
 			cmd = null;
@@ -90,7 +91,7 @@ private:
 	}
 
 public:
-	this(Environment env, uint maxWaiting)
+	this(env: Environment, maxWaiting: uint)
 	{
 		this.env = env;
 		this.maxWaiting = maxWaiting;
@@ -103,7 +104,7 @@ public:
 		}
 	}
 
-	void run(string cmd, string[] args, DoneDg dgt, FILE* log)
+	fn run(cmd: string, args: string[], dgt: DoneDg, log: FILE*)
 	{
 		count : int;
 		while (waiting >= maxWaiting) {
@@ -130,7 +131,7 @@ public:
 		}
 	}
 
-	void waitOne()
+	fn waitOne()
 	{
 		version(Windows) {
 			hCount : uint;
@@ -148,7 +149,7 @@ public:
 			hProcess := __handles[uRet];
 
 			// Retrieve the command for the returned wait, and remove it from the lists.
-			Cmd c;
+			c: Cmd;
 			foreach (cmd; cmdStore) {
 				if (hProcess !is cmd.handle) {
 					continue;
@@ -157,7 +158,7 @@ public:
 				break;
 			}
 
-			int result = -1;
+			result: int = -1;
 			bRet := GetExitCodeProcess(hProcess, cast(uint*)&result);
 			cRet := CloseHandle(hProcess);
 			if (bRet == 0) {
@@ -178,7 +179,7 @@ public:
 				return;
 			}
 
-			Cmd c;
+			c: Cmd;
 			// Because stopped processes doesn't count.
 			while(true) {
 				result = waitManyPosix(out pid);
@@ -218,7 +219,7 @@ public:
 		}
 	}
 
-	void waitAll()
+	fn waitAll()
 	{
 		while(waiting > 0) {
 			waitOne();
@@ -226,7 +227,7 @@ public:
 	}
 
 private:
-	Cmd newCmd(string cmd, string[] args, DoneDg dgt, Pid.NativeID handle)
+	fn newCmd(cmd: string, args: string[], dgt: DoneDg, handle: Pid.NativeID) Cmd
 	{
 		foreach (c; cmdStore) {
 			if (c is null) {
@@ -246,12 +247,12 @@ private:
  */
 class CmdException : Exception
 {
-	this(string cmd, string reason)
+	this(cmd: string, reason: string)
 	{
 		super("The below command failed due to: " ~ reason ~ "\n" ~ cmd);
 	}
 
-	this(string cmd, string[] args, string reason)
+	this(cmd: string, args: string[], reason: string)
 	{
 		foreach (a; args) {
 			cmd ~= " " ~ a;
@@ -259,12 +260,12 @@ class CmdException : Exception
 		this(cmd, reason);
 	}
 
-	this(string cmd, int result)
+	this(cmd: string, result: int)
 	{
 		super("The below command returned: " ~ .toString(result) ~ " \n" ~ cmd);
 	}
 
-	this(string cmd, string[] args, int result)
+	this(cmd: string, args: string[], result: int)
 	{
 		foreach (a; args) {
 			cmd ~= " " ~ a;

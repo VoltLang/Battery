@@ -127,7 +127,7 @@ public:
 
 	fn parse(args: string[])
 	{
-		ToArgs toArgs;
+		toArgs: ToArgs;
 		mPos = 0;
 		mArgs = toArgs.process(mDrv, null, args);
 		filterArgs(ref mArgs, mDrv.arch, mDrv.platform);
@@ -139,7 +139,7 @@ public:
 
 	fn parse(args: string[], path: string, base: Base)
 	{
-		ToArgs toArgs;
+		toArgs: ToArgs;
 		mPos = 0;
 		mArgs = toArgs.process(mDrv, path, args);
 		filterArgs(ref mArgs, mDrv.arch, mDrv.platform);

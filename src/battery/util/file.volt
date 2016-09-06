@@ -9,13 +9,13 @@ import watt.text.string : splitLines;
 import watt.io.file : exists, read;
 
 
-bool getLinesFromFile(string file, ref string[] lines)
+fn getLinesFromFile(file: string, ref lines: string[]) bool
 {
 	if (!exists(file)) {
 		return false;
 	}
 
-	auto src = cast(string) read(file);
+	src := cast(string) read(file);
 
 	foreach (line; splitLines(src)) {
 		if (line.length > 0 && line[0] != '#') {

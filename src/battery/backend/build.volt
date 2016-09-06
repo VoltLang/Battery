@@ -18,31 +18,31 @@ import battery.backend.command;
 class Builder
 {
 public:
-	Driver mDrv;
+	mDrv: Driver;
 
-	Configuration config;
+	config: Configuration;
 
-	string buildDir;
+	buildDir: string;
 
-	uni.Target mega;
-	uni.Instance ins;
+	mega: uni.Target;
+	ins: uni.Instance;
 
-	string gccPrint   = "  GCC      ";
-	string rdmdPrint  = "  RDMD     ";
-	string msvcPrint  = "  MSVC     ";
-	string voltaPrint = "  VOLTA    ";
+	gccPrint: string   = "  GCC      ";
+	rdmdPrint: string  = "  RDMD     ";
+	msvcPrint: string  = "  MSVC     ";
+	voltaPrint: string = "  VOLTA    ";
 
-	Exe voltaExe;
-	Exe teslaExe;
-	Lib rtLib;
+	voltaExe: Exe;
+	teslaExe: Exe;
+	rtLib: Lib;
 
-	uni.Target voltaBin;
-	uni.Target voltedBin;
-	uni.Target rtBin;
+	voltaBin: uni.Target;
+	voltedBin: uni.Target;
+	rtBin: uni.Target;
 
-	uni.Target teslaBin;
+	teslaBin: uni.Target;
 
-	ArgsGenerator gen;
+	gen: ArgsGenerator;
 
 
 public:

@@ -28,11 +28,11 @@ public:
 
 
 protected:
-	Configuration mHostConfig;
-	Base[string] mStore;
-	Exe[] mExe;
-	Lib[] mLib;
-	string mPwd;
+	mHostConfig: Configuration;
+	mStore: Base[string];
+	mExe: Exe[];
+	mLib: Lib[];
+	mPwd: string;
 
 
 public:
@@ -43,7 +43,7 @@ public:
 		mPwd = fullPath(".") ~ dirSeparator;
 	}
 
-	void process(string[] args)
+	fn process(args: string[])
 	{
 		switch (args.length) {
 		case 1: return printUsage();
@@ -58,7 +58,7 @@ public:
 		}
 	}
 
-	void config(string[] args)
+	fn config(args: string[])
 	{
 		// Get host config
 		mHostConfig = getHostConfig();
@@ -79,7 +79,7 @@ public:
 		ofs.close();
 	}
 
-	void build(string [] args)
+	fn build(args: string [])
 	{
 		args = null;
 		if (!getLinesFromFile(BatteryConfigFile, ref args)) {
@@ -94,7 +94,7 @@ public:
 		builder.build(mHostConfig, mLib, mExe);
 	}
 
-	void help(string[] args)
+	fn help(args: string[])
 	{
 		if (args.length <= 0) {
 			return printUsage();
@@ -108,7 +108,7 @@ public:
 		}
 	}
 
-	void printUsage()
+	fn printUsage()
 	{
 		info(`
 usage: battery <command>
@@ -123,17 +123,17 @@ Normal usecase when standing in a project directory.
 	$ battery build`);
 	}
 
-	void printHelpUsage()
+	fn printHelpUsage()
 	{
 		info("This is where the help for 'help' goes.");
 	}
 
-	void printBuildUsage()
+	fn printBuildUsage()
 	{
 		info("This is where the help for 'build' goes.");
 	}
 
-	void printConfigUsage()
+	fn printConfigUsage()
 	{
 		info("");
 		info("The three following arguments create a new target.");
@@ -177,7 +177,7 @@ Normal usecase when standing in a project directory.
 	 *
 	 */
 
-	void verifyConfig()
+	fn verifyConfig()
 	{
 		rt := mStore.get("rt", null);
 		volta := mStore.get("volta", null);
@@ -210,13 +210,13 @@ Normal usecase when standing in a project directory.
 	 *
 	 */
 
-	override string normalizePath(string path)
+	override fn normalizePath(path: string) string
 	{
 		version (Windows) path = normalizePathWindows(path);
 		return removeWorkingDirectoryPrefix(fullPath(path));
 	}
 
-	override string removeWorkingDirectoryPrefix(string path)
+	override fn removeWorkingDirectoryPrefix(path: string) string
 	{
 		if (path.length > mPwd.length &&
 			path[0 .. mPwd.length] == mPwd) {
@@ -226,7 +226,7 @@ Normal usecase when standing in a project directory.
 		return path;
 	}
 
-	override void add(Lib lib)
+	override fn add(lib: Lib)
 	{
 		if (mStore.get(lib.name, null) !is null) {
 			abort("Executable or Library with name '%s' already defined.", lib.name);
@@ -236,7 +236,7 @@ Normal usecase when standing in a project directory.
 		mStore[lib.name] = lib;
 	}
 
-	override void add(Exe exe)
+	override fn add(exe: Exe)
 	{
 		if (mStore.get(exe.name, null) !is null) {
 			abort("Executable or Library with name '%s' already defined.", exe.name);
@@ -246,9 +246,9 @@ Normal usecase when standing in a project directory.
 		mStore[exe.name] = exe;
 	}
 
-	override void action(Fmt fmt, ...)
+	override fn action(fmt: Fmt, ...)
 	{
-		va_list vl;
+		vl: va_list;
 		va_start(vl);
 		io.output.write("  BATTERY  ");
 		io.output.vwritefln(fmt, ref _typeids, ref vl);
@@ -256,18 +256,18 @@ Normal usecase when standing in a project directory.
 		va_end(vl);
 	}
 
-	override void info(Fmt fmt, ...)
+	override fn info(fmt: Fmt, ...)
 	{
-		va_list vl;
+		vl: va_list;
 		va_start(vl);
 		io.output.vwritefln(fmt, ref _typeids, ref vl);
 		io.output.flush();
 		va_end(vl);
 	}
 
-	override void abort(Fmt fmt, ...)
+	override fn abort(fmt: Fmt, ...)
 	{
-		va_list vl;
+		vl: va_list;
 		va_start(vl);
 		io.output.write("error: ");
 		io.output.vwritefln(fmt, ref _typeids, ref vl);

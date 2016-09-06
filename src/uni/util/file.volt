@@ -17,11 +17,11 @@ version (Linux || OSX) {
 }
 
 
-void getTimes(string name, out ulong access, out ulong modified)
+fn getTimes(name: string, out access: ulong, out modified: ulong)
 {
 	version (OSX || Linux) {
-		char[512] path;
-		stat_t buf;
+		path: char[512];
+		buf: stat_t;
 
 		path[0 .. name.length] = name;
 		path[name.length] = 0;
@@ -33,10 +33,10 @@ void getTimes(string name, out ulong access, out ulong modified)
 		access = cast(ulong) buf.st_atime;
 		modified = cast(ulong) buf.st_mtime;
 	} else {
-		WIN32_FILE_ATTRIBUTE_DATA buf;
-		wchar[512] tmp;
+		buf: WIN32_FILE_ATTRIBUTE_DATA;
+		tmp: wchar[512];
 
-		int numChars = MultiByteToWideChar(
+		numChars := MultiByteToWideChar(
 			CP_UTF8, 0, name.ptr, cast(int)name.length, null, 0);
 
 		if (numChars < 0) {
@@ -51,7 +51,7 @@ void getTimes(string name, out ulong access, out ulong modified)
 			CP_UTF8, 0, name.ptr, cast(int)name.length, tmp.ptr, numChars);
 		tmp[numChars] = '\0';
 
-		int ret = GetFileAttributesExW(
+		ret := GetFileAttributesExW(
 			tmp.ptr, GET_FILEEX_INFO_LEVELS.GetFileExInfoStandard,
 			cast(void*) &buf);
 		if (ret == 0) {
@@ -71,25 +71,25 @@ void getTimes(string name, out ulong access, out ulong modified)
  *
  * Assumes that name starts and ends with @oldPrefix, @oldSuffix.
  */
-string replacePrefixAndSuffix(string name,
-                             string oldPrefix, string newPrefix,
-                             string oldSuffix, string newSuffix)
+fn replacePrefixAndSuffix(name: string,
+                          oldPrefix: string, newPrefix: string,
+                          oldSuffix: string, newSuffix: string) string
 {
 	// Should be enough for all platforms max pathlength.
-	size_t len = name.length -
+	len: size_t = name.length -
 		oldPrefix.length -
 		oldSuffix.length +
 		newPrefix.length +
 		newSuffix.length;
-	char[512] data;
-	size_t pos;
+	data: char[512];
+	pos: size_t;
 
 	if (len > data.length) {
 		throw new Exception("error in replacePrefixSufix");
 	}
 
 	// Poor mans buffered string writer.
-	void add(string tmp) {
+	fn add(tmp: string) {
 		data[pos .. pos + tmp.length] = tmp;
 		pos += tmp.length;
 	}

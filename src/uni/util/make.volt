@@ -13,7 +13,7 @@ import watt.process.cmd;
 import uni.core;
 
 
-void importDepFile(Instance ins, SinkArg file)
+fn importDepFile(ins: Instance, file: SinkArg)
 {
 	if (!isFile(file)) {
 		return;
@@ -21,8 +21,8 @@ void importDepFile(Instance ins, SinkArg file)
 
 	str := cast(char[])read(file);
 
-	size_t last;
-	bool skip;
+	last: size_t;
+	skip: bool;
 	foreach (i, char c; str) {
 		switch (c) {
 		case '\n':
@@ -41,7 +41,7 @@ void importDepFile(Instance ins, SinkArg file)
 	}
 }
 
-void parseDeps(Instance ins, SinkArg filename, SinkArg text)
+fn parseDeps(ins: Instance, filename: SinkArg, text: SinkArg)
 {
 	ret := parseArguments(text);
 

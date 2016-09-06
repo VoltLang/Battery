@@ -208,7 +208,7 @@ fn deepScan(drv: Driver, path: string, ending: string) string[]
 		default:
 		}
 
-		auto full = path ~ dirSeparator ~ p;
+		full := path ~ dirSeparator ~ p;
 
 		if (isDir(full)) {
 			ret ~= deepScan(drv, full, ending);

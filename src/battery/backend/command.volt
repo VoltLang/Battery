@@ -58,7 +58,7 @@ public:
 		fn traverse(b: Base, first: bool = false)
 		{
 			// Has this dep allready been added.
-			auto p = b.name in added;
+			p := b.name in added;
 			if (p !is null) {
 				return;
 			}

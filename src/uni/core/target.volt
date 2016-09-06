@@ -20,10 +20,10 @@ import uni.util.file : getTimes;
 final class Instance
 {
 private:
-	Target[string] targets;
+	targets: Target[string];
 
 public:
-	Target file(string name)
+	fn file(name: string) Target
 	{
 		// Make sure they all have the same path.
 		version (Windows) {
@@ -40,7 +40,7 @@ public:
 		return targets[name] = ret;
 	}
 
-	Target fileNoRule(string name)
+	fn fileNoRule(name: string) Target
 	{
 		ret := file(name);
 		if (ret.rule !is null) {
@@ -73,23 +73,23 @@ public:
 
 	/// What is the status of this target.
 	/// Used to skip updating the date.
-	Status status;
+	status: Status;
 
 	/// Name, for file also actuall filename.
-	string name;
+	name: string;
 
 	/// Rule to build this targe.
-	Rule rule;
+	rule: Rule;
 
 	/// Will be built, but if no rule and missing will be ignored.
-	Target[] deps;
+	deps: Target[];
 
 	/// Cached last modified time.
-	ulong mod;
+	mod: ulong;
 
 public:
 	/// Updates the @mod field to the files last modified time.
-	void updateTime()
+	fn updateTime()
 	{
 		// Somebody might have set a higher status.
 		if (status <= FRESH) {
@@ -107,7 +107,7 @@ public:
 	/**
 	 * Called by the solver when the target has been built.
 	 */
-	void built()
+	fn built()
 	{
 		updateTime();
 		status = BUILT;
@@ -121,25 +121,25 @@ final class Rule
 {
 public:
 	/// To run be executed.
-	string cmd;
+	cmd: string;
 
 	/// To be given to cmd.
-	string[] args;
+	args: string[];
 
 	/// Echoed to stdout.
-	string print;
+	print: string;
 
 	/// Files needed directly to run this rule.
-	Target[] input;
+	input: Target[];
 
 	/// When the rule is running these targets will be locked.
-	Target[] outputs;
+	outputs: Target[];
 
 public:
 	/**
 	 * Called by the solver when the target has been built.
 	 */
-	void built(int)
+	fn built(int)
 	{
 		foreach (o; outputs) {
 			o.built();

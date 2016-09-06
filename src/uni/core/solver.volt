@@ -19,7 +19,7 @@ import uni.util.cmd : CmdGroup;
 /**
  * Builds a target, will throw exceptions on build failure.
  */
-void build(Target t, uint numJobs, Environment env)
+fn build(t: Target, numJobs: uint, env: Environment)
 {
 	g := new CmdGroup(env, numJobs);
 	built := build(t, g);
@@ -33,7 +33,7 @@ void build(Target t, uint numJobs, Environment env)
  * as every time the builder goes backup it waits for all
  * the children to complete building.
  */
-private bool build(Target t, CmdGroup g)
+private fn build(t: Target, g: CmdGroup) bool
 {
 	// This is needed for Windows.
 	if (t.status < Target.CHECKED) {
