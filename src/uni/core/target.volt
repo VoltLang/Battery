@@ -107,7 +107,7 @@ public:
 	/**
 	 * Called by the solver when the target has been built.
 	 */
-	void built(int)
+	void built()
 	{
 		updateTime();
 		status = BUILT;
@@ -139,10 +139,10 @@ public:
 	/**
 	 * Called by the solver when the target has been built.
 	 */
-	void built(int ret)
+	void built(int)
 	{
 		foreach (o; outputs) {
-			o.built(ret);
+			o.built();
 		}
 	}
 }
