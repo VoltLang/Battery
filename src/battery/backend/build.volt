@@ -217,29 +217,49 @@ public:
 
 	fn makeTargetVoltLibrary(lib: Lib) uni.Target
 	{
-		lib.bin = buildDir ~ dirSeparator ~ lib.name ~ ".o";
 		files := deepScan(mDrv, lib.srcDir, ".volt");
+		base := buildDir ~ dirSeparator ~ lib.name;
+		bcName := base ~ ".bc";
+		oName := base ~ ".o";
 
-		t := ins.fileNoRule(lib.bin);
-		t.deps = new uni.Target[](files.length);
+		// Make the bitcode file.
+		bc := ins.fileNoRule(bcName);
+
+		// Depends on all of the source files.
+		bc.deps = new uni.Target[](files.length);
 		foreach (i, file; files) {
-			t.deps[i] = ins.file(file);
+			bc.deps[i] = ins.file(file);
 		}
 
-		args := gen.genVoltaArgs(lib) ~
-			["-o", lib.bin, "-c"] ~ files;
-
-		// Depend on the compiler.
-		t.deps ~= voltaBin;
+		// And depend on the compiler.
+		bc.deps ~= voltaBin;
 
 		// Make the rule.
-		t.rule = new uni.Rule();
-		t.rule.cmd = voltaBin.name;
-		t.rule.print = voltaPrint ~ t.name;
-		t.rule.args = args;
-		t.rule.outputs = [t];
+		bc.rule = new uni.Rule();
+		bc.rule.cmd = voltaBin.name;
+		bc.rule.print = voltaPrint ~ bcName;
+		bc.rule.outputs = [bc];
+		bc.rule.args = gen.genVoltaArgs(lib) ~
+			["-o", bcName, "-c", "--emit-bitcode"] ~ files;
 
-		return t;
+		// Make o file.
+		o := ins.fileNoRule(oName);
+
+		// Depend on the compiler and bitcode file.
+		o.deps = [voltaBin, bc];
+
+		// Make the rule.
+		o.rule = new uni.Rule();
+		o.rule.cmd = voltaBin.name;
+		o.rule.print = voltaPrint ~ oName;
+		o.rule.outputs = [o];
+		o.rule.args = gen.voltaArgs ~
+			["--lib-I", rtLib.srcDir] ~
+			["-o", oName, "-c", bcName];
+
+		lib.bin = oName;
+
+		return o;
 	}
 
 
