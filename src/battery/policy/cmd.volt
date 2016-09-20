@@ -46,10 +46,6 @@ fn getArgsBase(b: Base, start: string) string[]
 		ret ~= ["--dep", dep];
 	}
 
-	if (b.bin !is null) {
-		ret ~= ["-o", b.bin];
-	}
-
 	foreach (def; b.defs) {
 		ret ~= ["-D", def];
 	}
@@ -84,6 +80,8 @@ fn getArgsBase(b: Base, start: string) string[]
 
 	ret ~= ["--src-I", b.srcDir];
 
+	ret ~= b.srcAsm;
+
 	return ret;
 }
 
@@ -103,6 +101,10 @@ fn getArgsExe(e: Exe) string[]
 	ret ~= e.srcC;
 	ret ~= e.srcObj;
 	ret ~= e.srcVolt;
+
+	if (e.bin !is null) {
+		ret ~= ["-o", e.bin];
+	}
 
 	return ret;
 }

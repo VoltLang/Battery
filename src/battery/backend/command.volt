@@ -55,7 +55,7 @@ public:
 		// Copy the default command line.
 		ret := voltaArgs;
 
-		fn traverse(b: Base, first: bool = false)
+		fn traverse(b: Base)
 		{
 			// Has this dep allready been added.
 			p := b.name in added;
@@ -66,11 +66,12 @@ public:
 			// Keep track of it now.
 			added[b.name] = b;
 
-			if (first || b.bin is null) {
-				ret ~= ["--src-I", b.srcDir];
-			} else {
-				ret ~= b.bin;
+			lib := cast(Lib)b;
+
+			if (lib !is null && lib.name == "rt") {
 				ret ~= ["--lib-I", b.srcDir];
+			} else {
+				ret ~= ["--src-I", b.srcDir];
 			}
 
 			foreach (path; b.libPaths) {
@@ -81,8 +82,8 @@ public:
 				ret ~= ["-J", path];
 			}
 
-			foreach (lib; b.libs) {
-				ret ~= ["-l", lib];
+			foreach (l; b.libs) {
+				ret ~= ["-l", l];
 			}
 
 			foreach (def; b.defs) {
@@ -106,7 +107,7 @@ public:
 			}
 		}
 
-		traverse(base, base !is null);
+		traverse(base);
 
 		// Implictly add rt as a dependancy
 		traverse(store["rt"]);

@@ -12,7 +12,6 @@ public import battery.defines;
 class Base
 {
 	name: string;
-	bin: string;
 
 	libs: string[];
 	libPaths: string[];
@@ -34,6 +33,8 @@ class Lib : Base
 
 class Exe : Base
 {
+	bin: string;
+
 	isDebug: bool;
 
 	srcC: string[];

@@ -45,6 +45,12 @@ public:
 	gen: ArgsGenerator;
 
 
+
+protected:
+	/// Store of objects each Lib/Exe produces.
+	mObjs: uni.Target[][string];
+
+
 public:
 	this(Driver drv)
 	{
@@ -121,6 +127,13 @@ public:
 		foreach (obj; exe.srcObj) {
 			t.deps ~= ins.file(obj);
 			args ~= obj;
+		}
+
+		// Add objects from libraries.
+		targetObjs := collectObjs(exe);
+		t.deps ~= targetObjs;
+		foreach (tObj; targetObjs) {
+			args ~= tObj.name;
 		}
 
 		importDepFile(ins, dep);
@@ -257,13 +270,47 @@ public:
 			["--lib-I", rtLib.srcDir] ~
 			["-o", oName, "-c", bcName];
 
-		lib.bin = oName;
+		mObjs[lib.name] = [o];
 
 		return o;
 	}
 
 
 private:
+	fn collectObjs(base: Base) uni.Target[]
+	{
+		added: Base[string];
+		ret: uni.Target[];
+
+		fn traverse(b: Base)
+		{
+			// Has this dep allready been added.
+			p := b.name in added;
+			if (p !is null) {
+				return;
+			}
+
+			// Keep track of it now.
+			added[b.name] = b;
+
+			r := b.name in mObjs;
+			if (r !is null) {
+				ret ~= *r;
+			}
+
+			foreach (dep; b.deps) {
+				traverse(gen.store[dep]);
+			}
+		}
+
+		traverse(base);
+
+		// Implictly add rt as a dependancy
+		traverse(gen.store["rt"]);
+
+		return ret;
+	}
+
 	/**
 	 * Filters out and sets the voltaExe and teslaExe files.
 	 */
