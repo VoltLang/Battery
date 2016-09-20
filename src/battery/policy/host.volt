@@ -17,6 +17,8 @@ version (MSVC) {
 
 	enum RdmdCommand = "rdmd.exe";
 	enum DmdCommand = "dmd.exe";
+
+	enum NasmCommand = "nasm.exe";
 } else version (Linux) {
 	enum HostPlatform = Platform.Linux;
 
@@ -28,6 +30,8 @@ version (MSVC) {
 
 	enum RdmdCommand = "rdmd";
 	enum DmdCommand = "dmd";
+
+	enum NasmCommand = "nasm";
 } else version (OSX) {
 	enum HostPlatform = Platform.OSX;
 
@@ -39,6 +43,8 @@ version (MSVC) {
 
 	enum RdmdCommand = "rdmd.exe";
 	enum DmdCommand = "dmd.exe";
+
+	enum NasmCommand = "nasm";
 } else {
 	static assert(false, "native platform not supported");
 }
@@ -82,6 +88,7 @@ fn getHostConfig() Configuration
 	c := new Configuration();
 	c.setupHostCCompiler(path);
 	c.setupHostLinker(path);
+	c.setupHostNasm(path);
 	c.setupHostRdmd(path);
 	c.env = env;
 	c.arch = HostArch;
@@ -113,6 +120,11 @@ fn setupHostLinker(config: Configuration, path: string)
 
 	config.linkerKind = HostLinkerKind;
 	config.linkerCmd = searchPath(HostLinkerCommand, path);
+}
+
+fn setupHostNasm(config: Configuration, path: string)
+{
+	config.nasmCmd = searchPath(NasmCommand, path);
 }
 
 fn setupHostRdmd(config: Configuration, path: string)

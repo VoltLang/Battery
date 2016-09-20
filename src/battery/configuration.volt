@@ -53,6 +53,8 @@ public:
 	ccCmd: string;
 	ccKind: CCKind;
 
+	nasmCmd: string;
+
 	rdmdCmd: string;
 	dmd: string;
 }
