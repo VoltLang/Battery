@@ -28,6 +28,7 @@ public:
 	ins: uni.Instance;
 
 	gccPrint: string   = "  GCC      ";
+	nasmPrint: string  = "  NASM     ";
 	rdmdPrint: string  = "  RDMD     ";
 	msvcPrint: string  = "  MSVC     ";
 	voltaPrint: string = "  VOLTA    ";
@@ -177,6 +178,22 @@ public:
 		return tc;
 	}
 
+	fn makeTargetAsm(src: string) uni.Target
+	{
+		obj := buildDir ~ dirSeparator ~ src ~ ".o";
+
+		tasm := ins.fileNoRule(obj);
+		tasm.deps = [ins.file(src)];
+
+		tasm.rule = new uni.Rule();
+		tasm.rule.cmd = config.nasmCmd;
+		tasm.rule.args = gen.genNasmArgs() ~ [src, "-o", obj];
+		tasm.rule.print = nasmPrint ~ obj;
+		tasm.rule.outputs = [tasm];
+
+		return tasm;
+	}
+
 	fn makeTargetVolted() uni.Target
 	{
 		srcDir := voltaExe.srcDir;
@@ -270,7 +287,13 @@ public:
 			["--lib-I", rtLib.srcDir] ~
 			["-o", oName, "-c", bcName];
 
-		mObjs[lib.name] = [o];
+		// Add results into into the store.
+		results := [o];
+		foreach (a; lib.srcAsm) {
+			results ~= makeTargetAsm(a);
+		}
+
+		mObjs[lib.name] = results;
 
 		return o;
 	}

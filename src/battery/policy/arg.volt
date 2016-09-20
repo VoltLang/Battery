@@ -38,6 +38,7 @@ public:
 
 		FileC,
 		FileObj,
+		FileAsm,
 		FileVolt,
 
 		ArgLD,

@@ -214,6 +214,7 @@ protected:
 			case ArgCC: lib.xcc ~= arg.extra; break;
 			case ArgLink: lib.xlink ~= arg.extra; break;
 			case ArgLinker: lib.xlinker ~= arg.extra; break;
+			case FileAsm: lib.srcAsm ~= arg.extra; break;
 			case Command: handleCommand(arg.extra); break;
 			default:
 				return parseDefault(arg);
@@ -236,6 +237,7 @@ protected:
 			case Output: exe.bin = arg.extra; break;
 			case Identifier: exe.defs ~= arg.extra; break;
 			case FileC: exe.srcC ~= arg.extra; break;
+			case FileAsm: exe.srcAsm ~= arg.extra; break;
 			case FileObj: exe.srcObj ~= arg.extra; break;
 			case FileVolt: exe.srcVolt ~= arg.extra; break;
 			case ArgLD: exe.xld ~= arg.extra; break;
@@ -404,6 +406,8 @@ struct ToArgs
 				argPath(Arg.Kind.FileC);
 			} else if (endsWith(tmp, ".volt")) {
 				argPath(Arg.Kind.FileVolt);
+			} else if (endsWith(tmp, ".asm")) {
+				argPath(Arg.Kind.FileAsm);
 			} else if (endsWith(tmp, ".o", ".obj", ".lib")) {
 				argPath(Arg.Kind.FileObj);
 			} else if (tmp[0] == '-') {

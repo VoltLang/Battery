@@ -9,6 +9,7 @@ import battery.configuration;
 struct ArgsGenerator
 {
 public:
+	config: Configuration;
 	libs: Lib[];
 	exes: Exe[];
 	store: Base[string];
@@ -20,6 +21,7 @@ public:
 public:
 	fn setup(config: Configuration, libs: Lib[], exes: Exe[])
 	{
+		this.config = config;
 		this.libs = libs;
 		this.exes = exes;
 		this.store = [];
@@ -120,6 +122,39 @@ public:
 		return ret;
 	}
 
+	fn genNasmArgs() string[]
+	{
+		bin: string;
+
+		final switch (config.platform) with (Platform) {
+		case MSVC:
+			final switch (config.arch) with (Arch) {
+			case X86: bin = "win32"; break;
+			case X86_64: bin = "win64"; break;
+			}
+			break;
+		case OSX:
+			final switch (config.arch) with (Arch) {
+			case X86: bin = "mach32"; break;
+			case X86_64: bin = "mach64"; break;
+			}
+			break;
+		case Linux:
+			final switch (config.arch) with (Arch) {
+			case X86: bin = "elf32"; break;
+			case X86_64: bin = "elf64"; break;
+			}
+			break;
+		case Metal:
+			final switch (config.arch) with (Arch) {
+			case X86: bin = "elf32"; break;
+			case X86_64: bin = "elf64"; break;
+			}
+			break;
+		}
+
+		return ["-f", bin];
+	}
 
 private:
 	fn getLinkerFlag(config: Configuration) string

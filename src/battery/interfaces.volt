@@ -25,6 +25,8 @@ class Base
 	xlinker: string[];
 
 	srcDir: string;
+
+	srcAsm: string[];
 }
 
 class Lib : Base
