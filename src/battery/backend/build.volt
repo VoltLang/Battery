@@ -272,6 +272,22 @@ public:
 		bc.rule.args = gen.genVoltaArgs(lib) ~
 			["-o", bcName, "-c", "--emit-bitcode"] ~ files;
 
+		// Create the object file for the library.
+		o := makeTargetBitcodeToObj(bc, oName);
+
+		// Add results into into the store.
+		results := [o];
+		foreach (a; lib.srcAsm) {
+			results ~= makeTargetAsm(a);
+		}
+
+		mObjs[lib.name] = results;
+
+		return o;
+	}
+
+	fn makeTargetBitcodeToObj(bc: uni.Target, oName: string) uni.Target
+	{
 		// Make o file.
 		o := ins.fileNoRule(oName);
 
@@ -285,15 +301,7 @@ public:
 		o.rule.outputs = [o];
 		o.rule.args = gen.voltaArgs ~
 			["--lib-I", rtLib.srcDir] ~
-			["-o", oName, "-c", bcName];
-
-		// Add results into into the store.
-		results := [o];
-		foreach (a; lib.srcAsm) {
-			results ~= makeTargetAsm(a);
-		}
-
-		mObjs[lib.name] = results;
+			["-o", oName, "-c", bc.name];
 
 		return o;
 	}
