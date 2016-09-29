@@ -14,6 +14,7 @@ import battery.configuration;
 import battery.policy.dir;
 import battery.backend.command;
 
+import watt.io;
 
 class Builder
 {
@@ -46,10 +47,13 @@ public:
 	gen: ArgsGenerator;
 
 
-
 protected:
 	/// Store of objects each Lib/Exe produces.
 	mObjs: uni.Target[][string];
+
+	mSubBitcodes: uni.Target[];
+	mSubExeObjs: uni.Target[];
+	mSubObjs: uni.Target[];
 
 
 public:
@@ -75,76 +79,113 @@ public:
 		// Setup volta and rtBin.
 		voltaBin = voltedBin = makeTargetVolted();
 		rtBin = makeTargetVoltLibrary(rtLib);
-		mega.deps = [voltaBin, rtBin];
+		mega.deps = [voltaBin];
 
 		// If Tesla was given, add it as well.
 		if (teslaExe !is null) {
 			teslaBin = makeTargetExe(teslaExe);
-			mega.deps ~= teslaBin;
 		}
 
 		// Generate rules for all the executables.
+		targets : uni.Target[];
 		foreach (exe; exes) {
-			mega.deps ~= makeTargetExe(exe);
+			targets ~= makeTargetExe(exe);
 		}
+		mega.deps ~= mSubBitcodes ~ mSubObjs ~ mSubExeObjs ~ targets;
 
 		// Do the build.
 		uni.build(mega, 4, config.env);
 	}
 
-	fn makeTargetExe(exe: Exe) uni.Target
+	fn makeTargetExeBc(exe: Exe) uni.Target
 	{
-		name := exe.bin is null ? exe.name : exe.bin;
-		version (Windows) if (!endsWith(name, ".exe")) {
-			name ~= ".exe";
-		}
-		dep := buildDir ~ dirSeparator ~ name ~ ".d";
+		bcName := buildDir ~ dirSeparator ~ exe.name ~ ".bc";
+		depName := buildDir ~ dirSeparator ~ exe.name ~ ".d";
 
-		t := ins.fileNoRule(name);
-		d := ins.file(dep);
-		t.deps = new uni.Target[](exe.srcVolt.length);
+		d := ins.file(depName);
+		bc := ins.fileNoRule(bcName);
+		mSubBitcodes ~= bc;
+		bc.deps = new uni.Target[](exe.srcVolt.length);
 
 		// Do dependancy tracking on source.
 		foreach (i, src; exe.srcVolt) {
-			t.deps[i] = ins.file(src);
+			bc.deps[i] = ins.file(src);
 		}
 
-		// Depend on the compiler and runtime.
-		t.deps ~= [voltaBin, rtBin];
+		// Depend on the compiler.
+		bc.deps ~= [voltaBin];
 
 		// Get all of the arguments.
 		args := gen.genVoltaArgs(exe) ~
-			["-o", name, "--dep", dep] ~
-			exe.srcVolt;
+			["-o", bcName, "--emit-bitcode", "-c",
+			"--dep", depName] ~ exe.srcVolt;
+
+		// Make the rule.
+		bc.rule = new uni.Rule();
+		bc.rule.cmd = voltaBin.name;
+		bc.rule.print = voltaPrint ~ bc.name;
+		bc.rule.args = args;
+		bc.rule.outputs = [bc, d];
+
+		importDepFile(ins, depName);
+
+		return bc;
+	}
+
+	fn makeTargetExe(exe: Exe) uni.Target
+	{
+		oName := buildDir ~ dirSeparator ~ exe.name ~ ".o";
+
+		// Build bitcode and object
+		bc := makeTargetExeBc(exe);
+		o := makeHelperBitcodeToObj(bc, oName);
+		mSubExeObjs ~= o;
+
+		// Flatten the dep graph.
+		mega.deps ~= bc;
+
+		// For the bitcode file and extra inputs.
+		aux : uni.Target[] = [o];
 
 		// Setup C targets.
 		foreach (src; exe.srcC) {
-			obj := makeTargetC(src);
-			t.deps ~= obj;
-			args ~= obj.name;
+			aux ~= makeTargetC(src);
 		}
 
 		// Add additional object and library files.
 		foreach (obj; exe.srcObj) {
-			t.deps ~= ins.file(obj);
-			args ~= obj;
+			aux ~= ins.file(obj);
 		}
+
+		// Put the extra sources here.
+		mObjs[exe.name] = aux;
+
+
+		//
+		// Make the binary build rule.
+		//
+
+		name := exe.bin is null ? exe.name : exe.bin;
+		version (Windows) if (!endsWith(name, ".exe")) {
+			name ~= ".exe";
+		}
+
+		t := ins.fileNoRule(name);
+		args := gen.genVoltaArgs(exe) ~ ["-o", name];
 
 		// Add objects from libraries.
-		targetObjs := collectObjs(exe);
-		t.deps ~= targetObjs;
-		foreach (tObj; targetObjs) {
-			args ~= tObj.name;
+		targetDeps := collectDeps(base:exe);
+		t.deps ~= targetDeps;
+		foreach (tDep; targetDeps) {
+			args ~= tDep.name;
 		}
-
-		importDepFile(ins, dep);
 
 		// Make the rule.
 		t.rule = new uni.Rule();
 		t.rule.cmd = voltaBin.name;
-		t.rule.print = voltaPrint ~ name;
+		t.rule.print = voltaPrint ~ t.name;
 		t.rule.args = args;
-		t.rule.outputs = [t, d];
+		t.rule.outputs = [t];
 
 		return t;
 	}
@@ -154,6 +195,7 @@ public:
 		obj := buildDir ~ dirSeparator ~ src ~ ".o";
 
 		tc := ins.fileNoRule(obj);
+		mSubObjs ~= tc;
 		tc.deps = [ins.file(src)];
 
 		switch (config.ccKind) with (CCKind) {
@@ -183,6 +225,7 @@ public:
 		obj := buildDir ~ dirSeparator ~ src ~ ".o";
 
 		tasm := ins.fileNoRule(obj);
+		mSubObjs ~= tasm;
 		tasm.deps = [ins.file(src)];
 
 		tasm.rule = new uni.Rule();
@@ -254,6 +297,7 @@ public:
 
 		// Make the bitcode file.
 		bc := ins.fileNoRule(bcName);
+		mSubBitcodes ~= bc;
 
 		// Depends on all of the source files.
 		bc.deps = new uni.Target[](files.length);
@@ -273,7 +317,8 @@ public:
 			["-o", bcName, "-c", "--emit-bitcode"] ~ files;
 
 		// Create the object file for the library.
-		o := makeTargetBitcodeToObj(bc, oName);
+		o := makeHelperBitcodeToObj(bc, oName);
+		mSubExeObjs ~= o;
 
 		// Add results into into the store.
 		results := [o];
@@ -286,7 +331,7 @@ public:
 		return o;
 	}
 
-	fn makeTargetBitcodeToObj(bc: uni.Target, oName: string) uni.Target
+	fn makeHelperBitcodeToObj(bc: uni.Target, oName: string) uni.Target
 	{
 		// Make o file.
 		o := ins.fileNoRule(oName);
@@ -308,7 +353,7 @@ public:
 
 
 private:
-	fn collectObjs(base: Base) uni.Target[]
+	fn collectDeps(base: Base) uni.Target[]
 	{
 		added: Base[string];
 		ret: uni.Target[];
