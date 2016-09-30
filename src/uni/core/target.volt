@@ -62,12 +62,14 @@ public:
 	enum Status {
 		FRESH,
 		CHECKED,
+		BLOCKED,
 		BUILDING,
 		BUILT
 	}
 
 	alias FRESH    = Status.FRESH;
 	alias CHECKED  = Status.CHECKED;
+	alias BLOCKED  = Status.BLOCKED;
 	alias BUILDING = Status.BUILDING;
 	alias BUILT    = Status.BUILT;
 

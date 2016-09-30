@@ -22,42 +22,58 @@ import uni.util.cmd : CmdGroup;
 fn build(t: Target, numJobs: uint, env: Environment)
 {
 	g := new CmdGroup(env, numJobs);
-	built := build(t, g);
-	if (built) {
-		g.waitAll();
+	build(t, g);
+}
+
+/**
+ * Internal looping build function.
+ */
+private fn build(root: Target, g: CmdGroup)
+{
+	shouldRestart := true;
+	while (shouldRestart) {
+		shouldRestart = false;
+		build(root, g, ref shouldRestart);
+
+		// Wait untill at least on dependancy has been solved.
+		g.waitOne();
 	}
 }
 
 /**
- * Internal recursive build function. Could be improved,
- * as every time the builder goes backup it waits for all
- * the children to complete building.
+ * Internal recursive build function.
  */
-private fn build(t: Target, g: CmdGroup) bool
+private fn build(t: Target, g: CmdGroup, ref shouldRestart: bool)
 {
-	// This is needed for Windows.
+	// If the target is fresh check it,
+	// checking this helps for performance on Windows.
 	if (t.status < Target.CHECKED) {
 		t.updateTime();
 	}
 
-	// Our work is allready done.
+	// This target is already building or have been built,
+	// then we don't need to do anything more.
 	if (t.status >= Target.BUILDING) {
-		return t.status == Target.BUILDING ? true : false;
+		return;
 	}
 
-	// Build all the dependancies.
-	built := false;
+	// Make sure all dependancies are built.
 	foreach (child; t.deps) {
-		built = build(child, g) || built;
+		build(child, g, ref shouldRestart);
 	}
 
-	// XXX Figure out a better algorithm then this.
-	if (built) {
-		g.waitAll();
-	}
-
+	// Then check if we should build this target.
 	shouldBuild := false;
 	foreach (d; t.deps) {
+
+		if (d.status < Target.BUILT) {
+			assert(d.status == Target.BUILDING ||
+			       d.status == Target.BLOCKED);
+			shouldRestart = true;
+			t.status = Target.BLOCKED;
+			return;
+		}
+
 		// Kinda risky adding =,
 		// but it avoids uneccasery recompiles.
 		if (t.mod >= d.mod) {
@@ -65,12 +81,12 @@ private fn build(t: Target, g: CmdGroup) bool
 		}
 
 		shouldBuild = true;
-		break;
 	}
 
-	// All deps are older then this target, nothing to do.
+	// All deps are older then this target, mark it as built.
 	if (!shouldBuild) {
-		return false;
+		t.status = Target.BUILT;
+		return;
 	}
 
 	/*
@@ -80,7 +96,7 @@ private fn build(t: Target, g: CmdGroup) bool
 	 * compiler warn about it.
 	 */
 	if (t.rule is null) {
-		return false;
+		return;
 	}
 
 	// Make sure the directory exist.
@@ -96,5 +112,5 @@ private fn build(t: Target, g: CmdGroup) bool
 	// The business end of the solver.
 	g.run(t.rule.cmd, t.rule.args, t.rule.built, null);
 
-	return true;
+	return;
 }
