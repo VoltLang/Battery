@@ -33,10 +33,12 @@ public:
 		StringPath,
 
 		Debug,
+		InternalD,
 		Identifier,
 		Output,
 
 		FileC,
+		FileD,
 		FileObj,
 		FileAsm,
 		FileVolt,

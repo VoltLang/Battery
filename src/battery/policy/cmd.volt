@@ -98,7 +98,12 @@ fn getArgsExe(e: Exe) string[]
 		ret ~= "-debug";
 	}
 
+	if (e.isInternalD) {
+		ret ~= "--internal-d";
+	}
+
 	ret ~= e.srcC;
+	ret ~= e.srcD;
 	ret ~= e.srcObj;
 	ret ~= e.srcVolt;
 
@@ -234,9 +239,11 @@ protected:
 			case LibraryPath: exe.libPaths ~= arg.extra; break;
 			case StringPath: exe.stringPaths ~= arg.extra; break;
 			case Debug: exe.isDebug = true; break;
+			case InternalD: exe.isInternalD = true; break;
 			case Output: exe.bin = arg.extra; break;
 			case Identifier: exe.defs ~= arg.extra; break;
 			case FileC: exe.srcC ~= arg.extra; break;
+			case FileD: exe.srcD ~= arg.extra; break;
 			case FileAsm: exe.srcAsm ~= arg.extra; break;
 			case FileObj: exe.srcObj ~= arg.extra; break;
 			case FileVolt: exe.srcVolt ~= arg.extra; break;
@@ -385,6 +392,7 @@ struct ToArgs
 			case "-L": argNext(LibraryPath, "expected library path"); continue;
 			case "-J": argNextPath(StringPath, "expected string path"); continue;
 			case "-d", "-debug", "--debug": arg(Debug); continue;
+			case "--internal-d": arg(InternalD); continue;
 			case "-D": argNext(Identifier, "expected version identifier"); continue;
 			case "-Xld", "--Xld": argNext(ArgLD, "expected ld arg"); continue;
 			case "-Xcc", "--Xcc": argNext(ArgCC, "expected cc arg"); continue;
@@ -404,6 +412,8 @@ struct ToArgs
 
 			if (endsWith(tmp, ".c")) {
 				argPath(Arg.Kind.FileC);
+			} else if (endsWith(tmp, ".d")) {
+				argPath(Arg.Kind.FileD);
 			} else if (endsWith(tmp, ".volt")) {
 				argPath(Arg.Kind.FileVolt);
 			} else if (endsWith(tmp, ".asm")) {

@@ -38,8 +38,10 @@ class Exe : Base
 	bin: string;
 
 	isDebug: bool;
+	isInternalD: bool;
 
 	srcC: string[];
+	srcD: string[];
 	srcObj: string[];
 	srcVolt: string[];
 }

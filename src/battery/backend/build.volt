@@ -120,6 +120,15 @@ public:
 			["-o", bcName, "--emit-bitcode", "-c",
 			"--dep", depName] ~ exe.srcVolt;
 
+		// This is mostly for Volta.
+		if (exe.isInternalD) {
+			args ~= "--internal-d";
+			foreach (src; exe.srcD) {
+				bc.deps ~= ins.file(src);
+				args ~= src;
+			}
+		}
+
 		// Make the rule.
 		bc.rule = new uni.Rule();
 		bc.rule.cmd = voltaBin.name;

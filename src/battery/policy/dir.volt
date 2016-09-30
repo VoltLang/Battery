@@ -89,6 +89,8 @@ fn scanVolta(drv: Driver, ref s: Scanner) Base
 	exe.name = s.name;
 	exe.srcDir = s.pathSrc;
 	exe.bin = s.pathDerivedBin;
+	exe.isInternalD = true;
+	exe.srcVolt ~= s.pathMainD;
 
 	processBatteryCmd(drv, exe, ref s);
 
