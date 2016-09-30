@@ -51,10 +51,6 @@ protected:
 	/// Store of objects each Lib/Exe produces.
 	mObjs: uni.Target[][string];
 
-	mSubBitcodes: uni.Target[];
-	mSubExeObjs: uni.Target[];
-	mSubObjs: uni.Target[];
-
 
 public:
 	this(Driver drv)
@@ -84,32 +80,22 @@ public:
 		// If Volta was given, add it as well.
 		voltaTmp : uni.Target;
 		if (voltaExe !is null) {
-			voltaTmp = makeTargetExe(voltaExe);
+			mega.deps ~= makeTargetExe(voltaExe);
 		}
 
 		// If Tesla was given, add it as well.
 		if (teslaExe !is null) {
 			teslaBin = makeTargetExe(teslaExe);
-		}
-
-		// Generate rules for all the executables.
-		targets : uni.Target[];
-		foreach (exe; exes) {
-			targets ~= makeTargetExe(exe);
-		}
-		mega.deps ~= mSubBitcodes ~ mSubObjs ~ mSubExeObjs ~ targets;
-
-		// If Tesla was given, add it as well.
-		if (teslaBin !is null) {
 			mega.deps ~= teslaBin;
 		}
 
-		if (voltaTmp !is null) {
-			mega.deps ~= voltaTmp;
+		// Generate rules for all the executables.
+		foreach (exe; exes) {
+			mega.deps ~= makeTargetExe(exe);
 		}
 
 		// Do the build.
-		uni.build(mega, 4, config.env);
+		uni.build(mega, 8, config.env);
 	}
 
 	fn makeTargetExeBc(exe: Exe) uni.Target
@@ -119,7 +105,6 @@ public:
 
 		d := ins.file(depName);
 		bc := ins.fileNoRule(bcName);
-		mSubBitcodes ~= bc;
 		bc.deps = new uni.Target[](exe.srcVolt.length);
 
 		// Do dependancy tracking on source.
@@ -163,7 +148,6 @@ public:
 		// Build bitcode and object
 		bc := makeTargetExeBc(exe);
 		o := makeHelperBitcodeToObj(bc, oName);
-		mSubExeObjs ~= o;
 
 		// Flatten the dep graph.
 		mega.deps ~= bc;
@@ -219,7 +203,6 @@ public:
 		obj := buildDir ~ dirSeparator ~ src ~ ".o";
 
 		tc := ins.fileNoRule(obj);
-		mSubObjs ~= tc;
 		tc.deps = [ins.file(src)];
 
 		switch (config.ccKind) with (CCKind) {
@@ -249,7 +232,6 @@ public:
 		obj := buildDir ~ dirSeparator ~ src ~ ".o";
 
 		tasm := ins.fileNoRule(obj);
-		mSubObjs ~= tasm;
 		tasm.deps = [ins.file(src)];
 
 		tasm.rule = new uni.Rule();
@@ -321,7 +303,6 @@ public:
 
 		// Make the bitcode file.
 		bc := ins.fileNoRule(bcName);
-		mSubBitcodes ~= bc;
 
 		// Depends on all of the source files.
 		bc.deps = new uni.Target[](files.length);
@@ -342,7 +323,6 @@ public:
 
 		// Create the object file for the library.
 		o := makeHelperBitcodeToObj(bc, oName);
-		mSubExeObjs ~= o;
 
 		// Add results into into the store.
 		results := [o];
