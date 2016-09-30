@@ -81,6 +81,12 @@ public:
 		rtBin = makeTargetVoltLibrary(rtLib);
 		mega.deps = [voltaBin];
 
+		// If Volta was given, add it as well.
+		voltaTmp : uni.Target;
+		if (voltaExe !is null) {
+			voltaTmp = makeTargetExe(voltaExe);
+		}
+
 		// If Tesla was given, add it as well.
 		if (teslaExe !is null) {
 			teslaBin = makeTargetExe(teslaExe);
@@ -92,6 +98,15 @@ public:
 			targets ~= makeTargetExe(exe);
 		}
 		mega.deps ~= mSubBitcodes ~ mSubObjs ~ mSubExeObjs ~ targets;
+
+		// If Tesla was given, add it as well.
+		if (teslaBin !is null) {
+			mega.deps ~= teslaBin;
+		}
+
+		if (voltaTmp !is null) {
+			mega.deps ~= voltaTmp;
+		}
 
 		// Do the build.
 		uni.build(mega, 4, config.env);
