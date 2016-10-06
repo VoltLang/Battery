@@ -36,12 +36,11 @@ public:
 
 	voltaExe: Exe;
 	teslaExe: Exe;
+	/// TODO remove once Volta can build bitcode without rt.
 	rtLib: Lib;
 
 	voltaBin: uni.Target;
 	voltedBin: uni.Target;
-	rtBin: uni.Target;
-
 	teslaBin: uni.Target;
 
 	gen: ArgsGenerator;
@@ -70,17 +69,15 @@ public:
 			gen.archStr ~ "-" ~ gen.platformStr;
 
 		filterExes(ref exes);
-		filterLibs(ref libs);
 
-		// Setup volta and rtBin.
+		// Setup volta and rtLib.
 		voltaBin = voltedBin = makeTargetVolted();
-		rtBin = makeTargetVoltLibrary(rtLib);
 		mega.deps = [voltaBin];
+		rtLib = cast(Lib)gen.store["rt"];
 
-		// If Volta was given, add it as well.
-		voltaTmp : uni.Target;
-		if (voltaExe !is null) {
-			mega.deps ~= makeTargetExe(voltaExe);
+		// Make sure each library is built.
+		foreach (lib; libs) {
+			mega.deps ~= makeTargetVoltLibrary(lib);
 		}
 
 		// If Tesla was given, add it as well.
@@ -408,23 +405,5 @@ private:
 			}
 		}
 		exes = exes[0 .. pos];
-	}
-
-	/**
-	 * Filter out and sets the rtLib files.
-	 */
-	fn filterLibs(ref libs: Lib[])
-	{
-		// Always copy, so we don't modify the origanal storage.
-		libs = new libs[..];
-
-		pos: size_t;
-		foreach (i, lib; libs) {
-			switch (lib.name) {
-			case "rt": rtLib = lib; continue;
-			default: libs[pos++] = lib; continue;
-			}	
-		}
-		libs = libs[0 .. pos];
 	}
 }

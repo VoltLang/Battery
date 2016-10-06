@@ -70,7 +70,7 @@ public:
 
 			lib := cast(Lib)b;
 
-			if (lib !is null && lib.name == "rt") {
+			if (lib !is null) {
 				ret ~= ["--lib-I", b.srcDir];
 			} else {
 				ret ~= ["--src-I", b.srcDir];
