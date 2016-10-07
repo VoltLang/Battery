@@ -80,6 +80,11 @@ public:
 			mega.deps ~= makeTargetVoltLibrary(lib);
 		}
 
+		// If Volta was given, add it as well.
+		if (voltaExe !is null) {
+			mega.deps ~= makeTargetExe(voltaExe);
+		}
+
 		// If Tesla was given, add it as well.
 		if (teslaExe !is null) {
 			teslaBin = makeTargetExe(teslaExe);
