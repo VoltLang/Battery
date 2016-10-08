@@ -140,6 +140,12 @@ public:
 					__handles[hCount++] = cmd.handle;
 				}
 			}
+
+			// If no cmds running just return.
+			if (hCount == 0) {
+				return;
+			}
+
 			ptr := __handles.ptr;
 			uRet := WaitForMultipleObjects(hCount, ptr, FALSE, cast(uint)-1);
 			if (uRet == cast(DWORD)-1 || uRet >= hCount) {
