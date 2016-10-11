@@ -24,16 +24,6 @@ enum CCKind
 }
 
 /**
- * Holds information about the rdmd command.
- */
-class Rdmd
-{
-public:
-	rdmd: string;
-	dmd: string;
-}
-
-/**
  * A build configuration for one or more builds.
  *
  * This can be shared between multiple builds. When cross-compiling there will
