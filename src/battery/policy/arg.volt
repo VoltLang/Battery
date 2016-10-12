@@ -71,28 +71,20 @@ public:
 		this.flag = flag;
 		this.extra = extra;
 	}
-
-	fn addArch(bits: int)
-	{
-		condArch |= bits;
-	}
-
-	fn addPlatform(bits: int)
-	{
-		condPlatform |= bits;
-	}
 }
 
 fn filterArgs(ref args: Arg[], arch: Arch, platform: Platform)
 {
 	pos: size_t;
+	archBits := (1 << arch);
+	platformBits := (1 << platform);
 
 	foreach (arg; args) {
-		if (arg.condArch && !(arg.condArch & (1 << arch))) {
+		if (arg.condArch && !(arg.condArch & archBits)) {
 			continue;
 		}
 
-		if (arg.condPlatform && !(arg.condPlatform & (1 << platform))) {
+		if (arg.condPlatform && !(arg.condPlatform & platformBits)) {
 			continue;
 		}
 
