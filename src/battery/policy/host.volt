@@ -100,7 +100,7 @@ fn getHostConfig() Configuration
 fn setupHostCCompiler(config: Configuration, path: string)
 {
 	config.ccKind = HostCCompilerKind;
-	config.ccCmd = searchPath(HostCCompilerCommand, path);
+	config.ccCmd = makeCommand(HostCCompilerCommand, path);
 }
 
 fn setupHostLinker(config: Configuration, path: string)
@@ -119,15 +119,33 @@ fn setupHostLinker(config: Configuration, path: string)
 	}
 
 	config.linkerKind = HostLinkerKind;
-	config.linkerCmd = searchPath(HostLinkerCommand, path);
+	config.linkerCmd = makeCommand(HostLinkerCommand, path);
 }
 
 fn setupHostNasm(config: Configuration, path: string)
 {
-	config.nasmCmd = searchPath(NasmCommand, path);
+	config.nasmCmd = makeCommand(NasmCommand, path);
 }
 
 fn setupHostRdmd(config: Configuration, path: string)
 {
-	config.rdmdCmd = searchPath(RdmdCommand, path);
+	config.rdmdCmd = makeCommand(RdmdCommand, path);
+}
+
+
+private:
+/**
+ * Search the command path and make a Command instance.
+ */
+fn makeCommand(name: string, path: string) Command
+{
+	cmd := searchPath(name, path);
+	if (cmd is null) {
+		return null;
+	}
+
+	c := new Command();
+	c.cmd = cmd;
+	c.name = name;
+	return c;
 }

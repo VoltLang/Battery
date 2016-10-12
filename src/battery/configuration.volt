@@ -23,6 +23,19 @@ enum CCKind
 	Clang, // LLVM Clang
 }
 
+
+class Command
+{
+	/// Textual name.
+	name: string;
+	/// Name and path.
+	cmd: string;
+	/// Extra args to give when invoking.
+	args: string[];
+	/// Name to print.
+	print: string;
+}
+
 /**
  * A build configuration for one or more builds.
  *
@@ -37,14 +50,13 @@ public:
 	arch: Arch;
 	platform: Platform;
 
-	linkerCmd: string;
+	linkerCmd: Command;
 	linkerKind: LinkerKind;
 
-	ccCmd: string;
+	ccCmd: Command;
 	ccKind: CCKind;
 
-	nasmCmd: string;
-
-	rdmdCmd: string;
-	dmd: string;
+	nasmCmd: Command;
+	rdmdCmd: Command;
+	dmdCmd: Command;
 }

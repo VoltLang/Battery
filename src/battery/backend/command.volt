@@ -34,7 +34,7 @@ public:
 			"--platform", platformStr,
 			"--arch", archStr,
 			getLinkerFlag(config),
-			config.linkerCmd,
+			config.linkerCmd.cmd,
 		];
 
 		foreach (lib; libs) {

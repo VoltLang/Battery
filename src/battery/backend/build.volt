@@ -210,14 +210,14 @@ public:
 		switch (config.ccKind) with (CCKind) {
 		case GCC:
 			tc.rule = new uni.Rule();
-			tc.rule.cmd = config.ccCmd;
+			tc.rule.cmd = config.ccCmd.cmd;
 			tc.rule.args = [src, "-c", "-o", obj];
 			tc.rule.print = gccPrint ~ obj;
 			tc.rule.outputs = [tc];
 			break;
 		case CL:
 			tc.rule = new uni.Rule();
-			tc.rule.cmd = config.ccCmd;
+			tc.rule.cmd = config.ccCmd.cmd;
 			tc.rule.args = [src, "/c", "/Fo" ~ obj];
 			tc.rule.print = msvcPrint ~ obj;
 			tc.rule.outputs = [tc];
@@ -237,7 +237,7 @@ public:
 		tasm.deps = [ins.file(src)];
 
 		tasm.rule = new uni.Rule();
-		tasm.rule.cmd = config.nasmCmd;
+		tasm.rule.cmd = config.nasmCmd.cmd;
 		tasm.rule.args = gen.genNasmArgs() ~ [src, "-o", obj];
 		tasm.rule.print = nasmPrint ~ obj;
 		tasm.rule.outputs = [tasm];
@@ -289,7 +289,7 @@ public:
 		args ~= mainFile;
 
 		t.rule.outputs = [t];
-		t.rule.cmd = config.rdmdCmd;
+		t.rule.cmd = config.rdmdCmd.cmd;
 		t.rule.args = args;
 		t.rule.print = rdmdPrint ~ t.name;
 
