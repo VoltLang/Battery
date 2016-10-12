@@ -38,7 +38,6 @@ fn getArgsBase(b: Base, start: string) string[]
 	ret := ["#",
 		new string("# ", b.name),
 		start,
-		"--name",
 		b.name
 	];
 
@@ -166,12 +165,14 @@ protected:
 		case Exe:
 			mPos++;
 			exe := new Exe();
+			exe.name = arg.extra;
 			process(exe);
 			mDrv.add(exe);
 			return;
 		case Lib:
 			mPos++;
 			lib := new Lib();
+			lib.name = arg.extra;
 			process(lib);
 			mDrv.add(lib);
 			return;
@@ -382,8 +383,8 @@ struct ToArgs
 			}
 
 			switch (tmp) with (Arg.Kind) {
-			case "--exe": arg(Exe); continue;
-			case "--lib": arg(Lib); continue;
+			case "--exe": argNext(Exe, "expected name"); continue;
+			case "--lib": argNext(Lib, "expected name"); continue;
 			case "--name": argNext(Name, "expected name"); continue;
 			case "--dep": argNext(Dep, "expected dependency"); continue;
 			case "--src-I": argNextPath(SrcDir, "expected source directory"); continue;
