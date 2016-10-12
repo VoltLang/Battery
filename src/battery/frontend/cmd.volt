@@ -3,7 +3,7 @@
 /**
  * Holds code for parsing command line options into Lib and Exe.
  */
-module battery.policy.cmd;
+module battery.frontend.cmd;
 
 import watt.process;
 import watt.text.path : normalizePath;
@@ -11,8 +11,8 @@ import watt.text.string : startsWith, endsWith;
 
 import battery.configuration;
 import battery.interfaces;
-import battery.policy.dir;
 import battery.policy.arg;
+import battery.frontend.dir;
 
 
 /**

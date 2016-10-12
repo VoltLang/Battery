@@ -11,10 +11,11 @@ import uni.util.make;
 
 import battery.interfaces;
 import battery.configuration;
-import battery.policy.dir;
 import battery.backend.command;
+import battery.frontend.dir : deepScan;
 
 import watt.io;
+
 
 class Builder
 {

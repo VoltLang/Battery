@@ -14,10 +14,10 @@ import watt.path : fullPath, dirSeparator;
 
 import battery.configuration;
 import battery.interfaces;
-import battery.policy.dir;
-import battery.policy.cmd;
-import battery.policy.host;
 import battery.util.file : getLinesFromFile;
+import battery.policy.host;
+import battery.frontend.cmd;
+import battery.frontend.dir;
 import battery.backend.build;
 
 

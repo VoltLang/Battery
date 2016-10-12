@@ -4,7 +4,7 @@
  * Holds the code for searching a directory and automatically creating
  * a project from that.
  */
-module battery.policy.dir;
+module battery.frontend.dir;
 
 import io = watt.io;
 import watt.io.file : exists, searchDir, isDir;
@@ -15,7 +15,7 @@ import watt.conv : toLower;
 import battery.interfaces;
 import battery.configuration;
 import battery.util.file : getLinesFromFile;
-import battery.policy.cmd : ArgParser;
+import battery.frontend.cmd : ArgParser;
 
 
 enum PathRt         = "rt";
