@@ -3,8 +3,9 @@
 module battery.policy.host;
 
 import watt.process : retriveEnvironment, Environment, searchPath;
+import battery.interfaces;
 import battery.configuration;
-
+import battery.policy.programs;
 
 version (MSVC) {
 	enum HostPlatform = Platform.MSVC;
@@ -57,7 +58,7 @@ version (X86_64) {
 	static assert(false, "native arch not supported");
 }
 
-fn getHostConfig() Configuration
+fn getHostConfig(drv: Driver) Configuration
 {
 	outside := retriveEnvironment();
 	path := outside.getOrNull("PATH");
@@ -86,13 +87,14 @@ fn getHostConfig() Configuration
 	}
 
 	c := new Configuration();
-	c.setupHostCCompiler(path);
-	c.setupHostLinker(path);
-	c.setupHostNasm(path);
-	c.setupHostRdmd(path);
 	c.env = env;
 	c.arch = HostArch;
 	c.platform = HostPlatform;
+	c.setupHostCCompiler(path);
+	c.setupHostLinker(path);
+	c.setupHostRdmd(path);
+
+	drv.setupNasm(c, c);
 
 	return c;
 }

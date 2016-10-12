@@ -61,7 +61,7 @@ public:
 	fn config(args: string[])
 	{
 		// Get host config
-		mHostConfig = getHostConfig();
+		mHostConfig = getHostConfig(this);
 
 		arg := new ArgParser(this);
 		arg.parse(args);
@@ -89,7 +89,7 @@ public:
 		arg := new ArgParser(this);
 		arg.parse(args);
 
-		mHostConfig = getHostConfig();
+		mHostConfig = getHostConfig(this);
 		builder := new Builder(this);
 		builder.build(mHostConfig, mLib, mExe);
 	}

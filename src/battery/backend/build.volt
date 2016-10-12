@@ -30,7 +30,6 @@ public:
 	ins: uni.Instance;
 
 	gccPrint: string   = "  GCC      ";
-	nasmPrint: string  = "  NASM     ";
 	rdmdPrint: string  = "  RDMD     ";
 	msvcPrint: string  = "  MSVC     ";
 	voltaPrint: string = "  VOLTA    ";
@@ -239,8 +238,8 @@ public:
 
 		tasm.rule = new uni.Rule();
 		tasm.rule.cmd = config.nasmCmd.cmd;
-		tasm.rule.args = gen.genNasmArgs() ~ [src, "-o", obj];
-		tasm.rule.print = nasmPrint ~ obj;
+		tasm.rule.args = config.nasmCmd.args ~ [src, "-o", obj];
+		tasm.rule.print = config.nasmCmd.print ~ obj;
 		tasm.rule.outputs = [tasm];
 
 		return tasm;
