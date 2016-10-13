@@ -37,6 +37,11 @@ public:
 			config.linkerCmd.cmd,
 		];
 
+		pass := getLinkerPassFlag(config);
+		foreach (arg; config.linkerCmd.args) {
+			voltaArgs ~= [pass, arg];
+		}
+
 		foreach (lib; libs) {
 			store[lib.name] = lib;
 		}
@@ -164,6 +169,17 @@ private:
 		case GCC: return "--cc";
 		case Link: return "--link";
 		case Clang: return "--cc";
+		case Invalid: assert(false);
+		}
+	}
+
+	fn getLinkerPassFlag(config: Configuration) string
+	{
+		final switch (config.linkerKind) with (LinkerKind) {
+		case LD: return "--Xld";
+		case GCC: return "--Xcc";
+		case Link: return "--Xlink";
+		case Clang: return "--Xcc";
 		case Invalid: assert(false);
 		}
 	}

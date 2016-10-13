@@ -9,43 +9,10 @@ import battery.policy.programs;
 
 version (MSVC) {
 	enum HostPlatform = Platform.MSVC;
-
-	enum HostCCompilerCommand = "cl.exe";
-	enum HostCCompilerKind = CCKind.CL;
-
-	enum HostLinkerCommand = "link.exe";
-	enum HostLinkerKind = LinkerKind.Link;
-
-	enum RdmdCommand = "rdmd.exe";
-	enum DmdCommand = "dmd.exe";
-
-	enum NasmCommand = "nasm.exe";
 } else version (Linux) {
 	enum HostPlatform = Platform.Linux;
-
-	enum HostCCompilerCommand = "gcc";
-	enum HostCCompilerKind = CCKind.GCC;
-
-	enum HostLinkerCommand = "gcc";
-	enum HostLinkerKind = LinkerKind.GCC;
-
-	enum RdmdCommand = "rdmd";
-	enum DmdCommand = "dmd";
-
-	enum NasmCommand = "nasm";
 } else version (OSX) {
 	enum HostPlatform = Platform.OSX;
-
-	enum HostCCompilerCommand = "clang";
-	enum HostCCompilerKind = CCKind.GCC;
-
-	enum HostLinkerCommand = "clang";
-	enum HostLinkerKind = LinkerKind.Clang;
-
-	enum RdmdCommand = "rdmd.exe";
-	enum DmdCommand = "dmd.exe";
-
-	enum NasmCommand = "nasm";
 } else {
 	static assert(false, "native platform not supported");
 }
@@ -90,64 +57,47 @@ fn getHostConfig(drv: Driver) Configuration
 	c.env = env;
 	c.arch = HostArch;
 	c.platform = HostPlatform;
-	c.setupHostCCompiler(path);
-	c.setupHostLinker(path);
-	c.setupHostRdmd(path);
-
-	drv.setupNasm(c, c);
+	drv.setupHostRdmd(c);
+	drv.setupHostLinkerAndCC(c);
+	drv.setupHostNasm(c);
 
 	return c;
 }
 
-fn setupHostCCompiler(config: Configuration, path: string)
-{
-	config.ccKind = HostCCompilerKind;
-	config.ccCmd = makeCommand(HostCCompilerCommand, path);
-}
 
-fn setupHostLinker(config: Configuration, path: string)
-{
-	// Can we reuse the ccompiler as linker.
-	final switch (config.ccKind) with (CCKind) {
-	case Clang:
-		config.linkerKind = LinkerKind.Clang;
-		config.linkerCmd = config.ccCmd;
-		return;
-	case GCC:
-		config.linkerKind = LinkerKind.GCC;
-		config.linkerCmd = config.ccCmd;
-		return;
-	case CL, Invalid: break;
-	}
-
-	config.linkerKind = HostLinkerKind;
-	config.linkerCmd = makeCommand(HostLinkerCommand, path);
-}
-
-fn setupHostNasm(config: Configuration, path: string)
-{
-	config.nasmCmd = makeCommand(NasmCommand, path);
-}
-
-fn setupHostRdmd(config: Configuration, path: string)
-{
-	config.rdmdCmd = makeCommand(RdmdCommand, path);
-}
-
-
-private:
-/**
- * Search the command path and make a Command instance.
+/*
+ *
+ * C compiler and linker functions.
+ *
  */
-fn makeCommand(name: string, path: string) Command
+
+fn setupHostLinkerAndCC(drv: Driver, host: Configuration)
 {
-	cmd := searchPath(name, path);
-	if (cmd is null) {
-		return null;
+	if (host.platform == Platform.MSVC) {
+		setupMSVC(drv, host);
+		return;
 	}
 
-	c := new Command();
-	c.cmd = cmd;
-	c.name = name;
-	return c;
+	// Try clang first.
+	clang := getClang(drv, host);
+	if (clang !is null) {
+		host.ccCmd = clang;
+		host.ccKind = CCKind.Clang;
+		host.linkerCmd = clang;
+		host.linkerKind = LinkerKind.Clang;
+		return;
+	}
+
+	// TODO: Maybe try GCC
+	drv.abort("Can not find clang.");
+}
+
+fn setupHostNasm(drv: Driver, host: Configuration)
+{
+	host.nasmCmd = getNasm(drv, host);
+}
+
+fn setupHostRdmd(drv: Driver, host: Configuration)
+{
+	host.rdmdCmd = getRdmd(drv, host);
 }

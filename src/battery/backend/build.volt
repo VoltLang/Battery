@@ -29,9 +29,6 @@ public:
 	mega: uni.Target;
 	ins: uni.Instance;
 
-	gccPrint: string   = "  GCC      ";
-	rdmdPrint: string  = "  RDMD     ";
-	msvcPrint: string  = "  MSVC     ";
 	voltaPrint: string = "  VOLTA    ";
 
 	voltaExe: Exe;
@@ -207,23 +204,23 @@ public:
 		tc := ins.fileNoRule(obj);
 		tc.deps = [ins.file(src)];
 
-		switch (config.ccKind) with (CCKind) {
-		case GCC:
+		c := config.ccCmd;
+		final switch (config.ccKind) with (CCKind) {
+		case GCC, Clang:
 			tc.rule = new uni.Rule();
-			tc.rule.cmd = config.ccCmd.cmd;
-			tc.rule.args = [src, "-c", "-o", obj];
-			tc.rule.print = gccPrint ~ obj;
+			tc.rule.cmd = c.cmd;
+			tc.rule.args = c.args ~ [src, "-c", "-o", obj];
+			tc.rule.print = c.print ~ obj;
 			tc.rule.outputs = [tc];
 			break;
 		case CL:
 			tc.rule = new uni.Rule();
-			tc.rule.cmd = config.ccCmd.cmd;
-			tc.rule.args = [src, "/c", "/Fo" ~ obj];
-			tc.rule.print = msvcPrint ~ obj;
+			tc.rule.cmd = c.cmd;
+			tc.rule.args = c.args ~ [src, "/c", "/Fo" ~ obj];
+			tc.rule.print = c.print ~ obj;
 			tc.rule.outputs = [tc];
 			break;
-		default:
-			mDrv.abort("unknown C compiler");
+		case Invalid: assert(false);
 		}
 
 		return tc;
@@ -263,16 +260,13 @@ public:
 
 		t.rule = new uni.Rule();
 
-		args := [
+		c := config.rdmdCmd;
+
+		args := c.args ~ [
 			"--build-only",
 			"-I" ~ srcDir,
 			"-of" ~ t.name
 		];
-
-		final switch (config.arch) with (Arch) {
-		case X86: args ~= "-m32"; break;
-		case X86_64: args ~= "-m64"; break;
-		}
 
 		foreach (arg; voltaExe.srcObj) {
 			args ~= arg;
@@ -289,9 +283,9 @@ public:
 		args ~= mainFile;
 
 		t.rule.outputs = [t];
-		t.rule.cmd = config.rdmdCmd.cmd;
+		t.rule.cmd = c.cmd;
 		t.rule.args = args;
-		t.rule.print = rdmdPrint ~ t.name;
+		t.rule.print = c.print ~ t.name;
 
 		return t;
 	}
