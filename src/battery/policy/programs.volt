@@ -38,7 +38,7 @@ fn getClang(drv: Driver, config: Configuration) Command
 
 	c := new Command();
 	c.cmd = cmd;
-	c.args = ["-config", config.getconfigString()];
+	c.args = ["-target", config.getconfigString()];
 	c.print = ClangPrint;
 	return c;
 }
