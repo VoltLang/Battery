@@ -24,6 +24,42 @@ enum LinkPrint =  "  LINK     ";
 enum CLPrint   =  "  CL       ";
 
 
+/**
+ * Ensures that a command/tool is there.
+ * Will fill in arguments if it knows how to.
+ */
+fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
+{
+	cmd := drv.getTool(name);
+	if (cmd is null) {
+		switch (name) {
+		case "nasm": cmd = getNasm(drv, c); break;
+		case "clang": cmd = getClang(drv, c); break;
+		case "cl": cmd = getCL(drv, c); break;
+		case "link": cmd = getLink(drv, c); break;
+		case "rdmd": cmd = getRdmd(drv, c); break;
+		default: assert(false);
+		}
+	} else {
+		drv.info("got '%s' from the command line '%s'.", name, cmd.cmd);
+	}
+
+	if (cmd is null) {
+		drv.abort("could not find '%s' command", name);
+	}
+
+	switch (name) {
+	case "nasm": addNasmArgs(drv, c, cmd); break;
+	case "clang": addClangArgs(drv, c, cmd); break;
+	case "rdmd": addRdmdArgs(drv, c, cmd); break;
+	case "cl", "link": break;
+	default: assert(false);
+	}
+
+	return cmd;
+}
+
+
 /*
  *
  * Clang functions.
@@ -32,7 +68,7 @@ enum CLPrint   =  "  CL       ";
 
 fn getClang(drv: Driver, config: Configuration) Command
 {
-	return drv.makeCommand(ClangCommand, ClangPrint, config.env);
+	return drv.makeCommand("clang", ClangCommand, ClangPrint, config.env);
 }
 
 fn addClangArgs(drv: Driver, config: Configuration, c: Command)
@@ -76,7 +112,7 @@ fn getLLVMTargetString(config: Configuration) string
 
 fn getNasm(drv: Driver, config: Configuration) Command
 {
-	return drv.makeCommand(NasmCommand, NasmPrint, config.env);
+	return drv.makeCommand("nasm", NasmCommand, NasmPrint, config.env);
 }
 
 fn addNasmArgs(drv: Driver, config: Configuration, c: Command)
@@ -120,12 +156,12 @@ fn getNasmFormatString(config: Configuration) string
 
 fn getCL(drv: Driver, config: Configuration) Command
 {
-	return drv.makeCommand(CLCommand, CLPrint, config.env);
+	return drv.makeCommand("cl", CLCommand, CLPrint, config.env);
 }
 
 fn getLink(drv: Driver, config: Configuration) Command
 {
-	return drv.makeCommand(LinkCommand, LinkPrint, config.env);
+	return drv.makeCommand("link", LinkCommand, LinkPrint, config.env);
 }
 
 
@@ -137,7 +173,7 @@ fn getLink(drv: Driver, config: Configuration) Command
 
 fn getRdmd(drv: Driver, config: Configuration) Command
 {
-	return drv.makeCommand(RdmdCommand, RdmdPrint, config.env);
+	return drv.makeCommand("rdmd", RdmdCommand, RdmdPrint, config.env);
 }
 
 fn addRdmdArgs(drv: Driver, config: Configuration, c: Command)
@@ -157,12 +193,14 @@ fn addRdmdArgs(drv: Driver, config: Configuration, c: Command)
 
 private:
 /// Search the command path and make a Command instance.
-fn makeCommand(drv: Driver, name: string,
+fn makeCommand(drv: Driver, name: string, cmd: string,
                print: string, env: Environment) Command
 {
-	cmd := searchPath(name, env);
+	cmd = searchPath(cmd, env);
 	if (cmd is null) {
 		return null;
+	} else {
+		drv.info("found '%s' on the path '%s'.", name, cmd);
 	}
 
 	c := new Command();

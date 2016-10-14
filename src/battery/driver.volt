@@ -63,10 +63,14 @@ public:
 	fn config(args: string[])
 	{
 		// Get host config
-		mHostConfig = getHostConfig(this);
+		mHostConfig = getBaseHostConfig(this);
 
 		arg := new ArgParser(this);
 		arg.parse(args);
+
+		// Do this after the arguments has been parsed.
+		doHostConfig(this, mHostConfig);
+		fillInHostConfig(this, mHostConfig);
 
 		verifyConfig();
 
@@ -93,7 +97,9 @@ public:
 		arg := new ArgParser(this);
 		arg.parse(args);
 
-		mHostConfig = getHostConfig(this);
+		mHostConfig = getBaseHostConfig(this);
+		fillInHostConfig(this, mHostConfig);
+
 		builder := new Builder(this);
 		builder.build(mHostConfig, mLib, mExe);
 	}
@@ -237,6 +243,11 @@ Normal usecase when standing in a project directory.
 			return null;
 		}
 		return *c;
+	}
+
+	override fn setTool(name: string, c: Command)
+	{
+		mCommands[name] = c;
 	}
 
 	override fn addToolCmd(name: string, cmd: string)

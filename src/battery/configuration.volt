@@ -4,6 +4,7 @@ module battery.configuration;
 
 import watt.process : Environment;
 public import battery.defines;
+public import battery.interfaces;
 
 
 enum LinkerKind
@@ -21,19 +22,6 @@ enum CCKind
 	CL,    // MSVC
 	GCC,   // GCC
 	Clang, // LLVM Clang
-}
-
-
-class Command
-{
-	/// Textual name.
-	name: string;
-	/// Name and path.
-	cmd: string;
-	/// Extra args to give when invoking.
-	args: string[];
-	/// Name to print.
-	print: string;
 }
 
 /**

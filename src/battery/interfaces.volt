@@ -7,7 +7,6 @@ module battery.interfaces;
 
 static import watt.text.sink;
 public import battery.defines;
-public import battery.configuration;
 
 
 class Base
@@ -47,6 +46,18 @@ class Exe : Base
 	srcVolt: string[];
 }
 
+class Command
+{
+	/// Textual name.
+	name: string;
+	/// Name and path.
+	cmd: string;
+	/// Extra args to give when invoking.
+	args: string[];
+	/// Name to print.
+	print: string;
+}
+
 abstract class Driver
 {
 public:
@@ -72,6 +83,9 @@ public:
 
 	/// Get a tool that has been added.
 	abstract fn getTool(name: string) Command;
+
+	/// Set a tool that has been found.
+	abstract fn setTool(name: string, c: Command);
 
 	/// Add a tool, will reset the tool if already given.
 	abstract fn addToolCmd(name: string, cmd: string);
