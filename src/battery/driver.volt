@@ -16,6 +16,7 @@ import battery.configuration;
 import battery.interfaces;
 import battery.util.file : getLinesFromFile;
 import battery.policy.host;
+import battery.policy.programs;
 import battery.frontend.cmd;
 import battery.frontend.dir;
 import battery.backend.build;
@@ -33,6 +34,7 @@ protected:
 	mExe: Exe[];
 	mLib: Lib[];
 	mPwd: string;
+	mCommands: Command[string];
 
 
 public:
@@ -68,10 +70,12 @@ public:
 
 		verifyConfig();
 
-		ret := getArgs(mLib, mExe);
-
 		ofs := new OutputFileStream(BatteryConfigFile);
-		foreach (r; ret) {
+		foreach (r; getArgs(mCommands.values)) {
+			ofs.write(r);
+			ofs.put('\n');
+		}
+		foreach (r; getArgs(mLib, mExe)) {
 			ofs.write(r);
 			ofs.put('\n');
 		}
@@ -224,6 +228,44 @@ Normal usecase when standing in a project directory.
 		}
 
 		return path;
+	}
+
+	override fn getTool(name: string) Command
+	{
+		c := name in mCommands;
+		if (c is null) {
+			return null;
+		}
+		return *c;
+	}
+
+	override fn addToolCmd(name: string, cmd: string)
+	{
+		c := new Command();
+		c.name = name;
+		c.cmd = cmd;
+
+		switch (name) {
+		case "clang": c.print = ClangPrint; break;
+		case "link": c.print = LinkPrint; break;
+		case "cl": c.print = CLPrint; break;
+		case "volta": c.print = VoltaPrint; break;
+		case "rdmd": c.print = RdmdPrint; break;
+		case "nasm": c.print = NasmPrint; break;
+		default:
+			abort("unknown tool '%s' (%s)", name, cmd);
+		}
+
+		mCommands[name] = c;
+	}
+
+	override fn addToolArg(name: string, arg: string)
+	{
+		c := name in mCommands;
+		if (c is null) {
+			abort("tool not defined '%s'", name);
+		}
+		c.args ~= arg;
 	}
 
 	override fn add(lib: Lib)

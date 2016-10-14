@@ -47,9 +47,15 @@ public:
 		ArgCC,
 		ArgLink,
 		ArgLinker,
+
+		ToolCmd,
+		ToolArg,
 	}
 
+	/// Always set, often the original param.
 	flag: string;
+
+	/// Extra option to the flag.
 	extra: string;
 
 	condArch: int;

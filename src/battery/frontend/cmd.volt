@@ -15,6 +15,25 @@ import battery.policy.arg;
 import battery.frontend.dir;
 
 
+
+fn getArgs(cmds: Command[]) string[]
+{
+	ret : string[];
+
+	foreach (cmd; cmds) {
+		name := cmd.name;
+		cmdFlag := "--cmd-" ~ name;
+		argFlag := "--arg-" ~ name;
+
+		ret ~= ["#", "# tool: " ~ name, cmdFlag, cmd.cmd];
+		foreach (arg; cmd.args) {
+			ret ~= [argFlag, arg];
+		}
+	}
+
+	return ret;
+}
+
 /**
  * Turn Libs and Exes into command line arguments.
  */
@@ -33,11 +52,11 @@ fn getArgs(libs: Lib[], exes: Exe[]) string[]
 	return ret;
 }
 
-fn getArgsBase(b: Base, start: string) string[]
+fn getArgsBase(b: Base, tag: string) string[]
 {
 	ret := ["#",
-		new string("# ", b.name),
-		start,
+		new string("# ", tag, ": ", b.name),
+		new string("--", tag),
 		b.name
 	];
 
@@ -86,12 +105,12 @@ fn getArgsBase(b: Base, start: string) string[]
 
 fn getArgsLib(l: Lib) string[]
 {
-	return getArgsBase(l, "--lib");
+	return getArgsBase(l, "lib");
 }
 
 fn getArgsExe(e: Exe) string[]
 {
-	ret := getArgsBase(e, "--exe");
+	ret := getArgsBase(e, "exe");
 
 	if (e.isDebug) {
 		ret ~= "-debug";
@@ -139,7 +158,7 @@ public:
 		filterArgs(ref mArgs, mDrv.arch, mDrv.platform);
 
 		for (; mPos < mArgs.length; mPos++) {
-			parseDefault(mArgs[mPos]);
+			parseDefault();
 		}
 	}
 
@@ -155,38 +174,45 @@ public:
 
 
 protected:
-	fn parseDefault(arg: Arg)
+	fn parseDefault()
 	{
-		if (mPos >= mArgs.length) {
-			return;
-		}
-
-		switch (arg.kind) with (Arg.Kind) {
-		case Exe:
-			mPos++;
-			exe := new Exe();
-			exe.name = arg.extra;
-			process(exe);
-			mDrv.add(exe);
-			return;
-		case Lib:
-			mPos++;
-			lib := new Lib();
-			lib.name = arg.extra;
-			process(lib);
-			mDrv.add(lib);
-			return;
-		case Directory:
-			mPos++;
-			base := scanDir(mDrv, arg.extra);
-			process(base);
-			if (auto lib = cast(Lib)base) {
-				mDrv.add(lib);
-			} else if (auto exe = cast(Exe)base) {
+		for (; mPos < mArgs.length; mPos++) {
+			arg := mArgs[mPos];
+			switch (arg.kind) with (Arg.Kind) {
+			case Exe:
+				mPos++;
+				exe := new Exe();
+				exe.name = arg.extra;
+				process(exe);
 				mDrv.add(exe);
+				return;
+			case Lib:
+				mPos++;
+				lib := new Lib();
+				lib.name = arg.extra;
+				process(lib);
+				mDrv.add(lib);
+				return;
+			case Directory:
+				mPos++;
+				base := scanDir(mDrv, arg.extra);
+				process(base);
+				if (auto lib = cast(Lib)base) {
+					mDrv.add(lib);
+				} else if (auto exe = cast(Exe)base) {
+					mDrv.add(exe);
+				}
+				return;
+			case ToolCmd:
+				assert(arg.flag.length > 6);
+				mDrv.addToolCmd(arg.flag[6 .. $], arg.extra);
+				break;
+			case ToolArg:
+				assert(arg.flag.length > 6);
+				mDrv.addToolArg(arg.flag[6 .. $], arg.extra);
+				break;
+			default: mDrv.abort("unknown argument '%s'", arg.flag);
 			}
-			return;
-		default: mDrv.abort("unknown argument '%s'", arg.flag);
 		}
 	}
 
@@ -223,7 +249,7 @@ protected:
 			case FileAsm: lib.srcAsm ~= arg.extra; break;
 			case Command: handleCommand(arg.extra); break;
 			default:
-				return parseDefault(arg);
+				return parseDefault();
 			}
 		}
 	}
@@ -254,7 +280,7 @@ protected:
 			case ArgLinker: exe.xlinker ~= arg.extra; break;
 			case Command: handleCommand(arg.extra); break;
 			default:
-				return parseDefault(arg);
+				return parseDefault();
 			}
 		}
 	}
@@ -380,6 +406,18 @@ struct ToArgs
 			    	mArgs.popFront();
 				mArgs.insertFront(tmp[0 .. 2], tmp[2 .. $]);
 				tmp = mArgs.front();
+			}
+
+			// Deal with --cmd-volta and --arg-volta.
+			if (tmp.length > 6 &&
+			    startsWith(tmp, "--cmd-", "--arg-")) {
+				isCmd := tmp[0 .. 6] == "--cmd-";
+				if (isCmd) {
+					argNextPath(Arg.Kind.ToolCmd, "expected command");
+				} else {
+					argNext(Arg.Kind.ToolArg, "expected argument");
+				}
+				continue;
 			}
 
 			switch (tmp) with (Arg.Kind) {

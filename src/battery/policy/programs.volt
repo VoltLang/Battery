@@ -16,6 +16,7 @@ enum RdmdCommand = "rdmd";
 enum LinkCommand = "link.exe";
 enum CLCommand = "cl.exe";
 
+enum VoltaPrint = "  VOLTA    ";
 enum ClangPrint = "  CLANG    ";
 enum NasmPrint =  "  NASM     ";
 enum RdmdPrint =  "  RDMD     ";

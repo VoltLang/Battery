@@ -7,6 +7,7 @@ module battery.interfaces;
 
 static import watt.text.sink;
 public import battery.defines;
+public import battery.configuration;
 
 
 class Base
@@ -68,6 +69,15 @@ public:
 
 	/// Add a library
 	abstract fn add(lib: Lib);
+
+	/// Get a tool that has been added.
+	abstract fn getTool(name: string) Command;
+
+	/// Add a tool, will reset the tool if already given.
+	abstract fn addToolCmd(name: string, cmd: string);
+
+	/// Add a argument for tool.
+	abstract fn addToolArg(name: string, arg: string);
 
 	/**
 	 * Prints a action string.
