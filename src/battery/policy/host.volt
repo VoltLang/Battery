@@ -57,9 +57,10 @@ fn getHostConfig(drv: Driver) Configuration
 	c.env = env;
 	c.arch = HostArch;
 	c.platform = HostPlatform;
-	drv.setupHostRdmd(c);
+
 	drv.setupHostLinkerAndCC(c);
 	drv.setupHostNasm(c);
+	drv.setupHostRdmd(c);
 
 	return c;
 }
@@ -81,6 +82,7 @@ fn setupHostLinkerAndCC(drv: Driver, host: Configuration)
 	// Try clang first.
 	clang := getClang(drv, host);
 	if (clang !is null) {
+		drv.addClangArgs(host, clang);
 		host.ccCmd = clang;
 		host.ccKind = CCKind.Clang;
 		host.linkerCmd = clang;
@@ -92,12 +94,28 @@ fn setupHostLinkerAndCC(drv: Driver, host: Configuration)
 	drv.abort("Can not find clang.");
 }
 
+fn setupMSVC(drv: Driver, host: Configuration)
+{
+	cl := drv.getCL(host);
+	link := drv.getLink(host);
+
+	host.ccCmd = cl;
+	host.ccKind = CCKind.CL;
+
+	host.linkerCmd = link;
+	host.linkerKind = LinkerKind.Link;
+}
+
 fn setupHostNasm(drv: Driver, host: Configuration)
 {
-	host.nasmCmd = getNasm(drv, host);
+	c := drv.getNasm(host);
+	drv.addNasmArgs(host, c);
+	host.nasmCmd = c;
 }
 
 fn setupHostRdmd(drv: Driver, host: Configuration)
 {
-	host.rdmdCmd = getRdmd(drv, host);
+	c := getRdmd(drv, host);
+	drv.addRdmdArgs(host, c);
+	host.rdmdCmd = c;
 }

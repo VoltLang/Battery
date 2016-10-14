@@ -32,20 +32,16 @@ enum CLPrint   =  "  CL       ";
 
 fn getClang(drv: Driver, config: Configuration) Command
 {
-	cmd := searchPath(ClangCommand, config.env);
-	if (cmd is null) {
-		return null;
-	}
+	return drv.makeCommand(ClangCommand, ClangPrint, config.env);
+}
 
-	c := new Command();
-	c.cmd = cmd;
-	c.args = ["-target", config.getconfigString()];
-	c.print = ClangPrint;
-	return c;
+fn addClangArgs(drv: Driver, config: Configuration, c: Command)
+{
+	c.args ~= ["-target", config.getLLVMTargetString()];
 }
 
 /// configs used with LLVM tools, Clang and Volta.
-fn getconfigString(config: Configuration) string
+fn getLLVMTargetString(config: Configuration) string
 {
 	final switch (config.platform) with (Platform) {
 	case MSVC:
@@ -80,16 +76,12 @@ fn getconfigString(config: Configuration) string
 
 fn getNasm(drv: Driver, config: Configuration) Command
 {
-	cmd := searchPath(NasmCommand, config.env);
-	if (cmd is null) {
-		return null;
-	}
+	return drv.makeCommand(NasmCommand, NasmPrint, config.env);
+}
 
-	c := new Command();
-	c.cmd = cmd;
-	c.args = ["-f", config.getNasmFormatString()];
-	c.print = NasmPrint;
-	return c;
+fn addNasmArgs(drv: Driver, config: Configuration, c: Command)
+{
+	c.args ~= ["-f", config.getNasmFormatString()];
 }
 
 /// Returns the format to be outputed for this configuration.
@@ -126,15 +118,14 @@ fn getNasmFormatString(config: Configuration) string
  *
  */
 
-fn setupMSVC(drv: Driver, config: Configuration)
+fn getCL(drv: Driver, config: Configuration) Command
 {
-	config.ccKind = CCKind.CL;
-	config.ccCmd = makeCommand(CLCommand, config.env);
-	config.ccCmd.print = CLPrint;
+	return drv.makeCommand(CLCommand, CLPrint, config.env);
+}
 
-	config.linkerKind = LinkerKind.Link;
-	config.linkerCmd = makeCommand(LinkCommand, config.env);
-	config.linkerCmd.print = LinkPrint;
+fn getLink(drv: Driver, config: Configuration) Command
+{
+	return drv.makeCommand(LinkCommand, LinkPrint, config.env);
 }
 
 
@@ -146,21 +137,15 @@ fn setupMSVC(drv: Driver, config: Configuration)
 
 fn getRdmd(drv: Driver, config: Configuration) Command
 {
-	cmd := searchPath(RdmdCommand, config.env);
-	if (cmd is null) {
-		return null;
-	}
+	return drv.makeCommand(RdmdCommand, RdmdPrint, config.env);
+}
 
-	c := new Command();
-	c.cmd = cmd;
-	c.print = RdmdPrint;
-
+fn addRdmdArgs(drv: Driver, config: Configuration, c: Command)
+{
 	final switch (config.arch) with (Arch) {
 	case X86: c.args ~= "-m32"; break;
 	case X86_64: c.args ~= "-m64"; break;
 	}
-
-	return c;
 }
 
 
@@ -172,7 +157,8 @@ fn getRdmd(drv: Driver, config: Configuration) Command
 
 private:
 /// Search the command path and make a Command instance.
-fn makeCommand(name: string, env: Environment) Command
+fn makeCommand(drv: Driver, name: string,
+               print: string, env: Environment) Command
 {
 	cmd := searchPath(name, env);
 	if (cmd is null) {
@@ -182,6 +168,7 @@ fn makeCommand(name: string, env: Environment) Command
 	c := new Command();
 	c.cmd = cmd;
 	c.name = name;
+	c.print = print;
 	return c;
 }
 
