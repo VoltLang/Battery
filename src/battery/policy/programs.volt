@@ -2,8 +2,8 @@
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 module battery.policy.programs;
 
-import watt.text.format : format, endsWith;
-import watt.text.string : split;
+import watt.text.format : format;
+import watt.text.string : split, endsWith;
 import watt.path : pathSeparator, dirSeparator, exists;
 import watt.process : retriveEnvironment, Environment;
 import battery.interfaces;
