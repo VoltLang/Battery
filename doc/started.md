@@ -54,4 +54,4 @@ What's Really Going On?
 
 Battery will read the `battery.txt` file for any information it needs to successfully build the project, but if you lay your source out in the standard way (`src` directory), it will find everything that it can build and build it. In fact, it will first build a Volta executable for that project.
 
-For more in-depth information, please refer to the rest of the Battery documentation.
+For more in-depth information, please refer to [the rest of the Battery documentation](index.html).
