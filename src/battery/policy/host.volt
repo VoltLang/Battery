@@ -2,7 +2,7 @@
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 module battery.policy.host;
 
-import watt.process : retriveEnvironment, Environment, searchPath;
+import watt.process : retrieveEnvironment, Environment, searchPath;
 import battery.interfaces;
 import battery.configuration;
 import battery.policy.programs;
@@ -27,7 +27,7 @@ version (X86_64) {
 
 fn getBaseHostConfig(drv: Driver) Configuration
 {
-	outside := retriveEnvironment();
+	outside := retrieveEnvironment();
 	path := outside.getOrNull("PATH");
 
 	env := new Environment();
