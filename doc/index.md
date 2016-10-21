@@ -7,6 +7,7 @@ permalink: /doc/battery
 Battery
 ---
 
-The batteries included build system. Start of on the
-[gettings started guide](started.html). Other links
-about more deep system here.
+The 'batteries included' build system. 
+
+There's a [getting started guide](started.html).
+[And here's the command documentation.](commands.html)
