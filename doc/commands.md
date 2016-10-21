@@ -64,7 +64,7 @@ You can conditionally add arguments for given arguments and linkers using the sp
     --if-linux
     --dep dl # Linux specific dependency.
 
-The if args are cumulative so that multiple arch and platforms bundle together. Like this:
+The if args are cumulative so that multiple arch and platforms OR together. Like this:
 
     ('arch' || 'arch') && 'platform'
 
