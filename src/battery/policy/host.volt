@@ -46,11 +46,11 @@ fn getBaseHostConfig(drv: Driver) Configuration
 		env.set("INCLUDE", outside.getOrNull("INCLUDE"));
 		env.set("SYSTEMROOT", outside.getOrNull("SYSTEMROOT"));
 
-		// Only needed for RDMD if it isn't installed properly.
-		//env.set("VCINSTALLDIR", outside.getOrNull("VCINSTALLDIR"));
-		//env.set("WindowsSdkDir", outside.getOrNull("WindowsSdkDir"));
-		//env.set("UniversalCRTSdkDir", outside.getOrNull("UniversalCRTSdkDir"));
-		//env.set("UCRTVersion", outside.getOrNull("UCRTVersion"));
+		// Only needed for RDMD if the installer wasn't used.
+		env.set("VCINSTALLDIR", outside.getOrNull("VCINSTALLDIR"));
+		env.set("WindowsSdkDir", outside.getOrNull("WindowsSdkDir"));
+		env.set("UniversalCRTSdkDir", outside.getOrNull("UniversalCRTSdkDir"));
+		env.set("UCRTVersion", outside.getOrNull("UCRTVersion"));
 	}
 
 	c := new Configuration();
