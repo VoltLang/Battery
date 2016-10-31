@@ -141,8 +141,11 @@ public:
 	/**
 	 * Called by the solver when the target has been built.
 	 */
-	fn built(int)
+	fn built(retval: i32)
 	{
+		if (retval != 0) {
+			throw new Exception(format("command '%s' aborted with non-zero retval %s", cmd, retval));
+		}
 		foreach (o; outputs) {
 			o.built();
 		}

@@ -2,6 +2,7 @@
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 module battery.backend.build;
 
+import core.exception;
 import watt.text.string : endsWith;
 import watt.process;
 import watt.path : dirSeparator;
@@ -94,7 +95,11 @@ public:
 		}
 
 		// Do the build.
-		uni.build(mega, 8, config.env);
+		try {
+			uni.build(mega, 8, config.env);
+		} catch (Exception e) {
+			mDrv.abort(e.msg);
+		}
 	}
 
 	fn makeTargetExeBc(exe: Exe) uni.Target
