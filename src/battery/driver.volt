@@ -191,11 +191,11 @@ Normal usecase when standing in a project directory.
 	{
 		rt := mStore.get("rt", null);
 		volta := mStore.get("volta", null);
-		if (volta is null) {
+		if (volta is null && getTool("volta") is null) {
 			abort("Must specify a Volta directory (for now).");
 		}
 		if (rt is null) {
-			abort("Must specify a Volta directory (for now).");
+			abort("Must specify a Volta rt directory (for now).");
 		}
 
 		if (mHostConfig.linkerCmd is null) {

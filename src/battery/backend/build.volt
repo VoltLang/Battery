@@ -40,6 +40,7 @@ public:
 	voltaBin: uni.Target;
 	voltedBin: uni.Target;
 	teslaBin: uni.Target;
+	voltaTool: Command;
 
 	gen: ArgsGenerator;
 
@@ -60,6 +61,7 @@ public:
 		this.config = config;
 		this.ins = new uni.Instance();
 		this.mega = ins.fileNoRule("__all");
+		this.voltaTool = mDrv.getTool("volta");
 
 		gen.setup(config, libs, exes);
 
@@ -68,9 +70,11 @@ public:
 
 		filterExes(ref exes);
 
-		// Setup volta and rtLib.
-		voltaBin = voltedBin = makeTargetVolted();
-		mega.deps = [voltaBin];
+		// Setup volta and rtLib
+		if (voltaTool is null) {
+			voltaBin = voltedBin = makeTargetVolted();
+			mega.deps = [voltaBin];
+		}
 		rtLib = cast(Lib)gen.store["rt"];
 
 		// Make sure each library is built.
@@ -117,7 +121,9 @@ public:
 		}
 
 		// Depend on the compiler.
-		bc.deps ~= [voltaBin];
+		if (voltaTool is null) {
+			bc.deps ~= [voltaBin];
+		}
 
 		// Get all of the arguments.
 		args := gen.genVoltaArgs(exe) ~
@@ -135,7 +141,7 @@ public:
 
 		// Make the rule.
 		bc.rule = new uni.Rule();
-		bc.rule.cmd = voltaBin.name;
+		bc.rule.cmd = voltaTool is null ? voltaBin.name : voltaTool.cmd;
 		bc.rule.print = voltaPrint ~ bc.name;
 		bc.rule.args = args;
 		bc.rule.outputs = [bc, d];
@@ -172,7 +178,6 @@ public:
 		// Put the extra sources here.
 		mObjs[exe.name] = aux;
 
-
 		//
 		// Make the binary build rule.
 		//
@@ -194,7 +199,7 @@ public:
 
 		// Make the rule.
 		t.rule = new uni.Rule();
-		t.rule.cmd = voltaBin.name;
+		t.rule.cmd = voltaTool is null ? voltaBin.name : voltaTool.cmd;
 		t.rule.print = voltaPrint ~ t.name;
 		t.rule.args = args;
 		t.rule.outputs = [t];
@@ -312,11 +317,13 @@ public:
 		}
 
 		// And depend on the compiler.
-		bc.deps ~= voltaBin;
+		if (voltaTool is null) {
+			bc.deps ~= voltaBin;
+		}
 
 		// Make the rule.
 		bc.rule = new uni.Rule();
-		bc.rule.cmd = voltaBin.name;
+		bc.rule.cmd = voltaTool is null ? voltaBin.name : voltaTool.cmd;
 		bc.rule.print = voltaPrint ~ bcName;
 		bc.rule.outputs = [bc];
 		bc.rule.args = gen.genVoltaArgs(lib) ~
@@ -342,11 +349,15 @@ public:
 		o := ins.fileNoRule(oName);
 
 		// Depend on the compiler and bitcode file.
-		o.deps = [voltaBin, bc];
+		if (voltaTool is null) {
+			o.deps = [voltaBin, bc];
+		} else {
+			o.deps = [bc];
+		}
 
 		// Make the rule.
 		o.rule = new uni.Rule();
-		o.rule.cmd = voltaBin.name;
+		o.rule.cmd = voltaTool is null ? voltaBin.name : voltaTool.cmd;
 		o.rule.print = voltaPrint ~ oName;
 		o.rule.outputs = [o];
 		o.rule.args = gen.voltaArgs ~
@@ -399,7 +410,7 @@ private:
 	{
 		// Always copy, so we don't modify the origanal storage.
 		exes = new exes[..];
-		
+
 		pos : size_t;
 		foreach (i, exe; exes) {
 			switch (exe.name) {
