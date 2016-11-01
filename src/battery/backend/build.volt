@@ -317,9 +317,7 @@ public:
 		}
 
 		// And depend on the compiler.
-		if (voltaTool is null) {
-			bc.deps ~= voltaBin;
-		}
+		bc.deps ~= voltaBin;
 
 		// Make the rule.
 		bc.rule = new uni.Rule();
