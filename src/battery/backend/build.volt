@@ -71,10 +71,8 @@ public:
 		filterExes(ref exes);
 
 		// Setup volta and rtLib
-		if (voltaTool is null) {
-			voltaBin = voltedBin = makeTargetVolted();
-			mega.deps = [voltaBin];
-		}
+		voltaBin = voltedBin = makeTargetVolted();
+		mega.deps = [voltaBin];
 		rtLib = cast(Lib)gen.store["rt"];
 
 		// Make sure each library is built.
@@ -121,9 +119,7 @@ public:
 		}
 
 		// Depend on the compiler.
-		if (voltaTool is null) {
-			bc.deps ~= [voltaBin];
-		}
+		bc.deps ~= [voltaBin];
 
 		// Get all of the arguments.
 		args := gen.genVoltaArgs(exe) ~
@@ -141,7 +137,7 @@ public:
 
 		// Make the rule.
 		bc.rule = new uni.Rule();
-		bc.rule.cmd = voltaTool is null ? voltaBin.name : voltaTool.cmd;
+		bc.rule.cmd = voltaBin.name;
 		bc.rule.print = voltaPrint ~ bc.name;
 		bc.rule.args = args;
 		bc.rule.outputs = [bc, d];
@@ -199,7 +195,7 @@ public:
 
 		// Make the rule.
 		t.rule = new uni.Rule();
-		t.rule.cmd = voltaTool is null ? voltaBin.name : voltaTool.cmd;
+		t.rule.cmd = voltaBin.name;
 		t.rule.print = voltaPrint ~ t.name;
 		t.rule.args = args;
 		t.rule.outputs = [t];
@@ -254,6 +250,10 @@ public:
 
 	fn makeTargetVolted() uni.Target
 	{
+		if (voltaTool !is null) {
+			// --cmd-volta on command line, use supplied Volta.
+			return ins.fileNoRule(voltaTool.cmd);
+		}
 		srcDir := voltaExe.srcDir;
 		mainFile := srcDir ~ dirSeparator ~ "main.d";
 		files := deepScan(mDrv, srcDir, ".d");
@@ -323,7 +323,7 @@ public:
 
 		// Make the rule.
 		bc.rule = new uni.Rule();
-		bc.rule.cmd = voltaTool is null ? voltaBin.name : voltaTool.cmd;
+		bc.rule.cmd = voltaBin.name;
 		bc.rule.print = voltaPrint ~ bcName;
 		bc.rule.outputs = [bc];
 		bc.rule.args = gen.genVoltaArgs(lib) ~
@@ -349,15 +349,11 @@ public:
 		o := ins.fileNoRule(oName);
 
 		// Depend on the compiler and bitcode file.
-		if (voltaTool is null) {
-			o.deps = [voltaBin, bc];
-		} else {
-			o.deps = [bc];
-		}
+		o.deps = [voltaBin, bc];
 
 		// Make the rule.
 		o.rule = new uni.Rule();
-		o.rule.cmd = voltaTool is null ? voltaBin.name : voltaTool.cmd;
+		o.rule.cmd = voltaBin.name;
 		o.rule.print = voltaPrint ~ oName;
 		o.rule.outputs = [o];
 		o.rule.args = gen.voltaArgs ~
