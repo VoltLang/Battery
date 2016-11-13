@@ -81,7 +81,7 @@ public:
 		}
 
 		// If Volta was given, add it as well.
-		if (false && voltaExe !is null) {
+		if (voltaExe !is null) {
 			mega.deps ~= makeTargetExe(voltaExe);
 		}
 
