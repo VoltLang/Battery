@@ -34,8 +34,6 @@ public:
 
 	voltaExe: Exe;
 	teslaExe: Exe;
-	/// TODO remove once Volta can build bitcode without rt.
-	rtLib: Lib;
 
 	voltaBin: uni.Target;
 	voltedBin: uni.Target;
@@ -73,7 +71,6 @@ public:
 		// Setup volta and rtLib
 		voltaBin = voltedBin = makeTargetVolted();
 		mega.deps = [voltaBin];
-		rtLib = cast(Lib)gen.store["rt"];
 
 		// Make sure each library is built.
 		foreach (lib; libs) {
@@ -355,7 +352,6 @@ public:
 		o.rule.print = voltaPrint ~ oName;
 		o.rule.outputs = [o];
 		o.rule.args = gen.voltaArgs ~
-			["--lib-I", rtLib.srcDir] ~
 			["-o", oName, "-c", bc.name];
 
 		return o;
