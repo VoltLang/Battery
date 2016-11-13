@@ -6,6 +6,7 @@
 module battery.frontend.cmd;
 
 import watt.process;
+import watt.conv : toLower;
 import watt.text.path : normalizePath;
 import watt.text.string : startsWith, endsWith;
 
@@ -15,10 +16,17 @@ import battery.policy.arg;
 import battery.frontend.dir;
 
 
+fn getArgs(arch: Arch, platform: Platform) string[]
+{
+	return [
+		"--arch", toString(arch),
+		"--platform", toString(platform)
+		];
+}
 
 fn getArgs(cmds: Command[]) string[]
 {
-	ret : string[];
+	ret: string[];
 
 	foreach (cmd; cmds) {
 		name := cmd.name;
@@ -131,7 +139,6 @@ fn getArgsExe(e: Exe) string[]
 
 	return ret;
 }
-
 
 /**
  * Parser args and turns them into Libs and Exes.
@@ -333,6 +340,76 @@ protected:
 	}
 }
 
+fn parseArch(driver: Driver, a: string) Arch
+{
+	switch (toLower(a)) {
+	case "x86":
+		return Arch.X86;
+	case "x86_64":
+		return Arch.X86_64;
+	default:
+		driver.abort("unknown arch '%s'", a);
+		assert(false);
+	}
+}
+
+fn parsePlatform(driver: Driver, p: string) Platform
+{
+	switch (toLower(p)) {
+	case "msvc":
+		return Platform.MSVC;
+	case "linux":
+		return Platform.Linux;
+	case "osx":
+		return Platform.OSX;
+	default:
+		driver.abort("unknown platform '%s'", p);
+		assert(false);
+	}
+}
+
+fn findArchAndPlatform(driver: Driver, ref args: string[],
+                       out arch: Arch, out platform: Platform)
+{
+	isArch, isPlatform: bool;
+	pos: size_t;
+
+	foreach (arg; args) {
+		if (isArch) {
+			pos++;
+			arch = parseArch(driver, arg);
+			isArch = false;
+			continue;
+		}
+		if (isPlatform) {
+			pos++;
+			platform = parsePlatform(driver, arg);
+			isPlatform = false;
+			continue;
+		}
+		switch (arg) {
+		case "--arch":
+			pos++;
+			isArch = true;
+			continue;
+		case "--platform":
+			pos++;
+			isPlatform = true;
+			continue;
+		default:
+		}
+		break;
+	}
+	if (isArch) {
+		driver.abort("expected arch");
+	}
+	if (isPlatform) {
+		driver.abort("expected platform");
+	}
+
+	// Update length
+	args = args[pos .. $];
+}
 
 struct ToArgs
 {
@@ -421,6 +498,8 @@ struct ToArgs
 			}
 
 			switch (tmp) with (Arg.Kind) {
+			case "--arch": mDrv.abort("--arch argument must be first argument after config"); continue;
+			case "--platform": mDrv.abort("--platform argument must be first argument after config"); continue;
 			case "--exe": argNext(Exe, "expected name"); continue;
 			case "--lib": argNext(Lib, "expected name"); continue;
 			case "--name": argNext(Name, "expected name"); continue;

@@ -65,6 +65,9 @@ public:
 		// Get host config
 		mHostConfig = getBaseHostConfig(this);
 
+		// Filter out --arch and --platform arguments.
+		findArchAndPlatform(this, ref args, out arch, out platform);
+
 		arg := new ArgParser(this);
 		arg.parse(args);
 
@@ -75,6 +78,10 @@ public:
 		verifyConfig();
 
 		ofs := new OutputFileStream(BatteryConfigFile);
+		foreach (r; getArgs(arch, platform)) {
+			ofs.write(r);
+			ofs.put('\n');
+		}
 		foreach (r; getArgs(mCommands.values)) {
 			ofs.write(r);
 			ofs.put('\n');
@@ -93,6 +100,9 @@ public:
 		if (!getLinesFromFile(BatteryConfigFile, ref args)) {
 			return abort("must first run the 'config' command");
 		}
+
+		// Filter out --arch and --platform arguments.
+		findArchAndPlatform(this, ref args, out arch, out platform);
 
 		arg := new ArgParser(this);
 		arg.parse(args);
@@ -145,6 +155,11 @@ Normal usecase when standing in a project directory.
 
 	fn printConfigUsage()
 	{
+		info("");
+		info("The following two arguments controlls which target battery compiles against.");
+		info("Not all combinations are supported.");
+		info("\t--arch arch      Selects arch (x86, x86_64).");
+		info("\t--platform plat  Selects platform (osx, msvc, linux).");
 		info("");
 		info("The three following arguments create a new target.");
 		info("");
