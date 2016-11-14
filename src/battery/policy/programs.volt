@@ -3,7 +3,7 @@
 module battery.policy.programs;
 
 import watt.text.format : format;
-import watt.text.string : split, endsWith;
+import watt.text.string : split, startsWith, endsWith;
 import watt.path : pathSeparator, dirSeparator, exists;
 import watt.process : retriveEnvironment, Environment;
 import battery.interfaces;
@@ -16,12 +16,14 @@ enum RdmdCommand = "rdmd";
 enum LinkCommand = "link.exe";
 enum CLCommand = "cl.exe";
 
-enum VoltaPrint = "  VOLTA    ";
-enum ClangPrint = "  CLANG    ";
-enum NasmPrint =  "  NASM     ";
-enum RdmdPrint =  "  RDMD     ";
-enum LinkPrint =  "  LINK     ";
-enum CLPrint   =  "  CL       ";
+enum VoltaPrint =      "  VOLTA    ";
+enum ClangPrint =      "  CLANG    ";
+enum NasmPrint =       "  NASM     ";
+enum RdmdPrint =       "  RDMD     ";
+enum LinkPrint =       "  LINK     ";
+enum CLPrint   =       "  CL       ";
+
+enum HostRdmdPrint =   "  HOSTRDMD ";
 
 
 /**
@@ -30,14 +32,16 @@ enum CLPrint   =  "  CL       ";
  */
 fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
 {
+	shortName := getShortName(name);
+
 	cmd := drv.getTool(name);
 	if (cmd is null) {
-		switch (name) {
-		case "nasm": cmd = getNasm(drv, c); break;
-		case "clang": cmd = getClang(drv, c); break;
-		case "cl": cmd = getCL(drv, c); break;
-		case "link": cmd = getLink(drv, c); break;
-		case "rdmd": cmd = getRdmd(drv, c); break;
+		switch (shortName) {
+		case "nasm": cmd = getNasm(drv, c, name); break;
+		case "clang": cmd = getClang(drv, c, name); break;
+		case "cl": cmd = getCL(drv, c, name); break;
+		case "link": cmd = getLink(drv, c, name); break;
+		case "rdmd": cmd = getRdmd(drv, c, name); break;
 		default: assert(false);
 		}
 	} else {
@@ -45,10 +49,14 @@ fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
 	}
 
 	if (cmd is null) {
-		drv.abort("could not find '%s' command", name);
+		if (name == shortName) {
+			drv.abort("could not find the command '%s'", name);
+		} else {
+			drv.abort("could not find the command '%s' '%s'", name, shortName);
+		}
 	}
 
-	switch (name) {
+	switch (shortName) {
 	case "nasm": addNasmArgs(drv, c, cmd); break;
 	case "clang": addClangArgs(drv, c, cmd); break;
 	case "rdmd": addRdmdArgs(drv, c, cmd); break;
@@ -66,9 +74,9 @@ fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
  *
  */
 
-fn getClang(drv: Driver, config: Configuration) Command
+fn getClang(drv: Driver, config: Configuration, name: string) Command
 {
-	return drv.makeCommand("clang", ClangCommand, ClangPrint, config.env);
+	return drv.makeCommand(name, ClangCommand, ClangPrint, config.env);
 }
 
 fn addClangArgs(drv: Driver, config: Configuration, c: Command)
@@ -110,9 +118,9 @@ fn getLLVMTargetString(config: Configuration) string
  *
  */
 
-fn getNasm(drv: Driver, config: Configuration) Command
+fn getNasm(drv: Driver, config: Configuration, name: string) Command
 {
-	return drv.makeCommand("nasm", NasmCommand, NasmPrint, config.env);
+	return drv.makeCommand(name, NasmCommand, NasmPrint, config.env);
 }
 
 fn addNasmArgs(drv: Driver, config: Configuration, c: Command)
@@ -154,14 +162,14 @@ fn getNasmFormatString(config: Configuration) string
  *
  */
 
-fn getCL(drv: Driver, config: Configuration) Command
+fn getCL(drv: Driver, config: Configuration, name: string) Command
 {
-	return drv.makeCommand("cl", CLCommand, CLPrint, config.env);
+	return drv.makeCommand(name, CLCommand, CLPrint, config.env);
 }
 
-fn getLink(drv: Driver, config: Configuration) Command
+fn getLink(drv: Driver, config: Configuration, name: string) Command
 {
-	return drv.makeCommand("link", LinkCommand, LinkPrint, config.env);
+	return drv.makeCommand(name, LinkCommand, LinkPrint, config.env);
 }
 
 
@@ -171,9 +179,9 @@ fn getLink(drv: Driver, config: Configuration) Command
  *
  */
 
-fn getRdmd(drv: Driver, config: Configuration) Command
+fn getRdmd(drv: Driver, config: Configuration, name: string) Command
 {
-	return drv.makeCommand("rdmd", RdmdCommand, RdmdPrint, config.env);
+	return drv.makeCommand(name, RdmdCommand, RdmdPrint, config.env);
 }
 
 fn addRdmdArgs(drv: Driver, config: Configuration, c: Command)
@@ -190,6 +198,14 @@ fn addRdmdArgs(drv: Driver, config: Configuration, c: Command)
  * Generic helpers.
  *
  */
+
+fn getShortName(name: string) string
+{
+	if (startsWith(name, "host-")) {
+		return name[5 .. $];
+	}
+	return name;
+}
 
 private:
 /// Search the command path and make a Command instance.

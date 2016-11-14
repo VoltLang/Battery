@@ -16,6 +16,7 @@ import battery.configuration;
 import battery.interfaces;
 import battery.util.file : getLinesFromFile;
 import battery.policy.host;
+import battery.policy.config;
 import battery.policy.programs;
 import battery.frontend.cmd;
 import battery.frontend.dir;
@@ -29,6 +30,7 @@ public:
 
 
 protected:
+	mConfig: Configuration;
 	mHostConfig: Configuration;
 	mStore: Base[string];
 	mExe: Exe[];
@@ -66,14 +68,31 @@ public:
 		mHostConfig = getBaseHostConfig(this);
 
 		// Filter out --arch and --platform arguments.
-		findArchAndPlatform(this, ref args, out arch, out platform);
+		findArchAndPlatform(this, ref args, ref arch, ref platform);
 
+		// Parse arguments.
 		arg := new ArgParser(this);
 		arg.parse(args);
 
+		// Handle cross compiling.
+		if (arch != mHostConfig.arch ||
+		    platform != mHostConfig.platform) {
+			info("cross compiling to %s-%s",
+			     .toString(arch), .toString(platform));
+			// Need fill in host commands seperatly.
+			doConfig(this, mHostConfig, true);
+			fillInConfigCommands(this, mHostConfig, true);
+
+			// Get a new config for this target.
+			mConfig = getBaseConfig(this, arch, platform);
+		} else {
+			// Just reuse the host config.
+			mConfig = mHostConfig;
+		}
+
 		// Do this after the arguments has been parsed.
-		doHostConfig(this, mHostConfig);
-		fillInHostConfig(this, mHostConfig);
+		doConfig(this, mConfig, false);
+		fillInConfigCommands(this, mConfig, false);
 
 		verifyConfig();
 
@@ -96,22 +115,40 @@ public:
 
 	fn build(args: string [])
 	{
+		// Get host config.
+		mHostConfig = getBaseHostConfig(this);
+
 		args = null;
 		if (!getLinesFromFile(BatteryConfigFile, ref args)) {
 			return abort("must first run the 'config' command");
 		}
 
 		// Filter out --arch and --platform arguments.
-		findArchAndPlatform(this, ref args, out arch, out platform);
+		findArchAndPlatform(this, ref args, ref arch, ref platform);
 
+		// Parse arguments.
 		arg := new ArgParser(this);
 		arg.parse(args);
 
-		mHostConfig = getBaseHostConfig(this);
-		fillInHostConfig(this, mHostConfig);
+		// Handle cross compiling.
+		if (arch != mHostConfig.arch ||
+		    platform != mHostConfig.platform) {
+		    	// Need fill in host commands.
+			fillInConfigCommands(this, mHostConfig, true);
 
+			// Get a new config for this target.
+			mConfig = getBaseConfig(this, arch, platform);
+		} else {
+			// Just reuse the host config.
+			mConfig = mHostConfig;
+		}
+
+		// Do this after the arguments has been parsed.
+		fillInConfigCommands(this, mConfig, false);
+
+		// Do the actual build now.
 		builder := new Builder(this);
-		builder.build(mHostConfig, mLib, mExe);
+		builder.build(mConfig, mHostConfig, mLib, mExe);
 	}
 
 	fn help(args: string[])
@@ -204,26 +241,33 @@ Normal usecase when standing in a project directory.
 
 	fn verifyConfig()
 	{
-		rt := mStore.get("rt", null);
-		volta := mStore.get("volta", null);
-		if (volta is null && getTool("volta") is null) {
-			abort("Must specify a Volta directory (for now).");
+		isCross := mHostConfig !is mConfig;
+		hasRtDir := mStore.get("rt", null) !is null;
+		hasRdmdTool := getTool("rdmd") !is null;
+		hasVoltaDir := mStore.get("volta", null) !is null;
+		hasVoltaTool := getTool("volta") !is null;
+
+		if (isCross && !hasVoltaTool) {
+			abort("Must use --volta-cmd when cross compiling");
 		}
-		if (rt is null) {
+		if (!hasVoltaDir && !hasVoltaTool) {
+			abort("Must specify a Volta directory or --cmd-volta (for now).");
+		}
+		if (!hasRtDir) {
 			abort("Must specify a Volta rt directory (for now).");
 		}
 
-		if (mHostConfig.linkerCmd is null) {
+		if (mConfig.linkerCmd is null) {
 			abort("No system linker found.");
 		}
-		if (mHostConfig.ccCmd is null) {
+		if (mConfig.ccCmd is null) {
 			abort("No system c compiler found.");
 		}
-		if (mHostConfig.rdmdCmd is null) {
+		if (!hasRdmdTool && !hasVoltaTool) {
 			abort("No rdmd found (needed right now for Volta).");
 		}
 
-		if (mExe.length == 1) {
+		if (mExe.length == 0) {
 			info("warning: Didn't specify any executables, will not do anything.");
 		}
 	}
@@ -271,7 +315,7 @@ Normal usecase when standing in a project directory.
 		c.name = name;
 		c.cmd = cmd;
 
-		switch (name) {
+		switch (getShortName(name)) {
 		case "clang": c.print = ClangPrint; break;
 		case "link": c.print = LinkPrint; break;
 		case "cl": c.print = CLPrint; break;

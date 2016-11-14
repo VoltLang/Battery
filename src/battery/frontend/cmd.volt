@@ -369,7 +369,7 @@ fn parsePlatform(driver: Driver, p: string) Platform
 }
 
 fn findArchAndPlatform(driver: Driver, ref args: string[],
-                       out arch: Arch, out platform: Platform)
+                       ref arch: Arch, ref platform: Platform)
 {
 	isArch, isPlatform: bool;
 	pos: size_t;

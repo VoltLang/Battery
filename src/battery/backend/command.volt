@@ -2,6 +2,7 @@
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 module battery.backend.command;
 
+import watt.path : dirSeparator;
 import battery.interfaces;
 import battery.configuration;
 
@@ -16,6 +17,7 @@ public:
 	voltaArgs: string[];
 	archStr: string;
 	platformStr: string;
+	buildDir: string;
 
 
 public:
@@ -28,6 +30,9 @@ public:
 
 		this.archStr = .toString(config.arch);
 		this.platformStr = .toString(config.platform);
+
+		this.buildDir = ".bin" ~ dirSeparator ~
+			this.archStr ~ "-" ~ this.platformStr;
 
 		this.voltaArgs = [
 			"--no-stdlib",

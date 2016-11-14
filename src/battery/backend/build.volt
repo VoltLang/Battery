@@ -23,29 +23,22 @@ class Builder
 public:
 	mDrv: Driver;
 
-	config: Configuration;
-
-	buildDir: string;
-
 	mega: uni.Target;
 	ins: uni.Instance;
 
 	voltaPrint: string = "  VOLTA    ";
-
-	voltaExe: Exe;
-	teslaExe: Exe;
-
 	voltaBin: uni.Target;
-	voltedBin: uni.Target;
-	teslaBin: uni.Target;
-	voltaTool: Command;
-
-	gen: ArgsGenerator;
 
 
 protected:
 	/// Store of objects each Lib/Exe produces.
 	mObjs: uni.Target[][string];
+
+	mConfig: Configuration;
+	mHostConfig: Configuration;
+
+	mGen: ArgsGenerator;
+	mHostGen: ArgsGenerator;
 
 
 public:
@@ -54,43 +47,36 @@ public:
 		this.mDrv = drv;
 	}
 
-	fn build(config: Configuration, libs: Lib[], exes: Exe[])
+	fn build(config: Configuration, host: Configuration,
+	         libs: Lib[], exes: Exe[])
 	{
-		this.config = config;
+		this.mConfig = config;
+		this.mHostConfig = host;
 		this.ins = new uni.Instance();
 		this.mega = ins.fileNoRule("__all");
-		this.voltaTool = mDrv.getTool("volta");
 
-		gen.setup(config, libs, exes);
+		mGen.setup(config, libs, exes);
+		mHostGen.setup(host, libs, exes);
 
-		this.buildDir = ".bin" ~ dirSeparator ~
-			gen.archStr ~ "-" ~ gen.platformStr;
-
-		filterExes(ref exes);
-
-		// Setup volta and rtLib
-		voltaBin = voltedBin = makeTargetVolted();
-		mega.deps = [voltaBin];
+		// Setup volta
+		voltaTool := mDrv.getTool("volta");
+		if (voltaTool !is null) {
+			// --cmd-volta on command line, use supplied Volta.
+			voltaBin = ins.fileNoRule(voltaTool.cmd);
+		} else {
+			// Need to build volta ourself.
+			exe := findVolta(exes);
+			voltaBin = makeTargetVolted(ref mHostGen, exe);
+		}
 
 		// Make sure each library is built.
 		foreach (lib; libs) {
-			mega.deps ~= makeTargetVoltLibrary(lib);
-		}
-
-		// If Volta was given, add it as well.
-		if (voltaExe !is null) {
-			mega.deps ~= makeTargetExe(voltaExe);
-		}
-
-		// If Tesla was given, add it as well.
-		if (teslaExe !is null) {
-			teslaBin = makeTargetExe(teslaExe);
-			mega.deps ~= teslaBin;
+			makeTargetVoltLibrary(ref mGen, lib);
 		}
 
 		// Generate rules for all the executables.
 		foreach (exe; exes) {
-			mega.deps ~= makeTargetExe(exe);
+			mega.deps ~= makeTargetExe(ref mGen, exe);
 		}
 
 		// Do the build.
@@ -101,10 +87,10 @@ public:
 		}
 	}
 
-	fn makeTargetExeBc(exe: Exe) uni.Target
+	fn makeTargetExeBc(ref gen: ArgsGenerator, exe: Exe) uni.Target
 	{
-		bcName := buildDir ~ dirSeparator ~ exe.name ~ ".bc";
-		depName := buildDir ~ dirSeparator ~ exe.name ~ ".d";
+		bcName := gen.buildDir ~ dirSeparator ~ exe.name ~ ".bc";
+		depName := gen.buildDir ~ dirSeparator ~ exe.name ~ ".d";
 
 		d := ins.file(depName);
 		bc := ins.fileNoRule(bcName);
@@ -144,13 +130,13 @@ public:
 		return bc;
 	}
 
-	fn makeTargetExe(exe: Exe) uni.Target
+	fn makeTargetExe(ref gen: ArgsGenerator, exe: Exe) uni.Target
 	{
-		oName := buildDir ~ dirSeparator ~ exe.name ~ ".o";
+		oName := gen.buildDir ~ dirSeparator ~ exe.name ~ ".o";
 
 		// Build bitcode and object
-		bc := makeTargetExeBc(exe);
-		o := makeHelperBitcodeToObj(bc, oName);
+		bc := makeTargetExeBc(ref gen, exe);
+		o := makeHelperBitcodeToObj(ref gen, bc, oName);
 
 		// Flatten the dep graph.
 		mega.deps ~= bc;
@@ -160,7 +146,7 @@ public:
 
 		// Setup C targets.
 		foreach (src; exe.srcC) {
-			aux ~= makeTargetC(src);
+			aux ~= makeTargetC(ref gen, src);
 		}
 
 		// Add additional object and library files.
@@ -184,7 +170,7 @@ public:
 		args := gen.genVoltaArgs(exe) ~ ["-o", name];
 
 		// Add objects from libraries.
-		targetDeps := collectDeps(base:exe);
+		targetDeps := collectDeps(ref gen, exe);
 		t.deps ~= targetDeps;
 		foreach (tDep; targetDeps) {
 			args ~= tDep.name;
@@ -200,15 +186,15 @@ public:
 		return t;
 	}
 
-	fn makeTargetC(src: string) uni.Target
+	fn makeTargetC(ref gen: ArgsGenerator, src: string) uni.Target
 	{
-		obj := buildDir ~ dirSeparator ~ src ~ ".o";
+		obj := gen.buildDir ~ dirSeparator ~ src ~ ".o";
 
 		tc := ins.fileNoRule(obj);
 		tc.deps = [ins.file(src)];
 
-		c := config.ccCmd;
-		final switch (config.ccKind) with (CCKind) {
+		c := gen.config.ccCmd;
+		final switch (gen.config.ccKind) with (CCKind) {
 		case GCC, Clang:
 			tc.rule = new uni.Rule();
 			tc.rule.cmd = c.cmd;
@@ -229,32 +215,28 @@ public:
 		return tc;
 	}
 
-	fn makeTargetAsm(src: string) uni.Target
+	fn makeTargetAsm(ref gen: ArgsGenerator, src: string) uni.Target
 	{
-		obj := buildDir ~ dirSeparator ~ src ~ ".o";
+		obj := gen.buildDir ~ dirSeparator ~ src ~ ".o";
 
 		tasm := ins.fileNoRule(obj);
 		tasm.deps = [ins.file(src)];
 
 		tasm.rule = new uni.Rule();
-		tasm.rule.cmd = config.nasmCmd.cmd;
-		tasm.rule.args = config.nasmCmd.args ~ [src, "-o", obj];
-		tasm.rule.print = config.nasmCmd.print ~ obj;
+		tasm.rule.cmd = gen.config.nasmCmd.cmd;
+		tasm.rule.args = gen.config.nasmCmd.args ~ [src, "-o", obj];
+		tasm.rule.print = gen.config.nasmCmd.print ~ obj;
 		tasm.rule.outputs = [tasm];
 
 		return tasm;
 	}
 
-	fn makeTargetVolted() uni.Target
+	fn makeTargetVolted(ref gen: ArgsGenerator, exe: Exe) uni.Target
 	{
-		if (voltaTool !is null) {
-			// --cmd-volta on command line, use supplied Volta.
-			return ins.fileNoRule(voltaTool.cmd);
-		}
-		srcDir := voltaExe.srcDir;
+		srcDir := exe.srcDir;
 		mainFile := srcDir ~ dirSeparator ~ "main.d";
 		files := deepScan(mDrv, srcDir, ".d");
-		name := buildDir ~ dirSeparator ~ "volted";
+		name := gen.buildDir ~ dirSeparator ~ "volted";
 		version (Windows) if (!endsWith(name, ".exe")) {
 			name ~= ".exe";
 		}
@@ -267,7 +249,7 @@ public:
 
 		t.rule = new uni.Rule();
 
-		c := config.rdmdCmd;
+		c := gen.config.rdmdCmd;
 
 		args := c.args ~ [
 			"--build-only",
@@ -275,16 +257,16 @@ public:
 			"-of" ~ t.name
 		];
 
-		foreach (arg; voltaExe.srcObj) {
+		foreach (arg; exe.srcObj) {
 			args ~= arg;
 		}
-		foreach (arg; voltaExe.libPaths) {
+		foreach (arg; exe.libPaths) {
 			args ~= ("-L-L" ~ arg);
 		}
-		foreach (arg; voltaExe.libs) {
+		foreach (arg; exe.libs) {
 			args ~= ("-L-l" ~ arg);
 		}
-		foreach (arg; voltaExe.xlinker) {
+		foreach (arg; exe.xlinker) {
 			args ~= ("-L" ~ arg);
 		}
 		args ~= mainFile;
@@ -297,10 +279,10 @@ public:
 		return t;
 	}
 
-	fn makeTargetVoltLibrary(lib: Lib) uni.Target
+	fn makeTargetVoltLibrary(ref gen: ArgsGenerator, lib: Lib) uni.Target
 	{
 		files := deepScan(mDrv, lib.srcDir, ".volt");
-		base := buildDir ~ dirSeparator ~ lib.name;
+		base := gen.buildDir ~ dirSeparator ~ lib.name;
 		bcName := base ~ ".bc";
 		oName := base ~ ".o";
 
@@ -325,12 +307,12 @@ public:
 			["-o", bcName, "-c", "--emit-bitcode"] ~ files;
 
 		// Create the object file for the library.
-		o := makeHelperBitcodeToObj(bc, oName);
+		o := makeHelperBitcodeToObj(ref gen, bc, oName);
 
 		// Add results into into the store.
 		results := [o];
 		foreach (a; lib.srcAsm) {
-			results ~= makeTargetAsm(a);
+			results ~= makeTargetAsm(ref gen, a);
 		}
 
 		mObjs[lib.name] = results;
@@ -338,7 +320,8 @@ public:
 		return o;
 	}
 
-	fn makeHelperBitcodeToObj(bc: uni.Target, oName: string) uni.Target
+	fn makeHelperBitcodeToObj(ref gen: ArgsGenerator,
+	                          bc: uni.Target, oName: string) uni.Target
 	{
 		// Make o file.
 		o := ins.fileNoRule(oName);
@@ -359,7 +342,7 @@ public:
 
 
 private:
-	fn collectDeps(base: Base) uni.Target[]
+	fn collectDeps(ref gen: ArgsGenerator, base: Base) uni.Target[]
 	{
 		added: Base[string];
 		ret: uni.Target[];
@@ -393,22 +376,13 @@ private:
 		return ret;
 	}
 
-	/**
-	 * Filters out and sets the voltaExe and teslaExe files.
-	 */
-	fn filterExes(ref exes: Exe[])
+	fn findVolta(exes: Exe[]) Exe
 	{
-		// Always copy, so we don't modify the origanal storage.
-		exes = new exes[..];
-
-		pos : size_t;
-		foreach (i, exe; exes) {
-			switch (exe.name) {
-			case "volta": voltaExe = exe; continue;
-			case "tesla": teslaExe = exe; continue;
-			default: exes[pos++] = exe; continue;
+		foreach (exe; exes) {
+			if (exe.name == "volta") {
+				return exe;
 			}
 		}
-		exes = exes[0 .. pos];
+		assert(false);
 	}
 }
