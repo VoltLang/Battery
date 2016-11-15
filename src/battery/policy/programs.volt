@@ -95,8 +95,8 @@ fn getLLVMTargetString(config: Configuration) string
 		}
 	case OSX:
 		final switch (config.arch) with (Arch) {
-		case X86: return "i386-apple-macosx10.7.0";
-		case X86_64: return "x86_64-apple-macosx10.7.0";
+		case X86: return "i386-apple-macosx10.9.0";
+		case X86_64: return "x86_64-apple-macosx10.9.0";
 		}
 	case Linux:
 		final switch (config.arch) with (Arch) {
