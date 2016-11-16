@@ -36,8 +36,6 @@ protected:
 	mExe: Exe[];
 	mLib: Lib[];
 	mPwd: string;
-	mCommands: Command[string];
-	mHostCommands: Command[string];
 
 
 public:
@@ -65,35 +63,35 @@ public:
 
 	fn config(args: string[])
 	{
-		// Get host config
-		mHostConfig = getBaseHostConfig(this);
-
 		// Filter out --arch and --platform arguments.
 		findArchAndPlatform(this, ref args, ref arch, ref platform);
+		mHostConfig = getBaseHostConfig(this);
+		mConfig = getBaseConfig(this, arch, platform);
+
+		// Are we not cross compiling.
+		if (arch == mHostConfig.arch &&
+		    platform == mHostConfig.platform) {
+			mHostConfig = null;
+			info("native compile");
+		} else {
+			info("cross compiling to %s-%s",
+			     .toString(arch), .toString(platform));
+		}
 
 		// Parse arguments.
 		arg := new ArgParser(this);
 		arg.parse(args);
 
 		// Handle cross compiling.
-		if (arch != mHostConfig.arch ||
-		    platform != mHostConfig.platform) {
-			info("cross compiling to %s-%s",
-			     .toString(arch), .toString(platform));
+		if (mHostConfig !is null) {
 			// Need fill in host commands seperatly.
-			doConfig(this, mHostConfig, true);
-			fillInConfigCommands(this, mHostConfig, true);
-
-			// Get a new config for this target.
-			mConfig = getBaseConfig(this, arch, platform);
-		} else {
-			// Just reuse the host config.
-			mConfig = mHostConfig;
+			doConfig(this, mHostConfig);
+			fillInConfigCommands(this, mHostConfig);
 		}
 
 		// Do this after the arguments has been parsed.
-		doConfig(this, mConfig, false);
-		fillInConfigCommands(this, mConfig, false);
+		doConfig(this, mConfig);
+		fillInConfigCommands(this, mConfig);
 
 		verifyConfig();
 
@@ -102,13 +100,15 @@ public:
 			ofs.write(r);
 			ofs.put('\n');
 		}
-		foreach (r; getArgs(false, mCommands.values)) {
+		foreach (r; getArgs(false, mConfig.commands.values)) {
 			ofs.write(r);
 			ofs.put('\n');
 		}
-		foreach (r; getArgs(true, mHostCommands.values)) {
-			ofs.write(r);
-			ofs.put('\n');
+		if (mHostConfig !is null) {
+			foreach (r; getArgs(true, mHostConfig.commands.values)) {
+				ofs.write(r);
+				ofs.put('\n');
+			}
 		}
 		foreach (r; getArgs(mLib, mExe)) {
 			ofs.write(r);
@@ -120,9 +120,6 @@ public:
 
 	fn build(args: string [])
 	{
-		// Get host config.
-		mHostConfig = getBaseHostConfig(this);
-
 		args = null;
 		if (!getLinesFromFile(BatteryConfigFile, ref args)) {
 			return abort("must first run the 'config' command");
@@ -131,6 +128,10 @@ public:
 		// Filter out --arch and --platform arguments.
 		findArchAndPlatform(this, ref args, ref arch, ref platform);
 
+		// Get the configs.
+		mHostConfig = getBaseHostConfig(this);
+		mConfig = getBaseConfig(this, arch, platform);
+
 		// Parse arguments.
 		arg := new ArgParser(this);
 		arg.parse(args);
@@ -138,18 +139,15 @@ public:
 		// Handle cross compiling.
 		if (arch != mHostConfig.arch ||
 		    platform != mHostConfig.platform) {
-		    	// Need fill in host commands.
-			fillInConfigCommands(this, mHostConfig, true);
-
-			// Get a new config for this target.
-			mConfig = getBaseConfig(this, arch, platform);
+			// Need fill in host commands.
+			fillInConfigCommands(this, mHostConfig);
 		} else {
 			// Just reuse the host config.
-			mConfig = mHostConfig;
+			mHostConfig = null;
 		}
 
 		// Do this after the arguments has been parsed.
-		fillInConfigCommands(this, mConfig, false);
+		fillInConfigCommands(this, mConfig);
 
 		// Do the actual build now.
 		builder := new Builder(this);
@@ -246,7 +244,7 @@ Normal usecase when standing in a project directory.
 
 	fn verifyConfig()
 	{
-		isCross := mHostConfig !is mConfig;
+		isCross := mHostConfig !is null;
 		hasRtDir := mStore.get("rt", null) !is null;
 		hasRdmdTool := getTool(false, "rdmd") !is null;
 		hasVoltaDir := mStore.get("volta", null) !is null;
@@ -300,22 +298,12 @@ Normal usecase when standing in a project directory.
 		return path;
 	}
 
-	override fn getTool(host: bool, name: string) Command
-	{
-		c := host ? (name in mHostCommands) : (name in mCommands);
-		if (c is null) {
-			return null;
-		}
-		return *c;
-	}
-
 	override fn setTool(host: bool, name: string, c: Command)
 	{
-		if (host) {
-			mHostCommands[name] = c;
-		} else {
-			mCommands[name] = c;
+		if (host && mHostConfig is null) {
+			abort("can not use host commands when not cross compiling");
 		}
+		(host ? mHostConfig : mConfig).commands[name] = c;
 	}
 
 	override fn addToolCmd(host: bool, name: string, cmd: string)
@@ -335,11 +323,7 @@ Normal usecase when standing in a project directory.
 			abort("unknown tool '%s' (%s)", name, cmd);
 		}
 
-		if (host) {
-			mHostCommands[name] = c;
-		} else {
-			mCommands[name] = c;
-		}
+		setTool(host, name, c);
 	}
 
 	override fn addToolArg(host: bool, name: string, arg: string)
@@ -399,5 +383,25 @@ Normal usecase when standing in a project directory.
 		io.output.flush();
 		va_end(vl);
 		exit(-1);
+	}
+
+
+	/*
+	 *
+	 * Helper functions.
+	 *
+	 */
+
+	fn getTool(host: bool, name: string) Command
+	{
+		if (host && mHostConfig is null) {
+			abort("can not use host commands when not cross compiling");
+		}
+		conf := (host ? mHostConfig : mConfig);
+		c := name in conf.commands;
+		if (c is null) {
+			return null;
+		}
+		return *c;
 	}
 }

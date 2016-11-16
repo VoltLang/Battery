@@ -47,7 +47,7 @@ fn getBaseConfig(drv: Driver, arch: Arch, platform: Platform) Configuration
 	return c;
 }
 
-fn doConfig(drv: Driver, config: Configuration, host: bool)
+fn doConfig(drv: Driver, config: Configuration)
 {
 	clStr := "cl";
 	linkStr := "link";
@@ -57,14 +57,14 @@ fn doConfig(drv: Driver, config: Configuration, host: bool)
 
 	// Need either MSVC or clang.
 	if (config.platform == Platform.MSVC) {
-		drv.setTool(host, clStr, drv.fillInCommand(config, host, clStr));
-		drv.setTool(host, linkStr, drv.fillInCommand(config, host, linkStr));
+		drv.setTool(config.isHost, clStr, drv.fillInCommand(config, clStr));
+		drv.setTool(config.isHost, linkStr, drv.fillInCommand(config, linkStr));
 	} else {
-		drv.setTool(host, clangStr, drv.fillInCommand(config, host, clangStr));
+		drv.setTool(config.isHost, clangStr, drv.fillInCommand(config, clangStr));
 	}
 
-	drv.setTool(host, nasmStr, drv.fillInCommand(config, host, nasmStr));
-	drv.setTool(host, rdmdStr, drv.fillInCommand(config, host, rdmdStr));
+	drv.setTool(config.isHost, nasmStr, drv.fillInCommand(config, nasmStr));
+	drv.setTool(config.isHost, rdmdStr, drv.fillInCommand(config, rdmdStr));
 }
 
 /*
@@ -73,27 +73,27 @@ fn doConfig(drv: Driver, config: Configuration, host: bool)
  *
  */
 
-fn fillInConfigCommands(drv: Driver, config: Configuration, host: bool)
+fn fillInConfigCommands(drv: Driver, config: Configuration)
 {
-	fillInLinkerAndCC(drv, config, host);
+	fillInLinkerAndCC(drv, config);
 
 	rdmdStr := "rdmd";
 	nasmStr := "nasm";
 
-	config.rdmdCmd = drv.getTool(host, rdmdStr);
-	config.nasmCmd = drv.getTool(host, nasmStr);
+	config.rdmdCmd = config.getTool(rdmdStr);
+	config.nasmCmd = config.getTool(nasmStr);
 }
 
-fn fillInLinkerAndCC(drv: Driver, config: Configuration, host: bool)
+fn fillInLinkerAndCC(drv: Driver, config: Configuration)
 {
 	if (config.platform == Platform.MSVC) {
-		fillInMSVC(drv, config, host);
+		fillInMSVC(drv, config);
 		return;
 	}
 
 	// Try clang from the given tools.
 	clangStr := "clang";
-	clang := drv.getTool(host, clangStr);
+	clang := config.getTool(clangStr);
 	assert(clang !is null);
 
 	config.ccCmd = clang;
@@ -102,13 +102,13 @@ fn fillInLinkerAndCC(drv: Driver, config: Configuration, host: bool)
 	config.linkerKind = LinkerKind.Clang;
 }
 
-fn fillInMSVC(drv: Driver, config: Configuration, host: bool)
+fn fillInMSVC(drv: Driver, config: Configuration)
 {
 	clStr := "cl";
 	linkStr := "link";
 
-	cl := drv.getTool(host, clStr);
-	link := drv.getTool(host, linkStr);
+	cl := config.getTool(clStr);
+	link := config.getTool(linkStr);
 
 	config.ccCmd = cl;
 	config.ccKind = CCKind.CL;

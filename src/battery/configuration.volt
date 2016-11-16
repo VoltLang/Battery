@@ -34,9 +34,11 @@ class Configuration
 {
 public:
 	env: Environment;
+	isHost: bool;
 
 	arch: Arch;
 	platform: Platform;
+
 
 	linkerCmd: Command;
 	linkerKind: LinkerKind;
@@ -47,4 +49,29 @@ public:
 	nasmCmd: Command;
 	rdmdCmd: Command;
 	dmdCmd: Command;
+
+	commands: Command[string];
+
+
+public:
+	/// Get a tool that has been added.
+	final fn getTool(name: string) Command
+	{
+		c := name in commands;
+		if (c is null) {
+			return null;
+		}
+		return *c;
+	}
+
+/*
+	override fn addToolArg(name: string, arg: string)
+	{
+		c := getTool(host, name);
+		if (c is null) {
+			abort("tool not defined '%s'", name);
+		}
+		c.args ~= arg;
+	}
+*/
 }

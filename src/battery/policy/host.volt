@@ -28,5 +28,7 @@ version (X86_64) {
 
 fn getBaseHostConfig(drv: Driver) Configuration
 {
-	return getBaseConfig(drv, HostArch, HostPlatform);
+	c := getBaseConfig(drv, HostArch, HostPlatform);
+	c.isHost = true;
+	return c;
 }

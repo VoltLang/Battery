@@ -34,9 +34,6 @@ protected:
 	/// Store of objects each Lib/Exe produces.
 	mObjs: uni.Target[][string];
 
-	mConfig: Configuration;
-	mHostConfig: Configuration;
-
 	mGen: ArgsGenerator;
 	mHostGen: ArgsGenerator;
 
@@ -50,16 +47,14 @@ public:
 	fn build(config: Configuration, host: Configuration,
 	         libs: Lib[], exes: Exe[])
 	{
-		this.mConfig = config;
-		this.mHostConfig = host;
 		this.ins = new uni.Instance();
 		this.mega = ins.fileNoRule("__all");
 
 		mGen.setup(config, libs, exes);
-		mHostGen.setup(host, libs, exes);
+		mHostGen.setup(host !is null ? host : config, libs, exes);
 
 		// Setup volta
-		voltaTool := mDrv.getTool(false, "volta");
+		voltaTool := config.getTool("volta");
 		if (voltaTool !is null) {
 			// --cmd-volta on command line, use supplied Volta.
 			voltaBin = ins.fileNoRule(voltaTool.cmd);
