@@ -37,6 +37,7 @@ protected:
 	mLib: Lib[];
 	mPwd: string;
 	mCommands: Command[string];
+	mHostCommands: Command[string];
 
 
 public:
@@ -101,7 +102,11 @@ public:
 			ofs.write(r);
 			ofs.put('\n');
 		}
-		foreach (r; getArgs(mCommands.values)) {
+		foreach (r; getArgs(false, mCommands.values)) {
+			ofs.write(r);
+			ofs.put('\n');
+		}
+		foreach (r; getArgs(true, mHostCommands.values)) {
 			ofs.write(r);
 			ofs.put('\n');
 		}
@@ -243,9 +248,9 @@ Normal usecase when standing in a project directory.
 	{
 		isCross := mHostConfig !is mConfig;
 		hasRtDir := mStore.get("rt", null) !is null;
-		hasRdmdTool := getTool("rdmd") !is null;
+		hasRdmdTool := getTool(false, "rdmd") !is null;
 		hasVoltaDir := mStore.get("volta", null) !is null;
-		hasVoltaTool := getTool("volta") !is null;
+		hasVoltaTool := getTool(false, "volta") !is null;
 
 		if (isCross && !hasVoltaTool) {
 			abort("Must use --volta-cmd when cross compiling");
@@ -295,27 +300,31 @@ Normal usecase when standing in a project directory.
 		return path;
 	}
 
-	override fn getTool(name: string) Command
+	override fn getTool(host: bool, name: string) Command
 	{
-		c := name in mCommands;
+		c := host ? (name in mHostCommands) : (name in mCommands);
 		if (c is null) {
 			return null;
 		}
 		return *c;
 	}
 
-	override fn setTool(name: string, c: Command)
+	override fn setTool(host: bool, name: string, c: Command)
 	{
-		mCommands[name] = c;
+		if (host) {
+			mHostCommands[name] = c;
+		} else {
+			mCommands[name] = c;
+		}
 	}
 
-	override fn addToolCmd(name: string, cmd: string)
+	override fn addToolCmd(host: bool, name: string, cmd: string)
 	{
 		c := new Command();
 		c.name = name;
 		c.cmd = cmd;
 
-		switch (getShortName(name)) {
+		switch (name) {
 		case "clang": c.print = ClangPrint; break;
 		case "link": c.print = LinkPrint; break;
 		case "cl": c.print = CLPrint; break;
@@ -326,12 +335,16 @@ Normal usecase when standing in a project directory.
 			abort("unknown tool '%s' (%s)", name, cmd);
 		}
 
-		mCommands[name] = c;
+		if (host) {
+			mHostCommands[name] = c;
+		} else {
+			mCommands[name] = c;
+		}
 	}
 
-	override fn addToolArg(name: string, arg: string)
+	override fn addToolArg(host: bool, name: string, arg: string)
 	{
-		c := name in mCommands;
+		c := getTool(host, name);
 		if (c is null) {
 			abort("tool not defined '%s'", name);
 		}

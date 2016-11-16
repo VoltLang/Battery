@@ -24,14 +24,14 @@ fn getArgs(arch: Arch, platform: Platform) string[]
 		];
 }
 
-fn getArgs(cmds: Command[]) string[]
+fn getArgs(host: bool, cmds: Command[]) string[]
 {
 	ret: string[];
 
 	foreach (cmd; cmds) {
 		name := cmd.name;
-		cmdFlag := "--cmd-" ~ name;
-		argFlag := "--arg-" ~ name;
+		cmdFlag := (host ? "--host-cmd-" : "--cmd-") ~ name;
+		argFlag := (host ? "--host-arg-" : "--arg-") ~ name;
 
 		ret ~= ["#", "# tool: " ~ name, cmdFlag, cmd.cmd];
 		foreach (arg; cmd.args) {
@@ -212,11 +212,19 @@ protected:
 				return;
 			case ToolCmd:
 				assert(arg.flag.length > 6);
-				mDrv.addToolCmd(arg.flag[6 .. $], arg.extra);
+				mDrv.addToolCmd(false, arg.flag[6 .. $], arg.extra);
 				break;
 			case ToolArg:
 				assert(arg.flag.length > 6);
-				mDrv.addToolArg(arg.flag[6 .. $], arg.extra);
+				mDrv.addToolArg(false, arg.flag[6 .. $], arg.extra);
+				break;
+			case HostToolCmd:
+				assert(arg.flag.length > 11);
+				mDrv.addToolCmd(true, arg.flag[11 .. $], arg.extra);
+				break;
+			case HostToolArg:
+				assert(arg.flag.length > 11);
+				mDrv.addToolArg(true, arg.flag[11 .. $], arg.extra);
 				break;
 			default: mDrv.abort("unknown argument '%s'", arg.flag);
 			}
@@ -493,6 +501,18 @@ struct ToArgs
 					argNextPath(Arg.Kind.ToolCmd, "expected command");
 				} else {
 					argNext(Arg.Kind.ToolArg, "expected argument");
+				}
+				continue;
+			}
+
+			// Deal with --host-cmd-volta and --host-arg-volta.
+			if (tmp.length > 11 &&
+			    startsWith(tmp, "--host-cmd-", "--host-arg-")) {
+				isCmd := tmp[0 .. 11] == "--host-cmd-";
+				if (isCmd) {
+					argNextPath(Arg.Kind.HostToolCmd, "expected command");
+				} else {
+					argNext(Arg.Kind.HostToolArg, "expected argument");
 				}
 				continue;
 			}

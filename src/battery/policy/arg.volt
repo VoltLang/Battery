@@ -50,6 +50,8 @@ public:
 
 		ToolCmd,
 		ToolArg,
+		HostToolCmd,
+		HostToolArg,
 	}
 
 	/// Always set, often the original param.

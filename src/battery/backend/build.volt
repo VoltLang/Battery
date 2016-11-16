@@ -59,7 +59,7 @@ public:
 		mHostGen.setup(host, libs, exes);
 
 		// Setup volta
-		voltaTool := mDrv.getTool("volta");
+		voltaTool := mDrv.getTool(false, "volta");
 		if (voltaTool !is null) {
 			// --cmd-volta on command line, use supplied Volta.
 			voltaBin = ins.fileNoRule(voltaTool.cmd);

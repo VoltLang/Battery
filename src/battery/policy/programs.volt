@@ -30,33 +30,29 @@ enum HostRdmdPrint =   "  HOSTRDMD ";
  * Ensures that a command/tool is there.
  * Will fill in arguments if it knows how to.
  */
-fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
+fn fillInCommand(drv: Driver, c: Configuration, host: bool, name: string) Command
 {
-	shortName := getShortName(name);
-
-	cmd := drv.getTool(name);
+	cmd := drv.getTool(host, name);
 	if (cmd is null) {
-		switch (shortName) {
-		case "nasm": cmd = getNasm(drv, c, name); break;
-		case "clang": cmd = getClang(drv, c, name); break;
-		case "cl": cmd = getCL(drv, c, name); break;
-		case "link": cmd = getLink(drv, c, name); break;
-		case "rdmd": cmd = getRdmd(drv, c, name); break;
+		switch (name) {
+		case "nasm": cmd = getNasm(drv, c, host, name); break;
+		case "clang": cmd = getClang(drv, c, host, name); break;
+		case "cl": cmd = getCL(drv, c, host, name); break;
+		case "link": cmd = getLink(drv, c, host, name); break;
+		case "rdmd": cmd = getRdmd(drv, c, host, name); break;
 		default: assert(false);
 		}
 	} else {
-		drv.info("got '%s' from the command line '%s'.", name, cmd.cmd);
+		str := host ? "host " : "";
+		drv.info("got '%s' from the %scommand line '%s'.", name, str, cmd.cmd);
 	}
 
 	if (cmd is null) {
-		if (name == shortName) {
-			drv.abort("could not find the command '%s'", name);
-		} else {
-			drv.abort("could not find the command '%s' '%s'", name, shortName);
-		}
+		str := host ? "host " : "";
+		drv.abort("could not find the %scommand '%s'", str, name);
 	}
 
-	switch (shortName) {
+	switch (name) {
 	case "nasm": addNasmArgs(drv, c, cmd); break;
 	case "clang": addClangArgs(drv, c, cmd); break;
 	case "rdmd": addRdmdArgs(drv, c, cmd); break;
@@ -74,9 +70,9 @@ fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
  *
  */
 
-fn getClang(drv: Driver, config: Configuration, name: string) Command
+fn getClang(drv: Driver, config: Configuration, host: bool, name: string) Command
 {
-	return drv.makeCommand(name, ClangCommand, ClangPrint, config.env);
+	return drv.makeCommand(host, name, ClangCommand, ClangPrint, config.env);
 }
 
 fn addClangArgs(drv: Driver, config: Configuration, c: Command)
@@ -118,9 +114,9 @@ fn getLLVMTargetString(config: Configuration) string
  *
  */
 
-fn getNasm(drv: Driver, config: Configuration, name: string) Command
+fn getNasm(drv: Driver, config: Configuration, host: bool, name: string) Command
 {
-	return drv.makeCommand(name, NasmCommand, NasmPrint, config.env);
+	return drv.makeCommand(host, name, NasmCommand, NasmPrint, config.env);
 }
 
 fn addNasmArgs(drv: Driver, config: Configuration, c: Command)
@@ -162,14 +158,14 @@ fn getNasmFormatString(config: Configuration) string
  *
  */
 
-fn getCL(drv: Driver, config: Configuration, name: string) Command
+fn getCL(drv: Driver, config: Configuration, host: bool, name: string) Command
 {
-	return drv.makeCommand(name, CLCommand, CLPrint, config.env);
+	return drv.makeCommand(host, name, CLCommand, CLPrint, config.env);
 }
 
-fn getLink(drv: Driver, config: Configuration, name: string) Command
+fn getLink(drv: Driver, config: Configuration, host: bool, name: string) Command
 {
-	return drv.makeCommand(name, LinkCommand, LinkPrint, config.env);
+	return drv.makeCommand(host, name, LinkCommand, LinkPrint, config.env);
 }
 
 
@@ -179,9 +175,9 @@ fn getLink(drv: Driver, config: Configuration, name: string) Command
  *
  */
 
-fn getRdmd(drv: Driver, config: Configuration, name: string) Command
+fn getRdmd(drv: Driver, config: Configuration, host: bool, name: string) Command
 {
-	return drv.makeCommand(name, RdmdCommand, RdmdPrint, config.env);
+	return drv.makeCommand(host, name, RdmdCommand, RdmdPrint, config.env);
 }
 
 fn addRdmdArgs(drv: Driver, config: Configuration, c: Command)
@@ -209,14 +205,15 @@ fn getShortName(name: string) string
 
 private:
 /// Search the command path and make a Command instance.
-fn makeCommand(drv: Driver, name: string, cmd: string,
+fn makeCommand(drv: Driver, host: bool, name: string, cmd: string,
                print: string, env: Environment) Command
 {
 	cmd = searchPath(cmd, env);
 	if (cmd is null) {
 		return null;
 	} else {
-		drv.info("found '%s' on the path '%s'.", name, cmd);
+		str := host ? "host " : "";
+		drv.info("found %s'%s' on the path '%s'.", str, name, cmd);
 	}
 
 	c := new Command();

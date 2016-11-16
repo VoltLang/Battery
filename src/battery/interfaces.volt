@@ -82,16 +82,16 @@ public:
 	abstract fn add(lib: Lib);
 
 	/// Get a tool that has been added.
-	abstract fn getTool(name: string) Command;
+	abstract fn getTool(host: bool, name: string) Command;
 
 	/// Set a tool that has been found.
-	abstract fn setTool(name: string, c: Command);
+	abstract fn setTool(host: bool, name: string, c: Command);
 
 	/// Add a tool, will reset the tool if already given.
-	abstract fn addToolCmd(name: string, cmd: string);
+	abstract fn addToolCmd(host: bool, name: string, cmd: string);
 
 	/// Add a argument for tool.
-	abstract fn addToolArg(name: string, arg: string);
+	abstract fn addToolArg(host: bool, name: string, arg: string);
 
 	/**
 	 * Prints a action string.
