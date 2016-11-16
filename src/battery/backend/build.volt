@@ -12,6 +12,7 @@ import uni.util.make;
 
 import battery.interfaces;
 import battery.configuration;
+import battery.policy.programs;
 import battery.backend.command;
 import battery.frontend.dir : deepScan;
 
@@ -26,7 +27,7 @@ public:
 	mega: uni.Target;
 	ins: uni.Instance;
 
-	voltaPrint: string = "  VOLTA    ";
+	voltaPrint: string;
 	voltaBin: uni.Target;
 
 
@@ -58,10 +59,12 @@ public:
 		if (voltaTool !is null) {
 			// --cmd-volta on command line, use supplied Volta.
 			voltaBin = ins.fileNoRule(voltaTool.cmd);
+			voltaPrint = voltaTool.print;
 		} else {
 			// Need to build volta ourself.
 			exe := findVolta(exes);
 			voltaBin = makeTargetVolted(ref mHostGen, exe);
+			voltaPrint = VoltaPrint;
 		}
 
 		// Make sure each library is built.
