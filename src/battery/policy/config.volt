@@ -49,23 +49,18 @@ fn getBaseConfig(drv: Driver, arch: Arch, platform: Platform) Configuration
 
 fn doConfig(drv: Driver, config: Configuration)
 {
-	clStr := "cl";
-	linkStr := "link";
-	rdmdStr := "rdmd";
-	nasmStr := "nasm";
-	clangStr := "clang";
-
 	// Need either MSVC or clang.
 	if (config.platform == Platform.MSVC) {
-		drv.setTool(config.isHost, clStr, drv.fillInCommand(config, clStr));
-		drv.setTool(config.isHost, linkStr, drv.fillInCommand(config, linkStr));
+		drv.setTool(config.isHost, CLName, drv.fillInCommand(config, CLName));
+		drv.setTool(config.isHost, LinkName, drv.fillInCommand(config, LinkName));
 	} else {
-		drv.setTool(config.isHost, clangStr, drv.fillInCommand(config, clangStr));
+		drv.setTool(config.isHost, ClangName, drv.fillInCommand(config, ClangName));
 	}
 
-	drv.setTool(config.isHost, nasmStr, drv.fillInCommand(config, nasmStr));
-	drv.setTool(config.isHost, rdmdStr, drv.fillInCommand(config, rdmdStr));
+	drv.setTool(config.isHost, NasmName, drv.fillInCommand(config, NasmName));
+	drv.setTool(config.isHost, RdmdName, drv.fillInCommand(config, RdmdName));
 }
+
 
 /*
  *
@@ -77,11 +72,8 @@ fn fillInConfigCommands(drv: Driver, config: Configuration)
 {
 	fillInLinkerAndCC(drv, config);
 
-	rdmdStr := "rdmd";
-	nasmStr := "nasm";
-
-	config.rdmdCmd = config.getTool(rdmdStr);
-	config.nasmCmd = config.getTool(nasmStr);
+	config.rdmdCmd = config.getTool(RdmdName);
+	config.nasmCmd = config.getTool(NasmName);
 }
 
 fn fillInLinkerAndCC(drv: Driver, config: Configuration)
@@ -92,8 +84,7 @@ fn fillInLinkerAndCC(drv: Driver, config: Configuration)
 	}
 
 	// Try clang from the given tools.
-	clangStr := "clang";
-	clang := config.getTool(clangStr);
+	clang := config.getTool(ClangName);
 	assert(clang !is null);
 
 	config.ccCmd = clang;
@@ -104,11 +95,8 @@ fn fillInLinkerAndCC(drv: Driver, config: Configuration)
 
 fn fillInMSVC(drv: Driver, config: Configuration)
 {
-	clStr := "cl";
-	linkStr := "link";
-
-	cl := config.getTool(clStr);
-	link := config.getTool(linkStr);
+	cl := config.getTool(CLName);
+	link := config.getTool(LinkName);
 
 	config.ccCmd = cl;
 	config.ccKind = CCKind.CL;

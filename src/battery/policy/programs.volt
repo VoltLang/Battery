@@ -10,11 +10,17 @@ import battery.interfaces;
 import battery.configuration;
 
 
-enum NasmCommand = "nasm";
+enum ClangName = "clang";
+enum NasmName = "nasm";
+enum RdmdName = "rdmd";
+enum CLName= "cl";
+enum LinkName = "link";
+
 enum ClangCommand = "clang";
+enum NasmCommand = "nasm";
 enum RdmdCommand = "rdmd";
-enum LinkCommand = "link.exe";
 enum CLCommand = "cl.exe";
+enum LinkCommand = "link.exe";
 
 enum VoltaPrint =      "  VOLTA    ";
 enum ClangPrint =      "  CLANG    ";
