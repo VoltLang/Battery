@@ -81,6 +81,9 @@ public:
 	/// Add a library
 	abstract fn add(lib: Lib);
 
+	/// Add a enviromental variable.
+	abstract fn addEnv(host: bool, name: string, value: string);
+
 	/// Set a tool that has been found.
 	abstract fn setTool(host: bool, name: string, c: Command);
 

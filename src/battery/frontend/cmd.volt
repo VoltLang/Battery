@@ -24,6 +24,16 @@ fn getArgs(arch: Arch, platform: Platform) string[]
 		];
 }
 
+fn getArgs(host: bool, env: Environment) string[]
+{
+	ret: string[] = ["#", "# Environment"];
+	foreach (k, v; env.store) {
+		ret ~= (host ? "--host-env-" : "--env-") ~ k;
+		ret ~= v;
+	}
+	return ret;
+}
+
 fn getArgs(host: bool, cmds: Command[]) string[]
 {
 	ret: string[];
@@ -210,6 +220,14 @@ protected:
 					mDrv.add(exe);
 				}
 				return;
+			case Env:
+				assert(arg.flag.length > 6);
+				mDrv.addEnv(false, arg.flag[6 .. $], arg.extra);
+				break;
+			case HostEnv:
+				assert(arg.flag.length > 11);
+				mDrv.addEnv(true, arg.flag[11 .. $], arg.extra);
+				break;
 			case ToolCmd:
 				assert(arg.flag.length > 6);
 				mDrv.addToolCmd(false, arg.flag[6 .. $], arg.extra);
@@ -502,6 +520,18 @@ struct ToArgs
 				} else {
 					argNext(Arg.Kind.ToolArg, "expected argument");
 				}
+				continue;
+			}
+
+			// Deal with --env-PATH
+			if (tmp.length > 6 && tmp[0 .. 6] == "--env-") {
+				argNext(Arg.Kind.Env, "expected env var");
+				continue;
+			}
+
+			// Deal with --host-env-PATH
+			if (tmp.length > 11 && tmp[0 .. 11] == "--host-env-") {
+				argNext(Arg.Kind.HostEnv, "expected env var");
 				continue;
 			}
 

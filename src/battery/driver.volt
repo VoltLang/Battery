@@ -100,11 +100,19 @@ public:
 			ofs.write(r);
 			ofs.put('\n');
 		}
+		foreach (r; getArgs(false, mConfig.env)) {
+			ofs.write(r);
+			ofs.put('\n');
+		}
 		foreach (r; getArgs(false, mConfig.commands.values)) {
 			ofs.write(r);
 			ofs.put('\n');
 		}
 		if (mHostConfig !is null) {
+			foreach (r; getArgs(true, mHostConfig.env)) {
+				ofs.write(r);
+				ofs.put('\n');
+			}
 			foreach (r; getArgs(true, mHostConfig.commands.values)) {
 				ofs.write(r);
 				ofs.put('\n');
@@ -296,6 +304,14 @@ Normal usecase when standing in a project directory.
 		}
 
 		return path;
+	}
+
+	override fn addEnv(host: bool, name: string, value: string)
+	{
+		if (host && mHostConfig is null) {
+			abort("can not use host envs when not cross compiling");
+		}
+		(host ? mHostConfig : mConfig).env.set(name, value);
 	}
 
 	override fn setTool(host: bool, name: string, c: Command)

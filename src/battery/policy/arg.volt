@@ -48,6 +48,9 @@ public:
 		ArgLink,
 		ArgLinker,
 
+		Env,
+		HostEnv,
+
 		ToolCmd,
 		ToolArg,
 		HostToolCmd,
