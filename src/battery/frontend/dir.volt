@@ -21,6 +21,7 @@ import battery.frontend.cmd : ArgParser;
 enum PathRt         = "rt";
 enum PathSrc        = "src";
 enum PathRes        = "res";
+enum PathTest       = "test";
 enum PathMainD      = "main.d";
 enum PathMainVolt   = "main.volt";
 enum PathBatteryTxt = "battery.txt";
@@ -59,6 +60,10 @@ fn scanDir(drv: Driver, path: string) Base
 		drv.info("detected library project in folder '%s'", s.inputPath);
 		lib := s.buildLib();
 		ret = lib;
+	}
+
+	if (s.hasPath) {
+		drv.info("detected tests in folder '%s'", s.pathTest);
 	}
 
 	processBatteryCmd(drv, ret, ref s);
@@ -122,6 +127,7 @@ public:
 	hasMainD: bool;
 	hasMainVolt: bool;
 	hasBatteryCmd: bool;
+	hasTest: bool;
 
 	path: string;
 	pathRt: string;
@@ -131,6 +137,7 @@ public:
 	pathMainVolt: string;
 	pathBatteryTxt: string;
 	pathDerivedBin: string;
+	pathTest: string;
 
 	filesC: string[];
 	filesVolt: string[];
@@ -155,6 +162,7 @@ public:
 		pathMainVolt   = pathSrc ~ dirSeparator ~ PathMainVolt;
 		pathBatteryTxt = getInPath(PathBatteryTxt);
 		pathDerivedBin = getInPath(name);
+		pathTest       = getInPath(PathTest);
 
 		hasPath        = isDir(path);
 		hasRt          = isDir(pathRt);
@@ -163,6 +171,7 @@ public:
 		hasMainD       = exists(pathMainD);
 		hasMainVolt    = exists(pathMainVolt);
 		hasBatteryCmd  = exists(pathBatteryTxt);
+		hasTest        = exists(pathTest);
 
 		if (!hasSrc) {
 			return;
