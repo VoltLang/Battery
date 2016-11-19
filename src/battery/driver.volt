@@ -9,6 +9,7 @@ import core.stdc.stdlib : exit;
 import core.varargs : va_list, va_start, va_end;
 import io = watt.io;
 import watt.text.path;
+import watt.text.string : endsWith, replace;
 import watt.io.streams : OutputFileStream;
 import watt.path : fullPath, dirSeparator;
 
@@ -21,12 +22,14 @@ import battery.policy.programs;
 import battery.frontend.cmd;
 import battery.frontend.dir;
 import battery.backend.build;
+import battery.backend.command : ArgsGenerator;
 
 
 class DefaultDriver : Driver
 {
 public:
 	enum BatteryConfigFile = ".battery.config.txt";
+	enum BatteryTeslaConfig = ".battery.tesla.json";
 
 
 protected:
@@ -124,6 +127,8 @@ public:
 		}
 		ofs.flush();
 		ofs.close();
+
+		writeTestConfig();
 	}
 
 	fn build(args: string [])
@@ -419,5 +424,52 @@ Normal usecase when standing in a project directory.
 			return null;
 		}
 		return *c;
+	}
+
+	fn writeTestConfig()
+	{
+		if (mExe.length != 2) {
+			return;
+		}
+		testProject: Base;
+		foreach (exe; mExe) {
+			if (exe.name != "volta") {
+				testProject = exe;
+			}
+		}
+		if (testProject is null) {
+			return;
+		}
+
+		fn slashEscape(str: string) string
+		{
+			version (!Windows) {
+				return str;
+			} else {
+				return str.replace("\\", "\\\\");
+			}
+		}
+
+		gen: ArgsGenerator;
+		gen.setup(mHostConfig is null ? mConfig : mHostConfig, mLib, mExe);
+		voltpath := slashEscape(gen.buildDir ~ dirSeparator ~ "volted");
+		rtpath := slashEscape(gen.buildDir ~ dirSeparator ~ "rt.o");
+		wattpath := slashEscape(gen.buildDir ~ dirSeparator ~ "watt.o");
+		version (Windows) {
+			if (!endsWith(voltpath, ".exe")) {
+				voltpath ~= ".exe";
+			}
+		}
+
+		ofs := new OutputFileStream(BatteryTeslaConfig);
+		ofs.write("{\n  \"cmds\": {\n    \"volta\": {\"path\": \"");
+		ofs.write(voltpath);
+		ofs.write("\", \"args\":[");
+		foreach (i, arg; gen.genVoltaArgs(testProject)) {
+			ofs.writef("\"%s\", ", slashEscape(arg));
+		}
+		ofs.writefln("\"%s\", \"%s\"]}\n  }\n}", rtpath, wattpath);
+		ofs.flush();
+		ofs.close();
 	}
 }
