@@ -62,8 +62,9 @@ fn scanDir(drv: Driver, path: string) Base
 		ret = lib;
 	}
 
-	if (s.hasPath) {
+	if (s.hasTest) {
 		drv.info("detected tests in folder '%s'", s.pathTest);
+		ret.hasTest = true;
 	}
 
 	processBatteryCmd(drv, ret, ref s);

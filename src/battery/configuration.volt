@@ -49,6 +49,7 @@ public:
 	nasmCmd: Command;
 	rdmdCmd: Command;
 	dmdCmd: Command;
+	teslaCmd: Command;
 
 	commands: Command[string];
 

@@ -35,6 +35,10 @@ fn doConfig(drv: Driver, config: Configuration)
 
 	drv.setTool(config.isHost, NasmName, drv.fillInCommand(config, NasmName));
 	drv.setTool(config.isHost, RdmdName, drv.fillInCommand(config, RdmdName));
+	tesla := drv.makeCommand(config, TeslaName, TeslaCommand, TeslaPrint);
+	if (tesla !is null) {
+		drv.setTool(config.isHost, TeslaName, tesla);
+	}
 }
 
 fn doEnv(drv: Driver, config: Configuration)
