@@ -24,6 +24,7 @@ public:
 		Name,
 		Dep,
 		SrcDir,
+		TestDir,
 
 		Command,
 

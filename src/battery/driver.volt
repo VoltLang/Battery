@@ -167,16 +167,40 @@ public:
 		// Do the actual build now.
 		builder := new Builder(this);
 		builder.build(mConfig, mHostConfig, mLib, mExe);
+		doTest();
 	}
 
 	fn test(args: string[])
 	{
 		build(args);
+		doTest();
+	}
+
+	fn doTest()
+	{
 		tesla := getTool(false, "tesla");
 		if (tesla is null) {
 			return abort("tesla needed on path (for now)");
 		}
-		pid := spawnProcess(tesla.cmd, args);
+
+		teslaArgs := [tesla.cmd, "-f", BatteryTeslaConfig];
+		foundTest := false;
+		foreach (exe; mExe) {
+			if (exe.testDir !is null) {
+				foundTest = true;
+				teslaArgs ~= ["-d", exe.testDir];
+			}
+		}
+		foreach (lib; mLib) {
+			if (lib.testDir !is null) {
+				foundTest = true;
+				teslaArgs ~= ["-d", lib.testDir];
+			}
+		}
+		if (!foundTest) {
+			return;
+		}
+		pid := spawnProcess(tesla.cmd, teslaArgs);
 		pid.wait();
 	}
 

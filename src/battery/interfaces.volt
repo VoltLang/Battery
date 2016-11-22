@@ -28,7 +28,7 @@ class Base
 
 	srcAsm: string[];
 
-	hasTest: bool;
+	testDir: string;
 }
 
 class Lib : Base

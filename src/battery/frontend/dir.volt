@@ -63,8 +63,8 @@ fn scanDir(drv: Driver, path: string) Base
 	}
 
 	if (s.hasTest) {
-		drv.info("detected tests in folder '%s'", s.pathTest);
-		ret.hasTest = true;
+		drv.info("%s detected tests in folder '%s'", ret.name, s.pathTest);
+		ret.testDir = s.pathTest;
 	}
 
 	processBatteryCmd(drv, ret, ref s);
@@ -172,7 +172,7 @@ public:
 		hasMainD       = exists(pathMainD);
 		hasMainVolt    = exists(pathMainVolt);
 		hasBatteryCmd  = exists(pathBatteryTxt);
-		hasTest        = exists(pathTest);
+		hasTest        = isDir(pathTest);
 
 		if (!hasSrc) {
 			return;
