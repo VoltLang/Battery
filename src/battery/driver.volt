@@ -180,7 +180,8 @@ public:
 	{
 		tesla := getTool(false, "tesla");
 		if (tesla is null) {
-			return abort("tesla needed on path (for now)");
+			info("tesla needed on path (for now) to run tests");
+			return;
 		}
 
 		teslaArgs := [tesla.cmd, "-f", BatteryTeslaConfig];
