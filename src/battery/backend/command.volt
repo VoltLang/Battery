@@ -3,6 +3,8 @@
 module battery.backend.command;
 
 import watt.path : dirSeparator;
+import io = watt.io;
+import core.stdc.stdlib : exit;
 import battery.interfaces;
 import battery.configuration;
 
@@ -115,7 +117,12 @@ public:
 			}
 
 			foreach (dep; b.deps) {
-				traverse(store[dep]);
+				dp := dep in store;
+				if (dp is null) {
+					io.error.writefln("No dependency '%s' found.", dep);
+					exit(-1);
+				}
+				traverse(*dp);
 			}
 		}
 
