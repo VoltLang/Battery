@@ -1,6 +1,6 @@
 // Copyright © 2016, Jakob Bornecrantz.  All rights reserved.
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
-module uni.util.make;
+module build.util.make;
 
 import core.exception;
 
@@ -10,7 +10,7 @@ import watt.text.string;
 import watt.io.file;
 import watt.process.cmd;
 
-import uni.core;
+import build.core;
 
 
 fn importDepFile(ins: Instance, file: SinkArg)

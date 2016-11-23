@@ -3,23 +3,23 @@
 
 /**
  * Here is the main solver algorithm implementation used as
- * a backend for all builds. Uses uni.util.cmd to dispatch
+ * a backend for all builds. Uses build.util.cmd to dispatch
  * compilers and other tasks.
  */
-module uni.core.solver;
+module build.core.solver;
 
 import watt.io : output;
 import watt.path : mkdirP, dirName;
 import watt.process;
 
-import uni.core.target : Target, Rule;
-import uni.util.cmd : CmdGroup;
+import build.core.target : Target, Rule;
+import build.util.cmdgroup : CmdGroup;
 
 
 /**
  * Builds a target, will throw exceptions on build failure.
  */
-fn build(t: Target, numJobs: uint, env: Environment)
+fn doBuild(t: Target, numJobs: uint, env: Environment)
 {
 	g := new CmdGroup(env, numJobs);
 	build(t, g);

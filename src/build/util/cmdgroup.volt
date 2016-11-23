@@ -1,6 +1,6 @@
 // Copyright © 2012-2016, Jakob Bornecrantz.  All rights reserved.
 // See copyright notice in src/battery/license.d (BOOST ver. 1.0).
-module uni.util.cmd;
+module build.util.cmdgroup;
 
 import core.stdc.stdio : FILE, fileno, stdin, stdout, stderr;
 import core.exception;

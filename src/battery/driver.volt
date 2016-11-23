@@ -19,10 +19,10 @@ import battery.interfaces;
 import battery.util.file : getLinesFromFile;
 import battery.policy.host;
 import battery.policy.config;
-import battery.policy.programs;
-import battery.frontend.cmd;
-import battery.frontend.dir;
-import battery.backend.build;
+import battery.policy.tools;
+import battery.frontend.parameters;
+import battery.frontend.scanner;
+import battery.backend.builder;
 import battery.backend.command : ArgsGenerator;
 
 

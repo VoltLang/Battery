@@ -1,20 +1,20 @@
 // Copyright © 2016, Jakob Bornecrantz.  All rights reserved.
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
-module battery.backend.build;
+module battery.backend.builder;
 
 import core.exception;
 import watt.text.string : endsWith;
 import watt.process;
 import watt.path : dirSeparator;
 
-import uni = uni.core;
-import uni.util.make;
+import uni = build.core;
+import build.util.make;
 
 import battery.interfaces;
 import battery.configuration;
-import battery.policy.programs;
+import battery.policy.tools;
 import battery.backend.command;
-import battery.frontend.dir : deepScan;
+import battery.frontend.scanner : deepScan;
 
 import watt.io;
 
@@ -79,7 +79,7 @@ public:
 
 		// Do the build.
 		try {
-			uni.build(mega, 8, config.env);
+			uni.doBuild(mega, 8, config.env);
 		} catch (Exception e) {
 			mDrv.abort(e.msg);
 		}

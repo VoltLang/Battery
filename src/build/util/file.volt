@@ -4,7 +4,7 @@
 /**
  * Function for manipulating files and paths.
  */
-module uni.util.file;
+module build.util.file;
 
 import core.exception;
 

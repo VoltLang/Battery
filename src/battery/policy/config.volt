@@ -8,7 +8,7 @@ module battery.policy.config;
 import watt.process : retrieveEnvironment, Environment, searchPath;
 import battery.interfaces;
 import battery.configuration;
-import battery.policy.programs;
+import battery.policy.tools;
 
 
 fn getBaseConfig(drv: Driver, arch: Arch, platform: Platform) Configuration

@@ -1,6 +1,6 @@
 // Copyright © 2015-2016, Jakob Bornecrantz.  All rights reserved.
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
-module battery.policy.programs;
+module battery.policy.tools;
 
 import watt.text.format : format;
 import watt.text.string : split, startsWith, endsWith;

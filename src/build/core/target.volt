@@ -4,13 +4,13 @@
 /**
  * The basic building blocks for a build.
  */
-module uni.core.target;
+module build.core.target;
 
 import core.exception;
 import watt.io.file : exists;
 import watt.text.string : indexOf;
 import watt.text.format : format;
-import uni.util.file : getTimes;
+import build.util.file : getTimes;
 
 
 /**

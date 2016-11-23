@@ -3,7 +3,7 @@
 /**
  * Holds code for parsing command line options into Lib and Exe.
  */
-module battery.frontend.cmd;
+module battery.frontend.parameters;
 
 import watt.process;
 import watt.conv : toLower;
@@ -13,7 +13,7 @@ import watt.text.string : startsWith, endsWith;
 import battery.configuration;
 import battery.interfaces;
 import battery.policy.arg;
-import battery.frontend.dir;
+import battery.frontend.scanner;
 
 
 fn getArgs(arch: Arch, platform: Platform) string[]
