@@ -10,7 +10,7 @@ Battery is a tool for building Volt programs. In the future it will fetch code a
 
 ##How To Use
 
-Battery makes some assumptions about project structure. Your source code will be in a directory named `src`. If your project is an executable, its entry point will be in `src/main.volt`. If you have tests, they will be in the `test` directory. So for a simple executable project that only depends on Watt (Volt's standard library, you might have your code in `src/main.volt`:
+Battery makes some assumptions about project structure. Your source code will be in a directory named `src`. If your project is an executable, its entry point will be in `src/main.volt`. If you have tests, they will be in the `test` directory. If there is a `res` folder, Volta will be told to look for string imports (`-J`) there. So for a simple executable project that only depends on Watt (Volt's standard library, you might have your code in `src/main.volt`:
 
 	module main;
 
