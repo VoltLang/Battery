@@ -228,7 +228,6 @@ public:
 	{
 		tesla := getTool(false, "tesla");
 		if (tesla is null) {
-			info("tesla needed on path (for now) to run tests");
 			return;
 		}
 
