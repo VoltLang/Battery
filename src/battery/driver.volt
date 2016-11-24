@@ -98,6 +98,8 @@ public:
 		doConfig(this, mConfig);
 		fillInConfigCommands(this, mConfig);
 
+		configSanity();
+
 		verifyConfig();
 
 		ofs := new OutputFileStream(BatteryConfigFile);
@@ -131,6 +133,52 @@ public:
 		ofs.close();
 
 		writeTestConfig();
+	}
+
+	fn configSanity()
+	{
+		foundTest := false;
+		foreach (exe; mExe) {
+			if (exe.testDir !is null) {
+				foundTest = true;
+				break;
+			}
+		}
+		if (!foundTest) {
+			foreach (lib; mLib) {
+				if (lib.testDir !is null) {
+					foundTest = true;
+					break;
+				}
+			}
+		}
+		if (foundTest) {
+			tesla := getTool(false, "tesla");
+			if (tesla is null) {
+				info("tesla needed on path (for now) to run tests");
+				return;
+			}
+		}
+
+		foreach (k, b; mStore) {
+			foreach (dep; b.deps) {
+				dp := dep in mStore;
+				if (dp is null) {
+					io.error.writefln("No dependency '%s' found.", dep);
+					switch (dep) {
+					case "watt":
+						io.error.writefln("Download Watt from https://github.com/VoltLang/Watt");
+						break;
+					case "amp":
+						io.error.writefln("Download Amp from https://github.com/VoltLang/Amp");
+						break;
+					default:
+						break;
+					}
+					exit(-1);
+				}
+			}
+		}
 	}
 
 	fn build(args: string [])

@@ -120,16 +120,6 @@ public:
 				dp := dep in store;
 				if (dp is null) {
 					io.error.writefln("No dependency '%s' found.", dep);
-					switch (dep) {
-					case "watt":
-						io.error.writefln("Download Watt from https://github.com/VoltLang/Watt");
-						break;
-					case "amp":
-						io.error.writefln("Download Amp from https://github.com/VoltLang/Amp");
-						break;
-					default:
-						break;
-					}
 					exit(-1);
 				}
 				traverse(*dp);
