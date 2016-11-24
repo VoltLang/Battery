@@ -67,6 +67,11 @@ fn scanDir(drv: Driver, path: string) Base
 		ret.testDir = s.pathTest;
 	}
 
+	if (s.hasRes) {
+		drv.info("%s detected resources in folder '%s'", ret.name, s.pathRes);
+		ret.stringPaths ~= s.pathRes;
+	}
+
 	processBatteryCmd(drv, ret, ref s);
 
 	return ret;
