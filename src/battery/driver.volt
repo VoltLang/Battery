@@ -566,7 +566,18 @@ Normal usecase when standing in a project directory.
 		foreach (i, arg; gen.genVoltaArgs(testProject)) {
 			ofs.writef("\"%s\", ", slashEscape(arg));
 		}
-		ofs.writefln("\"%s\", \"%s\"]}\n  }\n}", rtpath, wattpath);
+		ofs.writef("\"%s\", \"%s\"]}", rtpath, wattpath);
+		exe := cast(Exe)testProject;
+		if (exe !is null) {
+			exepath := slashEscape("." ~ dirSeparator ~ exe.bin);
+			version (Windows) {
+				if (!endsWith(exepath, ".exe")) {
+					exepath ~= ".exe";
+				}
+			}
+			ofs.writefln(",\n    \"%s\": {\"path\": \"%s\", \"args\":[]}", exe.name, exepath);
+		}
+		ofs.writefln("  }\n}");
 		ofs.flush();
 		ofs.close();
 	}
