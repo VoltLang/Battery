@@ -62,6 +62,7 @@ public:
 		case "build": return build(args[2 .. $]);
 		case "config": return config(args[2 .. $]);
 		case "test": return test(args[2 .. $]);
+		case "version": return printVersion();
 		default: return printUsage();
 		}
 	}
@@ -266,6 +267,11 @@ public:
 		}
 	}
 
+	fn printVersion()
+	{
+		info("battery version 0.1.0");
+	}
+
 	fn printUsage()
 	{
 		info(`
@@ -276,6 +282,7 @@ These are the available commands:
 	build            Build current config.
 	config [args]    Configures a build.
 	test             Build current config, then run Tesla.
+	version          Display battery version then exit.
 
 Normal usecase when standing in a project directory.
 	$ battery config path/to/volta path/to/watt .
