@@ -269,11 +269,12 @@ public:
 
 	fn printVersion()
 	{
-		info("battery version 0.1.0");
+		info("battery version 0.1.1");
 	}
 
 	fn printUsage()
 	{
+		printVersion();
 		info(`
 usage: battery <command>
 
