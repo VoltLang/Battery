@@ -574,7 +574,13 @@ Normal usecase when standing in a project directory.
 		foreach (i, arg; gen.genVoltaArgs(testProject)) {
 			ofs.writef("\"%s\", ", slashEscape(arg));
 		}
-		ofs.writef("\"%s\", \"%s\"]}", rtpath, wattpath);
+		ofs.writef("\"%s\", \"%s\"", rtpath, wattpath);
+		foreach (i, asmpath; gen.store["rt"].srcAsm) {
+			asmobjpath := slashEscape(gen.buildDir ~ dirSeparator ~
+				asmpath ~ ".o");
+			ofs.writef(", \"%s\"", asmobjpath);
+		}
+		ofs.write("]}");
 		exe := cast(Exe)testProject;
 		if (exe !is null) {
 			exepath := slashEscape("." ~ dirSeparator ~ exe.bin);
@@ -583,7 +589,8 @@ Normal usecase when standing in a project directory.
 					exepath ~= ".exe";
 				}
 			}
-			ofs.writefln(",\n    \"%s\": {\"path\": \"%s\", \"args\":[]}", exe.name, exepath);
+			ofs.writefln(",\n    \"%s\": {\"path\": \"%s\", \"args\":[]}",
+				exe.name, exepath);
 		}
 		ofs.writefln("  }\n}");
 		ofs.flush();
