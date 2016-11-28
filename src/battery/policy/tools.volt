@@ -147,8 +147,8 @@ fn getNasmFormatString(config: Configuration) string
 		}
 	case OSX:
 		final switch (config.arch) with (Arch) {
-		case X86: return "mach32";
-		case X86_64: return "mach64";
+		case X86: return "macho32";
+		case X86_64: return "macho64";
 		}
 	case Linux:
 		final switch (config.arch) with (Arch) {
