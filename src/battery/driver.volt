@@ -215,7 +215,6 @@ public:
 		// Do the actual build now.
 		builder := new Builder(this);
 		builder.build(mConfig, mHostConfig, mLib, mExe);
-		doTest();
 	}
 
 	fn test(args: string[])
