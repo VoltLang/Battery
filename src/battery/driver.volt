@@ -558,7 +558,14 @@ Normal usecase when standing in a project directory.
 
 		gen: ArgsGenerator;
 		gen.setup(mHostConfig is null ? mConfig : mHostConfig, mLib, mExe);
-		voltpath := slashEscape(gen.buildDir ~ dirSeparator ~ "volted");
+		voltpath: string;
+		volttool := getTool(false, "volta");
+		if (volttool !is null) {
+			voltpath = volttool.cmd;
+		} else {
+			voltpath = slashEscape(gen.buildDir ~ dirSeparator ~ "volted");
+		}
+
 		rtpath := slashEscape(gen.buildDir ~ dirSeparator ~ "rt.o");
 		wattpath := slashEscape(gen.buildDir ~ dirSeparator ~ "watt.o");
 		version (Windows) {
@@ -574,11 +581,18 @@ Normal usecase when standing in a project directory.
 		foreach (i, arg; gen.genVoltaArgs(testProject)) {
 			ofs.writef("\"%s\", ", slashEscape(arg));
 		}
-		ofs.writef("\"%s\", \"%s\"", rtpath, wattpath);
-		foreach (i, asmpath; gen.store["rt"].srcAsm) {
-			asmobjpath := cleanPath(slashEscape(gen.buildDir ~ dirSeparator ~
-				asmpath ~ ".o"));
-			ofs.writef(", \"%s\"", asmobjpath);
+		if (volttool is null) {
+			// If we built the volt, tell it where the RT is.
+			ofs.writef("\"%s\", \"%s\"", rtpath, wattpath);
+			foreach (i, asmpath; gen.store["rt"].srcAsm) {
+				asmobjpath := cleanPath(slashEscape(gen.buildDir ~ dirSeparator ~
+					asmpath ~ ".o"));
+				ofs.writef(", \"%s\"", asmobjpath);
+			}
+		} else {
+			foreach (voltarg; volttool.args) {
+				ofs.writef(", \"%s\"", voltarg);
+			}
 		}
 		ofs.write("]}");
 		exe := cast(Exe)testProject;
