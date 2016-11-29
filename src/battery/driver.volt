@@ -552,7 +552,7 @@ Normal usecase when standing in a project directory.
 			version (!Windows) {
 				return str;
 			} else {
-				return cleanPath(str.replace("\\", "\\\\"));
+				return str.replace("\\", "\\\\");
 			}
 		}
 
@@ -576,8 +576,8 @@ Normal usecase when standing in a project directory.
 		}
 		ofs.writef("\"%s\", \"%s\"", rtpath, wattpath);
 		foreach (i, asmpath; gen.store["rt"].srcAsm) {
-			asmobjpath := slashEscape(gen.buildDir ~ dirSeparator ~
-				asmpath ~ ".o");
+			asmobjpath := cleanPath(slashEscape(gen.buildDir ~ dirSeparator ~
+				asmpath ~ ".o"));
 			ofs.writef(", \"%s\"", asmobjpath);
 		}
 		ofs.write("]}");
