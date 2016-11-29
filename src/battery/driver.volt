@@ -17,6 +17,7 @@ import watt.process;
 import battery.configuration;
 import battery.interfaces;
 import battery.util.file : getLinesFromFile;
+import battery.util.path : cleanPath;
 import battery.policy.host;
 import battery.policy.config;
 import battery.policy.tools;
@@ -551,7 +552,7 @@ Normal usecase when standing in a project directory.
 			version (!Windows) {
 				return str;
 			} else {
-				return str.replace("\\", "\\\\");
+				return cleanPath(str.replace("\\", "\\\\"));
 			}
 		}
 

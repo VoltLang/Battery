@@ -15,6 +15,7 @@ import battery.configuration;
 import battery.policy.tools;
 import battery.backend.command;
 import battery.frontend.scanner : deepScan;
+import battery.util.path : cleanPath;
 
 import watt.io;
 
@@ -87,8 +88,8 @@ public:
 
 	fn makeTargetExeBc(ref gen: ArgsGenerator, exe: Exe) uni.Target
 	{
-		bcName := gen.buildDir ~ dirSeparator ~ exe.name ~ ".bc";
-		depName := gen.buildDir ~ dirSeparator ~ exe.name ~ ".d";
+		bcName := cleanPath(gen.buildDir ~ dirSeparator ~ exe.name ~ ".bc");
+		depName := cleanPath(gen.buildDir ~ dirSeparator ~ exe.name ~ ".d");
 
 		d := ins.file(depName);
 		bc := ins.fileNoRule(bcName);
@@ -130,7 +131,7 @@ public:
 
 	fn makeTargetExe(ref gen: ArgsGenerator, exe: Exe) uni.Target
 	{
-		oName := gen.buildDir ~ dirSeparator ~ exe.name ~ ".o";
+		oName := cleanPath(gen.buildDir ~ dirSeparator ~ exe.name ~ ".o");
 
 		// Build bitcode and object
 		bc := makeTargetExeBc(ref gen, exe);
@@ -186,7 +187,7 @@ public:
 
 	fn makeTargetC(ref gen: ArgsGenerator, src: string) uni.Target
 	{
-		obj := gen.buildDir ~ dirSeparator ~ src ~ ".o";
+		obj := cleanPath(gen.buildDir ~ dirSeparator ~ src ~ ".o");
 
 		tc := ins.fileNoRule(obj);
 		tc.deps = [ins.file(src)];
@@ -215,7 +216,7 @@ public:
 
 	fn makeTargetAsm(ref gen: ArgsGenerator, src: string) uni.Target
 	{
-		obj := gen.buildDir ~ dirSeparator ~ src ~ ".o";
+		obj := cleanPath(gen.buildDir ~ dirSeparator ~ src ~ ".o");
 
 		tasm := ins.fileNoRule(obj);
 		tasm.deps = [ins.file(src)];
@@ -234,7 +235,7 @@ public:
 		srcDir := exe.srcDir;
 		mainFile := srcDir ~ dirSeparator ~ "main.d";
 		files := deepScan(mDrv, srcDir, ".d");
-		name := gen.buildDir ~ dirSeparator ~ "volted";
+		name := cleanPath(gen.buildDir ~ dirSeparator ~ "volted");
 		version (Windows) if (!endsWith(name, ".exe")) {
 			name ~= ".exe";
 		}
