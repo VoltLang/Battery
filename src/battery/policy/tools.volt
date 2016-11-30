@@ -16,14 +16,12 @@ enum NasmName = "nasm";
 enum RdmdName = "rdmd";
 enum CLName= "cl";
 enum LinkName = "link";
-enum TeslaName = "tesla";
 
 enum ClangCommand = "clang";
 enum NasmCommand = "nasm";
 enum RdmdCommand = "rdmd";
 enum CLCommand = "cl.exe";
 enum LinkCommand = "link.exe";
-enum TeslaCommand = "tesla";
 
 enum VoltaPrint =      "  VOLTA    ";
 enum ClangPrint =      "  CLANG    ";
@@ -31,7 +29,6 @@ enum NasmPrint =       "  NASM     ";
 enum RdmdPrint =       "  RDMD     ";
 enum LinkPrint =       "  LINK     ";
 enum CLPrint   =       "  CL       ";
-enum TeslaPrint =      "  TESLA    ";
 
 enum HostRdmdPrint =   "  HOSTRDMD ";
 
@@ -50,7 +47,6 @@ fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
 		case "cl": cmd = getCL(drv, c, name); break;
 		case "link": cmd = getLink(drv, c, name); break;
 		case "rdmd": cmd = getRdmd(drv, c, name); break;
-		case "tesla": cmd = getTesla(drv, c, name); break;
 		default: assert(false);
 		}
 	} else {
@@ -67,7 +63,6 @@ fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
 	case "nasm": addNasmArgs(drv, c, cmd); break;
 	case "clang": addClangArgs(drv, c, cmd); break;
 	case "rdmd": addRdmdArgs(drv, c, cmd); break;
-	case "tesla": addTeslaArgs(drv, c, cmd); break;
 	case "cl", "link": break;
 	default: assert(false);
 	}
@@ -200,22 +195,6 @@ fn addRdmdArgs(drv: Driver, config: Configuration, c: Command)
 	case X86: c.args ~= "-m32"; break;
 	case X86_64: c.args ~= "-m64"; break;
 	}
-}
-
-/*
- *
- * Tesla functions.
- *
- */
-
-fn getTesla(drv: Driver, config: Configuration, name: string) Command
-{
-	return drv.makeCommand(config, name, TeslaCommand, TeslaPrint);
-}
-
-fn addTeslaArgs(drv: Driver, config: Configuration, c: Command)
-{
-	c.args ~= ["-f", DefaultDriver.BatteryTeslaConfig];
 }
 
 /*

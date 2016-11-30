@@ -155,12 +155,6 @@ public:
 				}
 			}
 		}
-		if (foundTest) {
-			tesla := getTool(false, "tesla");
-			if (tesla is null) {
-				info("tesla needed on path (for now) to run tests");
-			}
-		}
 
 		foreach (k, b; mStore) {
 			foreach (dep; b.deps) {
@@ -434,7 +428,6 @@ Normal usecase when standing in a project directory.
 		case "volta": c.print = VoltaPrint; break;
 		case "rdmd": c.print = RdmdPrint; break;
 		case "nasm": c.print = NasmPrint; break;
-		case "tesla": c.print = TeslaPrint; break;
 		default:
 			abort("unknown tool '%s' (%s)", name, cmd);
 		}

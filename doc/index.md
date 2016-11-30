@@ -100,7 +100,7 @@ You probably recognise quite a few of these from Volta.
 
 ###Build
 
-Actually performs the build. If there's a `test` folder, and Tesla is in the `PATH` (or specified at config time with `--cmd-tesla`), the tests will be run after the build completes. If the build failed, the return value will be non-zero. This only works after config has been run.
+Actually performs the build. If there's a `test` folder, the tests will be run after the build completes. If the build failed, the return value will be non-zero. This only works after config has been run.
 
 ###Test
 
