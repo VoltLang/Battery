@@ -25,6 +25,7 @@ import battery.frontend.parameters;
 import battery.frontend.scanner;
 import battery.backend.builder;
 import battery.backend.command : ArgsGenerator;
+import battery.testing.main;
 
 
 class DefaultDriver : Driver
@@ -226,12 +227,7 @@ public:
 
 	fn doTest()
 	{
-		tesla := getTool(false, "tesla");
-		if (tesla is null) {
-			return;
-		}
-
-		teslaArgs := [tesla.cmd, "-f", BatteryTeslaConfig];
+		teslaArgs := ["tesla", "-f", BatteryTeslaConfig];
 		foundTest := false;
 		foreach (exe; mExe) {
 			if (exe.testDir !is null) {
@@ -248,8 +244,7 @@ public:
 		if (!foundTest) {
 			return;
 		}
-		pid := spawnProcess(tesla.cmd, teslaArgs);
-		pid.wait();
+		testMain(teslaArgs);
 	}
 
 	fn help(args: string[])
