@@ -88,8 +88,8 @@ public:
 
 	fn makeTargetExeBc(ref gen: ArgsGenerator, exe: Exe) uni.Target
 	{
-		bcName := cleanPath(gen.buildDir ~ dirSeparator ~ exe.name ~ ".bc");
-		depName := cleanPath(gen.buildDir ~ dirSeparator ~ exe.name ~ ".d");
+		bcName := gen.genVoltExeBc(exe.name);
+		depName := gen.genVoltExeDep(exe.name);
 
 		d := ins.file(depName);
 		bc := ins.fileNoRule(bcName);
@@ -131,7 +131,7 @@ public:
 
 	fn makeTargetExe(ref gen: ArgsGenerator, exe: Exe) uni.Target
 	{
-		oName := cleanPath(gen.buildDir ~ dirSeparator ~ exe.name ~ ".o");
+		oName := gen.genVoltExeO(exe.name);
 
 		// Build bitcode and object
 		bc := makeTargetExeBc(ref gen, exe);
@@ -199,7 +199,7 @@ public:
 
 	fn makeTargetC(ref gen: ArgsGenerator, src: string) uni.Target
 	{
-		obj := cleanPath(gen.buildDir ~ dirSeparator ~ src ~ ".o");
+		obj := gen.genFileO(src);
 
 		tc := ins.fileNoRule(obj);
 		tc.deps = [ins.file(src)];
@@ -228,7 +228,7 @@ public:
 
 	fn makeTargetAsm(ref gen: ArgsGenerator, src: string) uni.Target
 	{
-		obj := cleanPath(gen.buildDir ~ dirSeparator ~ src ~ ".o");
+		obj := gen.genFileO(src);
 
 		tasm := ins.fileNoRule(obj);
 		tasm.deps = [ins.file(src)];
@@ -247,7 +247,7 @@ public:
 		srcDir := exe.srcDir;
 		mainFile := srcDir ~ dirSeparator ~ "main.d";
 		files := deepScan(mDrv, srcDir, ".d");
-		name := cleanPath(gen.buildDir ~ dirSeparator ~ "volted");
+		name := gen.genVolted();
 		version (Windows) if (!endsWith(name, ".exe")) {
 			name ~= ".exe";
 		}
@@ -293,9 +293,8 @@ public:
 	fn makeTargetVoltLibrary(ref gen: ArgsGenerator, lib: Lib) uni.Target
 	{
 		files := deepScan(mDrv, lib.srcDir, ".volt");
-		base := gen.buildDir ~ dirSeparator ~ lib.name;
-		bcName := base ~ ".bc";
-		oName := base ~ ".o";
+		bcName := gen.genVoltLibraryBc(lib.name);
+		oName := gen.genVoltLibraryO(lib.name);
 
 		// Make the bitcode file.
 		bc := ins.fileNoRule(bcName);

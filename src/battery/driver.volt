@@ -553,12 +553,10 @@ Normal usecase when standing in a project directory.
 
 			files: string[];
 			foreach (asmpath; base.srcAsm) {
-				files ~= cleanPath(gen.buildDir ~ dirSeparator ~
-					asmpath ~ ".o");
+				files ~= gen.genFileO(asmpath);
 			}
 
-			files ~= cleanPath(gen.buildDir ~ dirSeparator ~
-				base.name ~ ".o");
+			files ~= gen.genVoltLibraryO(base.name);
 
 			return files;
 		}

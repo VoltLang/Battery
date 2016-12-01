@@ -7,6 +7,7 @@ import io = watt.io;
 import core.stdc.stdlib : exit;
 import battery.interfaces;
 import battery.configuration;
+import battery.util.path : cleanPath;
 
 
 struct ArgsGenerator
@@ -145,6 +146,41 @@ public:
 		}
 
 		return ret;
+	}
+
+	fn genVolted() string
+	{
+		return cleanPath(buildDir ~ dirSeparator ~ "volted");
+	}
+
+	fn genFileO(name: string) string
+	{
+		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".o");
+	}
+
+	fn genVoltLibraryO(name: string) string
+	{
+		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".o");
+	}
+
+	fn genVoltLibraryBc(name: string) string
+	{
+		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".bc");
+	}
+
+	fn genVoltExeO(name: string) string
+	{
+		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".o");
+	}
+
+	fn genVoltExeBc(name: string) string
+	{
+		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".bc");
+	}
+
+	fn genVoltExeDep(name: string) string
+	{
+		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".d");
 	}
 
 
