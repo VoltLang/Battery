@@ -16,7 +16,7 @@ import watt.io;
 import watt.io.file;
 
 import battery.util.system;
-import battery.testing.cmd;
+import build.util.cmdgroup;
 
 import core.windows.windows;
 
@@ -66,12 +66,11 @@ fn getFinalPrefix(base: string) string
  *   threadCount = how many jobs to run at once. (0 means processor count).
  *   testDirs    = paths to test. (empty dir means just run 'test').
  *   configPath  = path to test config file. (empty string means default settings).
- *   progress    = print progress to stdout.
  *   compiler    = specify the compiler to use. (empty string means $VOLT).
  *   results     = name of the results XML file. (empty string means DEFAULT_RESULTS)
  * Returns: non-zero on failure, zero on success.
  */
-fn testMain(threadCount: i32, testDirs: string[], configPath: string, printProgress: bool, compiler: string, results: string) i32
+fn testMain(threadCount: i32, testDirs: string[], configPath: string, compiler: string, results: string) i32
 {
 	testPrefixes: string[];
 	foreach (i, dir; testDirs) {
@@ -116,8 +115,7 @@ fn testMain(threadCount: i32, testDirs: string[], configPath: string, printProgr
 	}
 
 	j := threadCount > 0 ? cast(uint)threadCount : processorCount();
-	cmdGroup := new CmdGroup(j, printProgress);
-
+	cmdGroup := new CmdGroup(retrieveEnvironment(), j);
 
 	s := new Searcher(cs);
 	rets: Test[];
@@ -134,9 +132,6 @@ fn testMain(threadCount: i32, testDirs: string[], configPath: string, printProgr
 	hasRegression: bool;
 
 	writeXmlFile(results, rets);
-	if (printProgress) {
-		writeln();
-	}
 	writeToStdio(rets, out hasRegression);
 
 	return hasRegression;

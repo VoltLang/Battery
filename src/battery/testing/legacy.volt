@@ -13,9 +13,9 @@ import core.stdc.stdio : printf, FILE, fprintf, fopen, fgets, fclose, fflush, st
 import core.stdc.string : strlen;
 
 import battery.util.system;
-import battery.testing.cmd;
 import battery.testing.test;
 import battery.testing.command;
+import build.util.cmdgroup;
 
 
 class Legacy : Test
@@ -65,9 +65,6 @@ public:
 	override fn runTest(cmdGroup: CmdGroup)
 	{
 		this.cmdGroup = cmdGroup;
-		if (cmdGroup.printProgress) {
-			completedPointer = &cmdGroup.printInteger;
-		}
 		outDirAppendable: string;
 		expectedToCompile = true;
 		expectedRetval = 0;
@@ -279,11 +276,6 @@ private:
 
 	fn compileDone(retval: int)
 	{
-		if (completedPointer !is null) {
-			printf("\r%s %d                    ", toStringz(test), ++(*completedPointer));
-			fflush(stdout);
-		}
-
 		/*
 		 * Go over the result from the compilation of the test.
 		 */

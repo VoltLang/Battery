@@ -235,7 +235,7 @@ public:
 		if (testDirs.length == 0) {
 			return;
 		}
-		testMain(0, testDirs, BatteryTeslaConfig, false, "", "");
+		testMain(0, testDirs, BatteryTeslaConfig, "", "");
 	}
 
 	fn help(args: string[])

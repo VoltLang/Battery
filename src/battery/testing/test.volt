@@ -4,7 +4,7 @@ module battery.testing.test;
 
 import core.stdc.stdio : FILE;
 
-import battery.testing.cmd;
+import build.util.cmdgroup;
 
 
 /**
