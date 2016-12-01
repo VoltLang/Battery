@@ -26,6 +26,7 @@ import battery.frontend.scanner;
 import battery.backend.builder;
 import battery.backend.command : ArgsGenerator;
 import battery.testing.main;
+import battery.testing.project;
 
 
 class DefaultDriver : Driver
@@ -134,8 +135,6 @@ public:
 		}
 		ofs.flush();
 		ofs.close();
-
-		writeTestConfig();
 	}
 
 	fn configSanity()
@@ -221,21 +220,26 @@ public:
 
 	fn doTest()
 	{
-		testDirs: string[];
+		projects: Project[];
+
+		voltaTool := getVoltaCommand();
+
 		foreach (exe; mExe) {
 			if (exe.testDir !is null) {
-				testDirs ~= exe.testDir;
+				projects ~= new Project(exe.testDir);
+				projects[$-1].addCommand("volta", voltaTool);
 			}
 		}
 		foreach (lib; mLib) {
 			if (lib.testDir !is null) {
-				testDirs ~= lib.testDir;
+				projects ~= new Project(lib.testDir);
+				projects[$-1].addCommand("volta", voltaTool);
 			}
 		}
-		if (testDirs.length == 0) {
+		if (projects.length == 0) {
 			return;
 		}
-		testMain(0, testDirs, BatteryTeslaConfig, "", "");
+		testMain(projects);
 	}
 
 	fn help(args: string[])
@@ -525,74 +529,39 @@ Normal usecase when standing in a project directory.
 		return null;
 	}
 
-	fn writeTestConfig()
+	fn getVoltaCommand() Command
 	{
-		testProject := getTestProject();
-		if (testProject is null) {
-			return;
+		volta := getTool(false, "volta");
+		if (volta !is null) {
+			return volta;
 		}
 
-		fn slashEscape(str: string) string
-		{
-			version (!Windows) {
-				return str;
-			} else {
-				return str.replace("\\", "\\\\");
-			}
-		}
+		volta = new Command();
+		volta.name = "volta";
+		volta.print = "volta";
 
 		gen: ArgsGenerator;
 		gen.setup(mHostConfig is null ? mConfig : mHostConfig, mLib, mExe);
-		voltpath: string;
-		volttool := getTool(false, "volta");
-		if (volttool !is null) {
-			voltpath = volttool.cmd;
-		} else {
-			voltpath = slashEscape(gen.buildDir ~ dirSeparator ~ "volted");
+		volta.cmd = gen.buildDir ~ dirSeparator ~ "volted";
+
+		foreach (arg; gen.genVoltaArgs(getTestProject())) {
+			volta.args ~= arg;
 		}
 
-		rtpath := slashEscape(gen.buildDir ~ dirSeparator ~ "rt.o");
-		wattpath := slashEscape(gen.buildDir ~ dirSeparator ~ "watt.o");
+		volta.args ~= gen.buildDir ~ dirSeparator ~ "rt.o";
+		volta.args ~= gen.buildDir ~ dirSeparator ~ "watt.o";
 		version (Windows) {
-			if (!endsWith(voltpath, ".exe")) {
-				voltpath ~= ".exe";
+			if (!endsWith(volta.cmd, ".exe")) {
+				volta.cmd ~= ".exe";
 			}
 		}
 
-		ofs := new OutputFileStream(BatteryTeslaConfig);
-		ofs.write("{\n  \"cmds\": {\n    \"volta\": {\"path\": \"");
-		ofs.write(voltpath);
-		ofs.write("\", \"args\":[");
-		foreach (i, arg; gen.genVoltaArgs(testProject)) {
-			ofs.writef("\"%s\", ", slashEscape(arg));
+		foreach (i, asmpath; gen.store["rt"].srcAsm) {
+			volta.args ~= cleanPath(gen.buildDir ~ dirSeparator ~
+				asmpath ~ ".o");
 		}
-		if (volttool is null) {
-			// If we built the volt, tell it where the RT is.
-			ofs.writef("\"%s\", \"%s\"", rtpath, wattpath);
-			foreach (i, asmpath; gen.store["rt"].srcAsm) {
-				asmobjpath := cleanPath(slashEscape(gen.buildDir ~ dirSeparator ~
-					asmpath ~ ".o"));
-				ofs.writef(", \"%s\"", asmobjpath);
-			}
-		} else {
-			foreach (voltarg; volttool.args) {
-				ofs.writef(", \"%s\"", voltarg);
-			}
-		}
-		ofs.write("]}");
-		exe := cast(Exe)testProject;
-		if (exe !is null) {
-			exepath := slashEscape("." ~ dirSeparator ~ exe.bin);
-			version (Windows) {
-				if (!endsWith(exepath, ".exe")) {
-					exepath ~= ".exe";
-				}
-			}
-			ofs.writefln(",\n    \"%s\": {\"path\": \"%s\", \"args\":[]}",
-				exe.name, exepath);
-		}
-		ofs.writefln("  }\n}");
-		ofs.flush();
-		ofs.close();
+
+		return volta;
 	}
 }
+import watt.io;

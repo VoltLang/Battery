@@ -24,6 +24,7 @@ import battery.testing.test;
 import battery.testing.legacy;
 import battery.testing.command;
 import battery.testing.searcher;
+import battery.testing.project;
 import battery.testing.output.xml;
 import battery.testing.output.stdio;
 
@@ -63,67 +64,23 @@ fn getFinalPrefix(base: string) string
 /**
  * Run tests.
  * Params:
- *   threadCount = how many jobs to run at once. (0 means processor count).
- *   testDirs    = paths to test. (empty dir means just run 'test').
- *   configPath  = path to test config file. (empty string means default settings).
- *   compiler    = specify the compiler to use. (empty string means $VOLT).
- *   results     = name of the results XML file. (empty string means DEFAULT_RESULTS)
+ *   projects    = test projects to run.
  * Returns: non-zero on failure, zero on success.
  */
-fn testMain(threadCount: i32, testDirs: string[], configPath: string, compiler: string, results: string) i32
+fn testMain(projects: Project[]) i32
 {
-	testPrefixes: string[];
-	foreach (i, dir; testDirs) {
-		testPrefixes ~= format("test%s", i + 1);
-	}
-	filter: string;
+	cmdGroup := new CmdGroup(retrieveEnvironment(), processorCount());
+	tests: Test[];
+	foreach (i, project; projects) {
+		cmd := project.getCommand("volta");
+		cs := new CommandStore("");
+		cs.addCmd("volta", cmd.cmd, cmd.args);
 
-	if (compiler is null) {
-		compiler = getEnv("VOLT");
-	}
-
-	if (compiler is null && configPath == "") {
-		writefln("must use --compiler|-c to specify compiler");
-		writefln("or set enviroment variable VOLT");
-		return 1;
+		s := new Searcher(cs);
+		tests ~= s.search(project.path, getFinalPrefix(format("test%s", i)));	
 	}
 
-	if (testDirs.length != testPrefixes.length) {
-		writefln("Too %s prefixes.", testDirs.length < testPrefixes.length ? "many" : "few");
-		return 1;
-	}
-
-	if (testDirs.length == 0) {
-		testPrefixes ~= "test1";
-		testDirs ~= DEFAULT_DIR;
-	}
-
-	if (results is null) {
-		results = DEFAULT_RESULTS;
-	}
-
-	foreach (testDir; testDirs) {
-		if (!testDir.isDir()) {
-			writefln("No such directory '%s'", testDir);
-			return 1;
-		}
-	}
-
-	cs := new CommandStore(configPath);
-	if (compiler != "" && configPath == "") {
-		cs.addCmd("volta", compiler, null);
-	}
-
-	j := threadCount > 0 ? cast(uint)threadCount : processorCount();
-	cmdGroup := new CmdGroup(retrieveEnvironment(), j);
-
-	s := new Searcher(cs);
-	rets: Test[];
-	foreach (i, testDir; testDirs) {
-		rets ~= s.search(testDir, getFinalPrefix(testPrefixes[i]));
-	}
-
-	foreach (i, test; rets) {
+	foreach (test; tests) {
 		test.runTest(cmdGroup);
 	}
 
@@ -131,8 +88,8 @@ fn testMain(threadCount: i32, testDirs: string[], configPath: string, compiler: 
 
 	hasRegression: bool;
 
-	writeXmlFile(results, rets);
-	writeToStdio(rets, out hasRegression);
+	writeXmlFile(DEFAULT_RESULTS, tests);
+	writeToStdio(tests, out hasRegression);
 
 	return hasRegression;
 }
