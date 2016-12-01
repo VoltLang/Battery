@@ -218,6 +218,7 @@ public:
 		doTest();
 	}
 
+	/// TODO: Refactor function into Tester class similar to Builder.
 	fn doTest()
 	{
 		projects: Project[];
@@ -524,6 +525,8 @@ Normal usecase when standing in a project directory.
 
 	fn getVoltaCommand(testProj: Base) Command
 	{
+		// TODO: Even if we get the tool we need to add the extra
+		// arguments.
 		volta := getTool(false, "volta");
 		if (volta !is null) {
 			return volta;
@@ -542,6 +545,8 @@ Normal usecase when standing in a project directory.
 			}
 		}
 
+		// TODO: Refactor this code into ArgsGenerator and use this
+		// function in build as well.
 		assert(testProj !is null);
 		volta.args ~= gen.genVoltaArgs(testProj);
 		volta.args ~= gen.buildDir ~ dirSeparator ~ "rt.o";
