@@ -104,7 +104,7 @@ public:
 		bc.deps ~= [voltaBin];
 
 		// Get all of the arguments.
-		args := gen.genVoltaArgs(exe) ~
+		args := gen.genVoltaArgs(exe, null) ~
 			["-o", bcName, "--emit-bitcode", "-c",
 			"--dep", depName] ~ exe.srcVolt;
 
@@ -166,14 +166,26 @@ public:
 		}
 
 		t := ins.fileNoRule(name);
-		args := gen.genVoltaArgs(exe) ~ ["-o", name];
 
-		// Add objects from libraries.
-		targetDeps := collectDeps(ref gen, exe);
-		t.deps ~= targetDeps;
-		foreach (tDep; targetDeps) {
-			args ~= tDep.name;
+		// Add deps and return files to be added to arguments.
+		fn cb(base: Base) string[] {
+			r := base.name in mObjs;
+			if (r is null) {
+				return null;
+			}
+
+			targets := *r;
+			t.deps ~= targets;
+
+			ret: string[];
+			foreach (d; targets) {
+				ret ~= d.name;
+			}
+			return ret;
 		}
+
+		// Generate arguments and collect deps.
+		args := gen.genVoltaArgs(exe, cb) ~ ["-o", name];
 
 		// Make the rule.
 		t.rule = new uni.Rule();
@@ -302,7 +314,7 @@ public:
 		bc.rule.cmd = voltaBin.name;
 		bc.rule.print = voltaPrint ~ bcName;
 		bc.rule.outputs = [bc];
-		bc.rule.args = gen.genVoltaArgs(lib) ~
+		bc.rule.args = gen.genVoltaArgs(lib, null) ~
 			["-o", bcName, "-c", "--emit-bitcode"] ~ files;
 
 		// Create the object file for the library.
@@ -341,40 +353,6 @@ public:
 
 
 private:
-	fn collectDeps(ref gen: ArgsGenerator, base: Base) uni.Target[]
-	{
-		added: Base[string];
-		ret: uni.Target[];
-
-		fn traverse(b: Base)
-		{
-			// Has this dep allready been added.
-			p := b.name in added;
-			if (p !is null) {
-				return;
-			}
-
-			// Keep track of it now.
-			added[b.name] = b;
-
-			r := b.name in mObjs;
-			if (r !is null) {
-				ret ~= *r;
-			}
-
-			foreach (dep; b.deps) {
-				traverse(gen.store[dep]);
-			}
-		}
-
-		traverse(base);
-
-		// Implictly add rt as a dependancy
-		traverse(gen.store["rt"]);
-
-		return ret;
-	}
-
 	fn findVolta(exes: Exe[]) Exe
 	{
 		foreach (exe; exes) {

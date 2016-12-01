@@ -12,6 +12,10 @@ import battery.configuration;
 struct ArgsGenerator
 {
 public:
+	alias Callback = scope dg(b: Base) string[];
+
+
+public:
 	config: Configuration;
 	libs: Lib[];
 	exes: Exe[];
@@ -61,7 +65,7 @@ public:
 	/**
 	 * Generates a Volta command line to build a binary.
 	 */
-	fn genVoltaArgs(base: Base) string[]
+	fn genVoltaArgs(base: Base, cb: Callback) string[]
 	{
 		added: Base[string];
 		exe := cast(Exe)base;
@@ -79,6 +83,10 @@ public:
 
 			// Keep track of it now.
 			added[b.name] = b;
+
+			if (cb !is null) {
+				ret ~= cb(b);
+			}
 
 			lib := cast(Lib)b;
 

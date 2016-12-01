@@ -525,37 +525,46 @@ Normal usecase when standing in a project directory.
 
 	fn getVoltaCommand(testProj: Base) Command
 	{
-		// TODO: Even if we get the tool we need to add the extra
-		// arguments.
-		volta := getTool(false, "volta");
-		if (volta !is null) {
-			return volta;
-		}
-
-		volta = new Command();
-		volta.name = "volta";
-		volta.print = VoltaPrint;
-
 		gen: ArgsGenerator;
 		gen.setup(mHostConfig is null ? mConfig : mHostConfig, mLib, mExe);
-		volta.cmd = gen.buildDir ~ dirSeparator ~ "volted";
-		version (Windows) {
-			if (!endsWith(volta.cmd, ".exe")) {
-				volta.cmd ~= ".exe";
+
+		volta := getTool(false, "volta");
+		if (volta is null) {
+			volta = new Command();
+			volta.name = "volta";
+			volta.print = VoltaPrint;
+
+
+			volta.cmd = gen.buildDir ~ dirSeparator ~ "volted";
+			version (Windows) {
+				if (!endsWith(volta.cmd, ".exe")) {
+					volta.cmd ~= ".exe";
+				}
 			}
 		}
 
-		// TODO: Refactor this code into ArgsGenerator and use this
-		// function in build as well.
-		assert(testProj !is null);
-		volta.args ~= gen.genVoltaArgs(testProj);
-		volta.args ~= gen.buildDir ~ dirSeparator ~ "rt.o";
-		volta.args ~= gen.buildDir ~ dirSeparator ~ "watt.o";
+		// Add deps and return files to be added to arguments.
+		fn cb(base: Base) string[] {
+			// Completely skip Exes.
+			exe := cast(Exe)base;
+			if (exe !is null) {
+				return null;
+			}
 
-		foreach (i, asmpath; gen.store["rt"].srcAsm) {
-			volta.args ~= cleanPath(gen.buildDir ~ dirSeparator ~
-				asmpath ~ ".o");
+			files: string[];
+			foreach (asmpath; base.srcAsm) {
+				files ~= cleanPath(gen.buildDir ~ dirSeparator ~
+					asmpath ~ ".o");
+			}
+
+			files ~= cleanPath(gen.buildDir ~ dirSeparator ~
+				base.name ~ ".o");
+
+			return files;
 		}
+
+		// Generate arguments and collect files.
+		volta.args ~= gen.genVoltaArgs(testProj, cb);
 
 		return volta;
 	}
