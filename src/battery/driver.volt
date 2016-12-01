@@ -221,24 +221,21 @@ public:
 
 	fn doTest()
 	{
-		teslaArgs := ["tesla", "-f", BatteryTeslaConfig];
-		foundTest := false;
+		testDirs: string[];
 		foreach (exe; mExe) {
 			if (exe.testDir !is null) {
-				foundTest = true;
-				teslaArgs ~= ["-d", exe.testDir];
+				testDirs ~= exe.testDir;
 			}
 		}
 		foreach (lib; mLib) {
 			if (lib.testDir !is null) {
-				foundTest = true;
-				teslaArgs ~= ["-d", lib.testDir];
+				testDirs ~= lib.testDir;
 			}
 		}
-		if (!foundTest) {
+		if (testDirs.length == 0) {
 			return;
 		}
-		testMain(teslaArgs);
+		testMain(0, testDirs, BatteryTeslaConfig, false, "", "");
 	}
 
 	fn help(args: string[])

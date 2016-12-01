@@ -60,46 +60,24 @@ fn getFinalPrefix(base: string) string
 	return format("%s-%s/%s/", getArch(), getPlatform(), base);
 }
 
-fn testMain(args: string[]) int
+/**
+ * Run tests.
+ * Params:
+ *   threadCount = how many jobs to run at once. (0 means processor count).
+ *   testDirs    = paths to test. (empty dir means just run 'test').
+ *   configPath  = path to test config file. (empty string means default settings).
+ *   progress    = print progress to stdout.
+ *   compiler    = specify the compiler to use. (empty string means $VOLT).
+ *   results     = name of the results XML file. (empty string means DEFAULT_RESULTS)
+ * Returns: non-zero on failure, zero on success.
+ */
+fn testMain(threadCount: i32, testDirs: string[], configPath: string, printProgress: bool, compiler: string, results: string) i32
 {
-	threadCount: int;
 	testPrefixes: string[];
-	testDirs: string[];
+	foreach (i, dir; testDirs) {
+		testPrefixes ~= format("test%s", i + 1);
+	}
 	filter: string;
-	compiler: string;
-	results: string;
-	printProgress: bool;
-	configPath: string;
-
-	fn help() {
-		printf("--jobs|-j\tHow many tests to run at once (defaults to processor count).\n");
-		printf("--dir|-d\tDirectory in test to run tests from (e.g. -d test/interfaces).\n");
-		printf("--config|-f\tPath to config file containing command definitions.\n");
-		printf("--progress|-p\tPrint how many tests have been completed to stdout.\n");
-		printf("--compiler|-c\tSpecify compiler instead of using VOLT env.\n");
-		printf("--results|-r\tSpecify the results file.\n");
-		printf("--help|-h\tPrint this message.\n");
-		exit(0);
-	}
-
-	fn addDir(dir: string) {
-		colonSplit := dir.split(',');
-		if (colonSplit.length == 2) {
-			testPrefixes ~= colonSplit[0];
-			testDirs ~= colonSplit[1];
-		} else {
-			testPrefixes ~= format("test%s", testDirs.length+1);
-			testDirs ~= dir;
-		}
-	}
-
-	getopt(ref args, "jobs|j", ref threadCount);
-	getopt(ref args, "dir|d", addDir);
-	getopt(ref args, "config|f", ref configPath);
-	getopt(ref args, "progress|p", ref printProgress);
-	getopt(ref args, "compiler|c", ref compiler);
-	getopt(ref args, "results|r", ref results);
-	getopt(ref args, "help|h", help);
 
 	if (compiler is null) {
 		compiler = getEnv("VOLT");
