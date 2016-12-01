@@ -222,23 +222,30 @@ public:
 	{
 		projects: Project[];
 
-		voltaTool := getVoltaCommand();
-
 		foreach (exe; mExe) {
-			if (exe.testDir !is null) {
-				projects ~= new Project(exe.testDir);
-				projects[$-1].addCommand("volta", voltaTool);
+			if (exe.testDir is null) {
+				continue;
 			}
+
+			voltaTool := getVoltaCommand(exe);
+			projects ~= new Project(exe.testDir);
+			projects[$-1].addCommand("volta", voltaTool);
 		}
+
 		foreach (lib; mLib) {
-			if (lib.testDir !is null) {
-				projects ~= new Project(lib.testDir);
-				projects[$-1].addCommand("volta", voltaTool);
+			if (lib.testDir is null) {
+				continue;
 			}
+
+			voltaTool := getVoltaCommand(lib);
+			projects ~= new Project(lib.testDir);
+			projects[$-1].addCommand("volta", voltaTool);
 		}
+
 		if (projects.length == 0) {
 			return;
 		}
+
 		testMain(projects);
 	}
 
@@ -515,21 +522,7 @@ Normal usecase when standing in a project directory.
 		return *c;
 	}
 
-	fn getTestProject() Base
-	{
-		if (mExe.length != 2) {
-			return null;
-		}
-		testProject: Base;
-		foreach (exe; mExe) {
-			if (exe.name != "volta") {
-				return exe;
-			}
-		}
-		return null;
-	}
-
-	fn getVoltaCommand() Command
+	fn getVoltaCommand(testProj: Base) Command
 	{
 		volta := getTool(false, "volta");
 		if (volta !is null) {
@@ -538,23 +531,21 @@ Normal usecase when standing in a project directory.
 
 		volta = new Command();
 		volta.name = "volta";
-		volta.print = "volta";
+		volta.print = VoltaPrint;
 
 		gen: ArgsGenerator;
 		gen.setup(mHostConfig is null ? mConfig : mHostConfig, mLib, mExe);
 		volta.cmd = gen.buildDir ~ dirSeparator ~ "volted";
-
-		foreach (arg; gen.genVoltaArgs(getTestProject())) {
-			volta.args ~= arg;
-		}
-
-		volta.args ~= gen.buildDir ~ dirSeparator ~ "rt.o";
-		volta.args ~= gen.buildDir ~ dirSeparator ~ "watt.o";
 		version (Windows) {
 			if (!endsWith(volta.cmd, ".exe")) {
 				volta.cmd ~= ".exe";
 			}
 		}
+
+		assert(testProj !is null);
+		volta.args ~= gen.genVoltaArgs(testProj);
+		volta.args ~= gen.buildDir ~ dirSeparator ~ "rt.o";
+		volta.args ~= gen.buildDir ~ dirSeparator ~ "watt.o";
 
 		foreach (i, asmpath; gen.store["rt"].srcAsm) {
 			volta.args ~= cleanPath(gen.buildDir ~ dirSeparator ~
@@ -564,4 +555,3 @@ Normal usecase when standing in a project directory.
 		return volta;
 	}
 }
-import watt.io;
