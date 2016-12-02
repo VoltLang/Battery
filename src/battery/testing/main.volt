@@ -20,9 +20,9 @@ import build.util.cmdgroup;
 
 import core.windows.windows;
 
+import battery.configuration;
 import battery.testing.test;
 import battery.testing.legacy;
-import battery.testing.command;
 import battery.testing.searcher;
 import battery.testing.project;
 import battery.testing.output.xml;
@@ -73,10 +73,10 @@ fn testMain(projects: Project[]) i32
 	tests: Test[];
 	foreach (i, project; projects) {
 		cmd := project.getCommand("volta");
-		cs := new CommandStore("");
-		cs.addCmd("volta", cmd.cmd, cmd.args);
+		cfg := new Configuration();
+		cfg.addTool("volta", cmd.cmd, cmd.args);
 
-		s := new Searcher(cs);
+		s := new Searcher(cfg);
 		tests ~= s.search(project.path, getFinalPrefix(format("test%s", i)));	
 	}
 

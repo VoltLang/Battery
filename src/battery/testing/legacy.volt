@@ -12,9 +12,9 @@ import watt.io.file : read;
 import core.stdc.stdio : printf, FILE, fprintf, fopen, fgets, fclose, fflush, stdout, stdin;
 import core.stdc.string : strlen;
 
+import battery.configuration;
 import battery.util.system;
 import battery.testing.test;
-import battery.testing.command;
 import build.util.cmdgroup;
 
 
@@ -48,11 +48,11 @@ public:
 
 
 protected:
-	mCommandStore: CommandStore;
+	mCommandStore: Configuration;
 
 
 public:
-	this(srcDir: string, test: string, cs: CommandStore, prefix: string)
+	this(srcDir: string, test: string, cs: Configuration, prefix: string)
 	{
 		this.srcDir = srcDir;
 		this.srcDirAppendable = srcDir ~ dirSeparator;
@@ -193,9 +193,13 @@ public:
 		}
 
 		// Get the command from the store.
-		if (runCmd == "" && !mCommandStore.getCmd("volta", args, out cmd, out args)) {
-			missingCommand(cmd);
-			return;
+		if (runCmd == "") {
+			c := mCommandStore.getTool("volta");
+			if (c is null) {
+				missingCommand(cmd);
+			}
+			cmd = c.cmd;
+			args ~= c.args;
 		}
 
 		// Finally run the compliler command.

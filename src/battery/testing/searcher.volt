@@ -5,9 +5,9 @@ import watt.io;
 import watt.io.file;
 import core.stdc.stdio;
 
+import battery.configuration;
 import battery.testing.test;
 import battery.testing.legacy;
-import battery.testing.command;
 
 
 /**
@@ -17,11 +17,11 @@ class Searcher
 {
 public:
 	mTests: Test[];
-	mCommandStore: CommandStore;
+	mCommandStore: Configuration;
 
 
 public:
-	this(cs: CommandStore)
+	this(cs: Configuration)
 	{
 		mCommandStore = cs;
 	}

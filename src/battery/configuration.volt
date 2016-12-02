@@ -2,6 +2,8 @@
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 module battery.configuration;
 
+import core.exception;
+
 import watt.process : Environment;
 public import battery.defines;
 public import battery.interfaces;
@@ -62,6 +64,19 @@ public:
 			return null;
 		}
 		return *c;
+	}
+
+	final fn addTool(name: string, cmd: string, args: string[])
+	{
+		c := getTool(name);
+		if (c !is null) {
+			throw new Exception("redefining tool '%s'", name);
+		}
+		c = new Command();
+		c.name = name;
+		c.cmd = cmd;
+		c.args = args;
+		commands[name] = c;
 	}
 
 /*
