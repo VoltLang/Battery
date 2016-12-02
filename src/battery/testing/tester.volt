@@ -14,6 +14,15 @@ import battery.testing.main;
 
 class Tester
 {
+private:
+	mDrv: Driver;
+	mLib: Lib[];
+	mExe: Exe[];
+	mConfig: Configuration;
+	mHostConfig: Configuration;
+
+
+public:
 	this(Driver drv)
 	{
 		mDrv = drv;
@@ -96,11 +105,4 @@ class Tester
 
 		return volta;
 	}
-
-	private:
-		mDrv: Driver;
-		mLib: Lib[];
-		mExe: Exe[];
-		mConfig: Configuration;
-		mHostConfig: Configuration;
 }
