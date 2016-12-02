@@ -6,12 +6,14 @@ import battery.interfaces;
 class Project
 {
 public:
+	name: string;
 	path: string;
 	commands: Command[string];
 
 public:
-	this(path: string)
+	this(name: string, path: string)
 	{
+		this.name = name;
 		this.path = path;
 	}
 

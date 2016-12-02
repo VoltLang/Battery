@@ -77,7 +77,7 @@ fn testMain(projects: Project[]) i32
 		cfg.addTool("volta", cmd.cmd, cmd.args);
 
 		s := new Searcher(cfg);
-		tests ~= s.search(project.path, getFinalPrefix(format("test%s", i)));	
+		tests ~= s.search(project.path, getFinalPrefix(project.name));
 	}
 
 	foreach (test; tests) {

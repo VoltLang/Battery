@@ -35,7 +35,7 @@ class Tester
 			}
 
 			voltaTool := getVoltaCommand(exe);
-			projects ~= new Project(exe.testDir);
+			projects ~= new Project(exe.name, exe.testDir);
 			projects[$-1].addCommand("volta", voltaTool);
 		}
 
@@ -45,7 +45,7 @@ class Tester
 			}
 
 			voltaTool := getVoltaCommand(lib);
-			projects ~= new Project(lib.testDir);
+			projects ~= new Project(lib.name, lib.testDir);
 			projects[$-1].addCommand("volta", voltaTool);
 		}
 
