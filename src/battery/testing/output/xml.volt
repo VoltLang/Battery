@@ -56,9 +56,10 @@ fn printXmlBad(f: FILE*, test: Test)
 {
 	name := test.name;
 	msg := test.msg;
+	pfix := test.prefix;
 
-	fprintf(f, "\t<testcase classname=\"%.*s\" name=\"\">\n".ptr,
-	        cast(int)name.length, name.ptr);
+	fprintf(f, "\t<testcase classname=\"%.*s%.*s\" name=\"\">\n".ptr,
+	        cast(i32)pfix.length, pfix.ptr, cast(int)name.length, name.ptr);
 	fprintf(f, "\t\t<failure type=\"Error\">%.*s</failure>\n".ptr,
 	        cast(int)msg.length, msg.ptr);
 	fprintf(f, "\t</testcase>\n".ptr);
