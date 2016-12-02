@@ -27,13 +27,13 @@ import battery.backend.builder;
 import battery.backend.command : ArgsGenerator;
 import battery.testing.main;
 import battery.testing.project;
+import battery.testing.tester;
 
 
 class DefaultDriver : Driver
 {
 public:
 	enum BatteryConfigFile = ".battery.config.txt";
-	enum BatteryTeslaConfig = ".battery.tesla.json";
 
 
 protected:
@@ -215,39 +215,8 @@ public:
 	fn test(args: string[])
 	{
 		build(args);
-		doTest();
-	}
-
-	/// TODO: Refactor function into Tester class similar to Builder.
-	fn doTest()
-	{
-		projects: Project[];
-
-		foreach (exe; mExe) {
-			if (exe.testDir is null) {
-				continue;
-			}
-
-			voltaTool := getVoltaCommand(exe);
-			projects ~= new Project(exe.testDir);
-			projects[$-1].addCommand("volta", voltaTool);
-		}
-
-		foreach (lib; mLib) {
-			if (lib.testDir is null) {
-				continue;
-			}
-
-			voltaTool := getVoltaCommand(lib);
-			projects ~= new Project(lib.testDir);
-			projects[$-1].addCommand("volta", voltaTool);
-		}
-
-		if (projects.length == 0) {
-			return;
-		}
-
-		testMain(projects);
+		tester := new Tester(this);
+		tester.test(mConfig, mHostConfig, mLib, mExe);
 	}
 
 	fn help(args: string[])
@@ -503,14 +472,7 @@ Normal usecase when standing in a project directory.
 		exit(-1);
 	}
 
-
-	/*
-	 *
-	 * Helper functions.
-	 *
-	 */
-
-	fn getTool(host: bool, name: string) Command
+	override fn getTool(host: bool, name: string) Command
 	{
 		if (host && mHostConfig is null) {
 			abort("can not use host commands when not cross compiling");
@@ -521,49 +483,5 @@ Normal usecase when standing in a project directory.
 			return null;
 		}
 		return *c;
-	}
-
-	fn getVoltaCommand(testProj: Base) Command
-	{
-		gen: ArgsGenerator;
-		gen.setup(mHostConfig is null ? mConfig : mHostConfig, mLib, mExe);
-
-		volta := getTool(false, "volta");
-		if (volta is null) {
-			volta = new Command();
-			volta.name = "volta";
-			volta.print = VoltaPrint;
-
-
-			volta.cmd = gen.buildDir ~ dirSeparator ~ "volted";
-			version (Windows) {
-				if (!endsWith(volta.cmd, ".exe")) {
-					volta.cmd ~= ".exe";
-				}
-			}
-		}
-
-		// Add deps and return files to be added to arguments.
-		fn cb(base: Base) string[] {
-			// Completely skip Exes.
-			exe := cast(Exe)base;
-			if (exe !is null) {
-				return null;
-			}
-
-			files: string[];
-			foreach (asmpath; base.srcAsm) {
-				files ~= gen.genFileO(asmpath);
-			}
-
-			files ~= gen.genVoltLibraryO(base.name);
-
-			return files;
-		}
-
-		// Generate arguments and collect files.
-		volta.args ~= gen.genVoltaArgs(testProj, cb);
-
-		return volta;
 	}
 }

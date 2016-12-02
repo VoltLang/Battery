@@ -89,6 +89,9 @@ public:
 	/// Set a tool that has been found.
 	abstract fn setTool(host: bool, name: string, c: Command);
 
+	/// Get a tool.
+	abstract fn getTool(host: bool, name: string) Command;
+
 	/// Add a tool, will reset the tool if already given.
 	abstract fn addToolCmd(host: bool, name: string, cmd: string);
 
