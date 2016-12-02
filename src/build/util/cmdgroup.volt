@@ -106,12 +106,9 @@ public:
 
 	fn run(cmd: string, args: string[], dgt: DoneDg, log: FILE*)
 	{
-		count : int;
+		// Wait untill we have a free slot.
 		while (waiting >= maxWaiting) {
 			waitOne();
-			if (count++ > 5) {
-				throw new Exception("Wait one failed to many times");
-			}
 		}
 
 		pid := spawnProcess(cmd, args, null, log, log, env);
