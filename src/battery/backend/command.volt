@@ -3,6 +3,7 @@
 module battery.backend.command;
 
 import watt.path : dirSeparator;
+import watt.text.string : endsWith;
 import io = watt.io;
 import core.stdc.stdlib : exit;
 import battery.interfaces;

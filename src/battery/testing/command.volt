@@ -7,21 +7,7 @@ import watt.text.format;
 import file = watt.io.file;
 import json = watt.text.json;
 
-
-class Command
-{
-public:
-	cmd: string;
-	baseArgs: string[];
-
-
-public:
-	this(cmd: string, baseArgs: string[])
-	{
-		this.cmd = cmd;
-		this.baseArgs = baseArgs;
-	}
-}
+import battery.interfaces;
 
 class CommandStore
 {
@@ -51,7 +37,7 @@ public:
 		}
 
 		cmd = c.cmd;
-		outArgs = c.baseArgs ~ args;
+		outArgs = c.args ~ args;
 
 		return true;
 	}

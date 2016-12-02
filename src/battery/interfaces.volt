@@ -58,6 +58,16 @@ class Command
 	args: string[];
 	/// Name to print.
 	print: string;
+
+	this()
+	{
+	}
+
+	this(cmd: string, args: string[])
+	{
+		this.cmd = cmd;
+		this.args = args;
+	}
 }
 
 abstract class Driver
