@@ -72,9 +72,10 @@ fn testMain(projects: Project[]) i32
 	cmdGroup := new CmdGroup(retrieveEnvironment(), processorCount());
 	tests: Test[];
 	foreach (i, project; projects) {
-		cmd := project.getCommand("volta");
 		cfg := new Configuration();
-		cfg.addTool("volta", cmd.cmd, cmd.args);
+		foreach (k, v; project.commands) {
+			cfg.addTool(k, v.cmd, v.args);
+		}
 
 		s := new Searcher(cfg);
 		tests ~= s.search(project.path, getFinalPrefix(project.name));

@@ -193,14 +193,14 @@ public:
 		}
 
 		// Get the command from the store.
-		if (runCmd == "") {
-			c := mCommandStore.getTool("volta");
-			if (c is null) {
-				missingCommand(cmd);
-			}
-			cmd = c.cmd;
-			args ~= c.args;
+		c := mCommandStore.getTool(cmd);
+		if (c is null) {
+			missingCommand(cmd);
+			return;
 		}
+
+		cmd = c.cmd;
+		args = c.args ~ args;
 
 		// Finally run the compliler command.
 		cmdGroup.run(cmd, args, compileDone, log);

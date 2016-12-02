@@ -43,9 +43,11 @@ public:
 				continue;
 			}
 
+			exeTool := getCommandFromExe(exe);
 			voltaTool := getVoltaCommand(exe);
 			projects ~= new Project(exe.name, exe.testDir);
 			projects[$-1].addCommand("volta", voltaTool);
+			projects[$-1].addCommand(exe.name, exeTool);
 		}
 
 		foreach (lib; libs) {
@@ -63,6 +65,15 @@ public:
 		}
 
 		testMain(projects);
+	}
+
+	fn getCommandFromExe(exe: Exe) Command
+	{
+		cmd := new Command();
+		cmd.name = exe.name;
+		cmd.print = "  " ~ exe.name ~ " ";
+		cmd.cmd = exe.bin;
+		return cmd;
 	}
 
 	fn getVoltaCommand(testProj: Base) Command
