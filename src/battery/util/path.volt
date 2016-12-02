@@ -6,12 +6,14 @@
 module battery.util.path;
 
 import watt.text.string : replace;
+import watt.text.path : normalizePath;
+
 
 fn cleanPath(s: string) string
 {
 	version (Windows) {
-		return s.replace(":", "");
+		return normalizePath(s.replace(":", ""));
 	} else {
-		return s;
+		return normalizePath(s);
 	}
 }
