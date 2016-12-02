@@ -42,7 +42,11 @@ private:
 			switch (file) {
 			case "", ".", "..":
 				return;
-			case "tesla.simple.txt":
+			case "battery.tests.json":
+				t := dir ~ dirSeparator ~ file;
+				writefln("Found new but not yet supported tests (%s)!", t);
+				return;
+			case "battery.tests.simple":
 				searchSimple(dir, dir, prefix);
 				return;
 			default:
