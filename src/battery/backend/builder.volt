@@ -248,9 +248,6 @@ public:
 		mainFile := srcDir ~ dirSeparator ~ "main.d";
 		files := deepScan(mDrv, srcDir, ".d");
 		name := gen.genVolted();
-		version (Windows) if (!endsWith(name, ".exe")) {
-			name ~= ".exe";
-		}
 
 		t := ins.fileNoRule(name);
 		t.deps = new uni.Target[](files.length);

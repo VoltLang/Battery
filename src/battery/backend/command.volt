@@ -150,7 +150,13 @@ public:
 
 	fn genVolted() string
 	{
-		return cleanPath(buildDir ~ dirSeparator ~ "volted");
+		cmd := cleanPath(buildDir ~ dirSeparator ~ "volted");
+		version (Windows) {
+			if (!endsWith(cmd, ".exe")) {
+				cmd ~= ".exe";
+			}
+		}
+		return cmd;
 	}
 
 	fn genFileO(name: string) string

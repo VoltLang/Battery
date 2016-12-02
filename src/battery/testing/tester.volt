@@ -61,19 +61,16 @@ class Tester
 		gen: ArgsGenerator;
 		gen.setup(mHostConfig is null ? mConfig : mHostConfig, mLib, mExe);
 
-		volta := mDrv.getTool(false, "volta");
-		if (volta is null) {
-			volta = new Command();
-			volta.name = "volta";
-			volta.print = VoltaPrint;
+		volta := new Command();
+		volta.name = "volta";
+		volta.print = VoltaPrint;
+		volta.cmd = gen.genVolted();
 
-
-			volta.cmd = gen.buildDir ~ dirSeparator ~ "volted";
-			version (Windows) {
-				if (!endsWith(volta.cmd, ".exe")) {
-					volta.cmd ~= ".exe";
-				}
-			}
+		// Should we replace the command with the one given on the command line.
+		tool := mDrv.getTool(false, "volta");
+		if (tool !is null) {
+			volta.cmd = tool.cmd;
+			volta.args = volta.args;
 		}
 
 		// Add deps and return files to be added to arguments.
