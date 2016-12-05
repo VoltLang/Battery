@@ -5,6 +5,9 @@ module battery.testing.searcher;
 import watt.path;
 import watt.io;
 import watt.io.file;
+import watt.text.format;
+import json = watt.text.json;
+import core.exception;
 import core.stdc.stdio;
 
 import battery.configuration;
@@ -46,6 +49,7 @@ private:
 				return;
 			case "battery.tests.json":
 				t := dir ~ dirSeparator ~ file;
+				searchJson(base, dir, prefix, t);
 				writefln("Found new but not yet supported tests (%s)!", t);
 				return;
 			case "battery.tests.simple":
@@ -84,5 +88,38 @@ private:
 		}
 
 		searchDir(dir, "*", hit);
+	}
+
+	fn searchJson(base: string, dir: string, prefix: string, jsonPath: string)
+	{
+		btj: BatteryTestsJson;
+		btj.parse(jsonPath);
+	}
+}
+
+struct BatteryTestsJson
+{
+	pattern: string;
+
+	fn parse(jsonPath: string)
+	{
+		fn error(msg: string)
+		{
+			throw new Exception(format("Malformed battery.tests.json: %s.", msg));
+		}
+		jsonTxt := cast(string)read(jsonPath);
+		rootValue := json.parse(jsonTxt);
+		if (rootValue.type() != json.DomType.OBJECT) {
+			error("root node is not an object");
+		}
+		if (!rootValue.hasObjectKey("pattern")) {
+			error("root object does not declare pattern field");
+		}
+		patternValue := rootValue.lookupObjectKey("pattern");
+		if (patternValue.type() != json.DomType.STRING) {
+			error("pattern field is not a string");
+		}
+
+		pattern = patternValue.str();
 	}
 }
