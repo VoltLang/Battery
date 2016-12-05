@@ -4,13 +4,23 @@ module battery.testing.tester;
 
 import watt.path : dirSeparator;
 import watt.text.string : endsWith;
+import watt.process;
 
 import battery.interfaces;
 import battery.configuration;
 import battery.policy.tools;
 import battery.backend.command;
+import battery.util.system;
+import build.util.cmdgroup;
 import battery.testing.project;
-import battery.testing.main;
+import battery.testing.test;
+import battery.testing.searcher;
+import battery.testing.output.stdio;
+import battery.testing.output.xml;
+
+
+private enum DEFAULT_DIR = "test";
+private enum DEFAULT_RESULTS = "results.xml";
 
 class Tester
 {
@@ -65,6 +75,32 @@ public:
 		}
 
 		testMain(projects);
+	}
+
+	fn testMain(projects: Project[])
+	{
+		cmdGroup := new CmdGroup(retrieveEnvironment(), processorCount());
+		tests: Test[];
+		foreach (i, project; projects) {
+			cfg := new Configuration();
+			foreach (k, v; project.commands) {
+				cfg.addTool(k, v.cmd, v.args);
+			}
+
+			s := new Searcher(cfg);
+			tests ~= s.search(project.path, getFinalPrefix(project.name));
+		}
+
+		foreach (test; tests) {
+			test.runTest(cmdGroup);
+		}
+
+		cmdGroup.waitAll();
+
+		hasRegression: bool;
+
+		writeXmlFile(DEFAULT_RESULTS, tests);
+		writeToStdio(tests, out hasRegression);
 	}
 
 	fn getCommandFromExe(exe: Exe) Command

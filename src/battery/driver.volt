@@ -25,7 +25,6 @@ import battery.frontend.parameters;
 import battery.frontend.scanner;
 import battery.backend.builder;
 import battery.backend.command : ArgsGenerator;
-import battery.testing.main;
 import battery.testing.project;
 import battery.testing.tester;
 
