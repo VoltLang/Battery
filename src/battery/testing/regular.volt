@@ -68,7 +68,7 @@ public:
 	{
 		this.cmdGroup = cmdGroup;
 		mOutDir = ".obj" ~ dirSeparator ~ name;
-		mkdir(mOutDir);
+		mkdirP(mOutDir);
 		mOutFile = mOutDir ~ dirSeparator ~ "output";
 		logFile := mOutDir ~ dirSeparator ~ "log.txt";
 		log = fopen(toStringz(logFile), "w");
