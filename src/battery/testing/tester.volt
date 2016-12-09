@@ -82,6 +82,7 @@ public:
 		cmdGroup := new CmdGroup(retrieveEnvironment(), processorCount());
 		tests: Test[];
 		foreach (i, project; projects) {
+			mDrv.info("  TEST     %s", project.path);
 			cfg := new Configuration();
 			foreach (k, v; project.commands) {
 				cfg.addTool(k, v.cmd, v.args);
