@@ -29,7 +29,7 @@ fn writeXmlFile(filename: string, tests: Test[])
 	fprintf(f, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n".ptr);
 	fprintf(f, "<testsuites errors=\"%u\" failures=\"%u\" tests=\"%u\">\n",
 	        fail, xfail, total);
-	fprintf(f, "\t<testsuite name=\"tests\" errors=\"%u\" failures=\"%u\" tests=\"%u\">\n",
+	fprintf(f, "\t<testsuite errors=\"%u\" failures=\"%u\" tests=\"%u\">\n",
 	        fail, xfail, total);
 
 	foreach (test; tests) {
