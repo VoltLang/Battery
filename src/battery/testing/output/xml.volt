@@ -4,6 +4,7 @@ module battery.testing.output.xml;
 
 import core.stdc.stdio : FILE, fprintf, fopen, fflush, fclose;
 import watt.conv : toStringz;
+import watt.text.html : htmlEscape;
 import battery.testing.test;
 
 
@@ -76,14 +77,20 @@ fn printXmlBad(f: FILE*, test: Test)
 
 fn printOutput(f: FILE*, test: Test)
 {
+	fn print(str: scope const(char)[]) {
+		fprintf(f, "%.*s", cast(i32)str.length, str.ptr);
+	}
+
 	outputStr := test.getOutput();
 	if (outputStr.length > 0) {
-		fprintf(f, "\t\t<system-out>%.*s\t\t</system-out>\n".ptr,
-			cast(i32)outputStr.length, outputStr.ptr);
+		print("\t\t<system-out>");
+		htmlEscape(print, outputStr);
+		print("\t\t</system-out>\n");
 	}
 	errorStr := test.getError();
 	if (errorStr.length > 0) {
-		fprintf(f, "\t\t<system-err>%.*s\t\t</system-err>\n".ptr,
-			cast(i32)errorStr.length, errorStr.ptr);
+		print("\t\t<system-out>");
+		htmlEscape(print, errorStr);
+		print("\t\t</system-out>\n");
 	}
 }
