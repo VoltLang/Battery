@@ -3,6 +3,7 @@
 module battery.testing.output.xml;
 
 import core.stdc.stdio : FILE, fprintf, fopen, fflush, fclose;
+import watt.text.sink : Sink;
 import watt.conv : toStringz;
 import watt.text.html : htmlEscape;
 import battery.testing.test;
@@ -28,7 +29,7 @@ fn writeXmlFile(filename: string, tests: Test[])
 	fprintf(f, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n".ptr);
 	fprintf(f, "<testsuites errors=\"%u\" failures=\"%u\" tests=\"%u\">\n",
 	        fail, xfail, total);
-	fprintf(f, "\t<testsuite errors=\"%u\" failures=\"%u\" tests=\"%u\">\n",
+	fprintf(f, "\t<testsuite name=\"tests\" errors=\"%u\" failures=\"%u\" tests=\"%u\">\n",
 	        fail, xfail, total);
 
 	foreach (test; tests) {
@@ -55,21 +56,15 @@ fn printXmlOk(f: FILE*, test: Test)
 		fprintf(f, "%.*s", cast(i32)str.length, str.ptr);
 	}
 
-	name := test.name;
-	pfix := test.prefix;
 	outputStr := test.getOutput();
 	errorStr := test.getError();
 
-	print("\t\t<testcase classname=\"");
-	print(pfix);
-	print(name);
-	print("\" name=\"\"");
+	stopTag := outputStr.length == 0 && errorStr.length == 0;
 
-	if (outputStr.length == 0 && errorStr.length == 0) {
-		print("/>\n");
-	} else {
-		print(">\n");
-		printOutput(f, test);
+	printTestCase(print, test, stopTag);
+
+	if (!stopTag) {
+		printOutput(print, test);
 		fprintf(f, "\t\t</testcase>\n");
 	}
 }
@@ -80,28 +75,35 @@ fn printXmlBad(f: FILE*, test: Test)
 		fprintf(f, "%.*s", cast(i32)str.length, str.ptr);
 	}
 
-	name := test.name;
 	msg := test.msg;
-	pfix := test.prefix;
 
-	print("\t\t<testcase classname=\"");
-	print(pfix);
-	print(name);
-	print("\" name=\"\">\n");
-
+	printTestCase(print, test, false);
 	print("\t\t<failure message=\"");
 	htmlEscape(print, msg);
 	print("\" type=\"Error\"></failure>\n");
-	printOutput(f, test);
+	printOutput(print, test);
 	print("\t\t</testcase>\n");
 }
 
-fn printOutput(f: FILE*, test: Test)
+fn printTestCase(print: Sink, test: Test, stopTag: bool)
 {
-	fn print(str: scope const(char)[]) {
-		fprintf(f, "%.*s", cast(i32)str.length, str.ptr);
-	}
+	name := test.name;
+	pfix := test.prefix;
 
+	print("\t\t<testcase classname=\"");
+	print(pfix[0 .. $ - 1]);
+	print("\" name=\"");
+	print(name);
+
+	if (stopTag) {
+		print("\"/>\n");
+	} else {
+		print("\">\n");
+	}
+}
+
+fn printOutput(print: Sink, test: Test)
+{
 	outputStr := test.getOutput();
 	if (outputStr.length > 0) {
 		print("\t\t\t<system-out>");
