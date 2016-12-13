@@ -51,7 +51,7 @@ fn getBuiltPlatform() string
 	}
 }
 
-fn getFinalPrefix(base: string) string
+fn getBuiltIdent() string
 {
-	return format("%s-%s/%s/", getBuiltArch(), getBuiltPlatform(), base);
+	return format("%s-%s", getBuiltArch(), getBuiltPlatform());
 }

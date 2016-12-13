@@ -89,7 +89,7 @@ public:
 			}
 
 			s := new Searcher(cfg);
-			tests ~= s.search(project.path, getFinalPrefix(project.name));
+			tests ~= s.search(project, project.path);
 		}
 
 		foreach (test; tests) {
@@ -99,8 +99,8 @@ public:
 		cmdGroup.waitAll();
 
 		hasRegression: bool;
-
-		writeXmlFile(DEFAULT_RESULTS, tests);
+		host := getBuiltIdent();
+		writeXmlFile(host, DEFAULT_RESULTS, tests);
 		writeToStdio(tests, out hasRegression);
 	}
 

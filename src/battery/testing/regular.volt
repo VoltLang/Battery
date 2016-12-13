@@ -13,6 +13,7 @@ import watt.text.format;
 
 import battery.configuration;
 import battery.testing.test;
+import battery.testing.project;
 import build.util.cmdgroup;
 
 class Regular : Test
@@ -54,13 +55,13 @@ private:
 
 public:
 	this(srcDir: string, test: string, testFileName: string,
-		commandPrefix: string, prefix: string, cs: Configuration)
+		commandPrefix: string, project: Project, cs: Configuration)
 	{
 		this.srcDir = srcDir;
 		this.srcFile = srcDir ~ dirSeparator ~ testFileName;
 		this.testFileName = testFileName;
 		this.name = test;
-		this.prefix = prefix;
+		this.project = project;
 		this.mCommandStore = cs;
 
 		this.commandPrefix = commandPrefix;

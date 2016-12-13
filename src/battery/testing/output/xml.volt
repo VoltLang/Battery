@@ -9,7 +9,7 @@ import watt.text.html : htmlEscape;
 import battery.testing.test;
 
 
-fn writeXmlFile(filename: string, tests: Test[])
+fn writeXmlFile(ident: string, filename: string, tests: Test[])
 {
 	f := fopen(toStringz(filename), "w+");
 	if (f is null) {
@@ -29,8 +29,8 @@ fn writeXmlFile(filename: string, tests: Test[])
 	fprintf(f, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n".ptr);
 	fprintf(f, "<testsuites errors=\"%u\" failures=\"%u\" tests=\"%u\">\n",
 	        fail, xfail, total);
-	fprintf(f, "\t<testsuite errors=\"%u\" failures=\"%u\" tests=\"%u\">\n",
-	        fail, xfail, total);
+	fprintf(f, "\t<testsuite name=\"%.*s\" errors=\"%u\" failures=\"%u\" tests=\"%u\">\n",
+	        cast(int)ident.length, ident.ptr, fail, xfail, total);
 
 	foreach (test; tests) {
 		final switch(test.result) with (Result) {
@@ -87,13 +87,10 @@ fn printXmlBad(f: FILE*, test: Test)
 
 fn printTestCase(print: Sink, test: Test, stopTag: bool)
 {
-	name := test.name;
-	pfix := test.prefix;
-
 	print("\t\t<testcase classname=\"");
-	print(pfix[0 .. $ - 1]);
+	print(test.project.name);
 	print("\" name=\"");
-	print(name);
+	print(test.name);
 
 	if (stopTag) {
 		print("\"/>\n");

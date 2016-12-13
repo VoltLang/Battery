@@ -5,6 +5,7 @@ module battery.testing.test;
 import core.stdc.stdio : FILE;
 
 import build.util.cmdgroup;
+import battery.testing.project;
 
 
 /**
@@ -26,7 +27,7 @@ abstract class Test
 public:
 	name: string;
 	msg: string;
-	prefix: string;
+	project: Project;
 
 	result: Result;
 

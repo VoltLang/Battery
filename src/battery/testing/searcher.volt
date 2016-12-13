@@ -14,6 +14,7 @@ import core.stdc.stdio;
 import battery.configuration;
 import battery.testing.test;
 import battery.testing.legacy;
+import battery.testing.project;
 import battery.testing.regular;
 
 
@@ -33,16 +34,16 @@ public:
 		mCommandStore = cs;
 	}
 
-	fn search(dir: string, prefix: string) Test[]
+	fn search(project: Project, dir: string) Test[]
 	{
-		search(dir, dir, prefix);
+		search(project, dir, dir);
 
 		return mTests;
 	}
 
 
 private:
-	fn search(base: string, dir: string, prefix: string)
+	fn search(project: Project, base: string, dir: string)
 	{
 		fn hit(file: string)
 		{
@@ -52,17 +53,17 @@ private:
 			case "battery.tests.json":
 				btj: BatteryTestsJson;
 				btj.parse(dir ~ dirSeparator ~ file);
-				searchJson(dir, dir, prefix, ref btj);
+				searchJson(project, dir, dir, ref btj);
 				return;
 			case "battery.tests.simple":
-				searchSimple(dir, dir, prefix);
+				searchSimple(project, dir, dir);
 				return;
 			default:
 				fullpath := dir ~ dirSeparator ~ file;
 				if (!isDir(fullpath)) {
 					return;
 				}
-				search(base, fullpath, prefix);
+				search(project, base, fullpath);
 				return;
 			}
 		}
@@ -70,7 +71,7 @@ private:
 		searchDir(dir, "*", hit);
 	}
 
-	fn searchSimple(base: string, dir: string, prefix: string)
+	fn searchSimple(project: Project, base: string, dir: string)
 	{
 		fn hit(file: string) {
 			switch (file) {
@@ -78,21 +79,21 @@ private:
 				return;
 			case "test.volt":
 				test := dir[base.length + 1 .. $];
-				mTests ~= new Legacy(dir, test, mCommandStore, prefix);
+				mTests ~= new Legacy(dir, test, mCommandStore, project);
 				return;
 			default:
 				fullpath := dir ~ dirSeparator ~ file;
 				if (!isDir(fullpath)) {
 					return;
 				}
-				searchSimple(base, fullpath, prefix);
+				searchSimple(project, base, fullpath);
 			}
 		}
 
 		searchDir(dir, "*", hit);
 	}
 
-	fn searchJson(base: string, dir: string, prefix: string, ref btj: BatteryTestsJson)
+	fn searchJson(project: Project, base: string, dir: string, ref btj: BatteryTestsJson)
 	{
 		fn hit(file: string) {
 			switch (file) {
@@ -102,14 +103,14 @@ private:
 				if (globMatch(file, btj.pattern)) {
 					test := dir[base.length + 1 .. $];
 					mTests ~= new Regular(dir, test, file,
-						btj.testCommandPrefix, prefix, mCommandStore);
+						btj.testCommandPrefix, project, mCommandStore);
 					return;
 				}
 				fullpath := dir ~ dirSeparator ~ file;
 				if (!isDir(fullpath)) {
 					return;
 				}
-				searchJson(base, fullpath, prefix, ref btj);
+				searchJson(project, base, fullpath, ref btj);
 			}
 		}
 

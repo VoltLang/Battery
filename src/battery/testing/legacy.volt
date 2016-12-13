@@ -15,6 +15,7 @@ import core.stdc.string : strlen;
 import battery.configuration;
 import battery.util.system;
 import battery.testing.test;
+import battery.testing.project;
 import build.util.cmdgroup;
 
 
@@ -55,14 +56,14 @@ protected:
 
 
 public:
-	this(srcDir: string, test: string, cs: Configuration, prefix: string)
+	this(srcDir: string, test: string, cs: Configuration, project: Project)
 	{
 		this.srcDir = srcDir;
 		this.srcDirAppendable = srcDir ~ dirSeparator;
 		this.name = test;
 		this.test = test;
 		this.mCommandStore = cs;
-		this.prefix = prefix;
+		this.project = project;
 	}
 
 	override fn runTest(cmdGroup: CmdGroup)
