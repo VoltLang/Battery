@@ -25,7 +25,10 @@ fn writeXmlFile(filename: string, tests: Test[])
 		}
 	}
 
+	fprintf(f, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n".ptr);
 	fprintf(f, "<testsuites errors=\"%u\" failures=\"%u\" tests=\"%u\">\n",
+	        fail, xfail, total);
+	fprintf(f, "\t<testsuite errors=\"%u\" failures=\"%u\" tests=\"%u\">\n",
 	        fail, xfail, total);
 
 	foreach (test; tests) {
@@ -35,6 +38,9 @@ fn writeXmlFile(filename: string, tests: Test[])
 		}
 	}
 
+	fprintf(f, "\t\t<system-out/>\n".ptr);
+	fprintf(f, "\t\t<system-err/>\n".ptr);
+	fprintf(f, "\t</testsuite>\n".ptr);
 	fprintf(f, "</testsuites>\n".ptr);
 	fflush(f);
 	fclose(f);
@@ -45,34 +51,49 @@ private:
 
 fn printXmlOk(f: FILE*, test: Test)
 {
+	fn print(str: scope const(char)[]) {
+		fprintf(f, "%.*s", cast(i32)str.length, str.ptr);
+	}
+
 	name := test.name;
 	pfix := test.prefix;
 	outputStr := test.getOutput();
 	errorStr := test.getError();
 
+	print("\t\t<testcase classname=\"");
+	print(pfix);
+	print(name);
+	print("\" name=\"\"");
+
 	if (outputStr.length == 0 && errorStr.length == 0) {
-		fprintf(f, "\t<testcase classname=\"%.*s%.*s\" name=\"\"/>\n".ptr,
-			cast(i32)pfix.length, pfix.ptr, cast(int)name.length, name.ptr);
+		print("/>\n");
 	} else {
-		fprintf(f, "\t<testcase classname=\"%.*s%.*s\" name=\"\">\n".ptr,
-			cast(i32)pfix.length, pfix.ptr, cast(int)name.length, name.ptr);
+		print(">\n");
 		printOutput(f, test);
-		fprintf(f, "\t</testcase>\n");
+		fprintf(f, "\t\t</testcase>\n");
 	}
 }
 
 fn printXmlBad(f: FILE*, test: Test)
 {
+	fn print(str: scope const(char)[]) {
+		fprintf(f, "%.*s", cast(i32)str.length, str.ptr);
+	}
+
 	name := test.name;
 	msg := test.msg;
 	pfix := test.prefix;
 
-	fprintf(f, "\t<testcase classname=\"%.*s%.*s\" name=\"\">\n".ptr,
-	        cast(i32)pfix.length, pfix.ptr, cast(int)name.length, name.ptr);
-	fprintf(f, "\t\t<failure type=\"Error\">%.*s</failure>\n".ptr,
-	        cast(int)msg.length, msg.ptr);
+	print("\t\t<testcase classname=\"");
+	print(pfix);
+	print(name);
+	print("\" name=\"\">\n");
+
+	print("\t\t<failure message=\"");
+	htmlEscape(print, msg);
+	print("\" type=\"Error\"></failure>\n");
 	printOutput(f, test);
-	fprintf(f, "\t</testcase>\n".ptr);
+	print("\t\t</testcase>\n");
 }
 
 fn printOutput(f: FILE*, test: Test)
@@ -83,14 +104,14 @@ fn printOutput(f: FILE*, test: Test)
 
 	outputStr := test.getOutput();
 	if (outputStr.length > 0) {
-		print("\t\t<system-out>");
+		print("\t\t\t<system-out>");
 		htmlEscape(print, outputStr);
-		print("\t\t</system-out>\n");
+		print("\t\t\t</system-out>\n");
 	}
 	errorStr := test.getError();
 	if (errorStr.length > 0) {
-		print("\t\t<system-out>");
+		print("\t\t\t<system-err>");
 		htmlEscape(print, errorStr);
-		print("\t\t</system-out>\n");
+		print("\t\t\t</system-err>\n");
 	}
 }
