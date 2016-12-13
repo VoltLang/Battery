@@ -3,6 +3,7 @@
 module battery.testing.output.xml;
 
 import core.stdc.stdio : FILE, fprintf, fopen, fflush, fclose;
+import watt.text.format : formatSink;
 import watt.text.sink : Sink;
 import watt.conv : toStringz;
 import watt.text.html : htmlEscape;
@@ -26,16 +27,20 @@ fn writeXmlFile(ident: string, filename: string, tests: Test[])
 		}
 	}
 
-	fprintf(f, "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n".ptr);
-	fprintf(f, "<testsuites errors=\"%u\" failures=\"%u\" tests=\"%u\">\n",
+	fn print(str: scope const(char)[]) {
+		fprintf(f, "%.*s", cast(i32)str.length, str.ptr);
+	}
+
+	print("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
+	formatSink(print, "<testsuites errors=\"%s\" failures=\"%s\" tests=\"%s\">\n",
 	        fail, xfail, total);
-	fprintf(f, "\t<testsuite name=\"%.*s\" errors=\"%u\" failures=\"%u\" tests=\"%u\">\n",
-	        cast(int)ident.length, ident.ptr, fail, xfail, total);
+	formatSink(print, "\t<testsuite name=\"%s\" errors=\"%s\" failures=\"%s\" tests=\"%s\">\n",
+	        ident, fail, xfail, total);
 
 	foreach (test; tests) {
 		final switch(test.result) with (Result) {
-		case PASS, XPASS: printXmlOk(f, test); break;
-		case FAIL, XFAIL: printXmlBad(f, test); break;
+		case PASS, XPASS: printXmlOk(print, ident, test); break;
+		case FAIL, XFAIL: printXmlBad(print, ident, test); break;
 		}
 	}
 
@@ -50,52 +55,40 @@ fn writeXmlFile(ident: string, filename: string, tests: Test[])
 
 private:
 
-fn printXmlOk(f: FILE*, test: Test)
+fn printXmlOk(print: Sink, ident: string, test: Test)
 {
-	fn print(str: scope const(char)[]) {
-		fprintf(f, "%.*s", cast(i32)str.length, str.ptr);
-	}
-
 	outputStr := test.getOutput();
 	errorStr := test.getError();
 
 	stopTag := outputStr.length == 0 && errorStr.length == 0;
 
-	printTestCase(print, test, stopTag);
+	printTestCase(print, ident, test, stopTag);
 
 	if (!stopTag) {
 		printOutput(print, test);
-		fprintf(f, "\t\t</testcase>\n");
+		print("\t\t</testcase>\n");
 	}
 }
 
-fn printXmlBad(f: FILE*, test: Test)
+fn printXmlBad(print: Sink, ident: string, test: Test)
 {
-	fn print(str: scope const(char)[]) {
-		fprintf(f, "%.*s", cast(i32)str.length, str.ptr);
-	}
-
-	msg := test.msg;
-
-	printTestCase(print, test, false);
+	printTestCase(print, ident, test, false);
 	print("\t\t<failure message=\"");
-	htmlEscape(print, msg);
+	htmlEscape(print, test.msg);
 	print("\" type=\"Error\"></failure>\n");
 	printOutput(print, test);
 	print("\t\t</testcase>\n");
 }
 
-fn printTestCase(print: Sink, test: Test, stopTag: bool)
+fn printTestCase(print: Sink, ident: string, test: Test, stopTag: bool)
 {
-	print("\t\t<testcase classname=\"");
-	print(test.project.name);
-	print("\" name=\"");
-	print(test.name);
+	formatSink(print, "\t\t<testcase classname=\"%s/%s\" name=\"%s\"",
+		ident, test.project.name, test.name);
 
 	if (stopTag) {
-		print("\"/>\n");
+		print("/>\n");
 	} else {
-		print("\">\n");
+		print(">\n");
 	}
 }
 
