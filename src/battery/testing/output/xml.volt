@@ -46,10 +46,18 @@ fn printXmlOk(f: FILE*, test: Test)
 {
 	name := test.name;
 	pfix := test.prefix;
+	outputStr := test.getOutput();
+	errorStr := test.getError();
 
-	fprintf(f, "\t<testcase classname=\"%.*s%.*s\" name=\"\"/>\n".ptr,
-	        cast(i32)pfix.length, pfix.ptr, cast(int)name.length, name.ptr);
-
+	if (outputStr.length == 0 && errorStr.length == 0) {
+		fprintf(f, "\t<testcase classname=\"%.*s%.*s\" name=\"\"/>\n".ptr,
+			cast(i32)pfix.length, pfix.ptr, cast(int)name.length, name.ptr);
+	} else {
+		fprintf(f, "\t<testcase classname=\"%.*s%.*s\" name=\"\">\n".ptr,
+			cast(i32)pfix.length, pfix.ptr, cast(int)name.length, name.ptr);
+		printOutput(f, test);
+		fprintf(f, "\t</testcase>\n");
+	}
 }
 
 fn printXmlBad(f: FILE*, test: Test)
@@ -62,5 +70,20 @@ fn printXmlBad(f: FILE*, test: Test)
 	        cast(i32)pfix.length, pfix.ptr, cast(int)name.length, name.ptr);
 	fprintf(f, "\t\t<failure type=\"Error\">%.*s</failure>\n".ptr,
 	        cast(int)msg.length, msg.ptr);
+	printOutput(f, test);
 	fprintf(f, "\t</testcase>\n".ptr);
+}
+
+fn printOutput(f: FILE*, test: Test)
+{
+	outputStr := test.getOutput();
+	if (outputStr.length > 0) {
+		fprintf(f, "\t\t<system-out>%.*s\t\t</system-out>\n".ptr,
+			cast(i32)outputStr.length, outputStr.ptr);
+	}
+	errorStr := test.getError();
+	if (errorStr.length > 0) {
+		fprintf(f, "\t\t<system-err>%.*s\t\t</system-err>\n".ptr,
+			cast(i32)errorStr.length, errorStr.ptr);
+	}
 }

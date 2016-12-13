@@ -3,7 +3,7 @@
 module battery.testing.regular;
 
 import core.exception;
-import core.stdc.stdio : fopen, fclose;
+import core.stdc.stdio;
 import watt.io;
 import watt.path;
 import watt.conv;
@@ -47,6 +47,10 @@ private:
 	mOutDir: string;
 	mOutFile: string;
 	mCommandStore: Configuration;
+	mOutputLog: FILE*;
+	mOlogFile: string;
+	mErrorLog: FILE*;
+	mElogFile: string;
 
 public:
 	this(srcDir: string, test: string, testFileName: string,
@@ -70,8 +74,10 @@ public:
 		mOutDir = ".obj" ~ dirSeparator ~ name;
 		mkdirP(mOutDir);
 		mOutFile = mOutDir ~ dirSeparator ~ "output";
-		logFile := mOutDir ~ dirSeparator ~ "log.txt";
-		log = fopen(toStringz(logFile), "w");
+		mOlogFile = mOutDir ~ dirSeparator ~ "outlog.txt";
+		mElogFile = mOutDir ~ dirSeparator ~ "errlog.txt";
+		mOutputLog = fopen(toStringz(mOlogFile), "w");
+		mErrorLog = fopen(toStringz(mElogFile), "w");
 
 		ifs := new InputFileStream(srcFile);
 		while (!ifs.eof()) {
@@ -109,6 +115,16 @@ public:
 		runCommand();
 	}
 
+	override fn getOutput() string
+	{
+		return cast(string)read(mOlogFile);
+	}
+
+	override fn getError() string
+	{
+		return cast(string)read(mElogFile);
+	}
+
 private:
 	fn runRuns(retval: int)
 	{
@@ -135,7 +151,7 @@ private:
 			cmd = c.cmd;
 			args = c.args ~ args;
 		}
-		cmdGroup.run(cmd, args, runRuns, log);
+		cmdGroup.run(cmd, args, runRuns, mOutputLog, mErrorLog);
 	}
 
 	fn parseRunCommand(line: string) bool
@@ -178,10 +194,10 @@ private:
 		}
 
 		// Close the log.
-		if (log !is null) {
-			fclose(log);
-			log = null;
-		}
+		fclose(mOutputLog);
+		mOutputLog = null;
+		fclose(mErrorLog);
+		mErrorLog = null;
 	}
 
 	fn testOk()

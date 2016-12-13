@@ -106,12 +106,17 @@ public:
 
 	fn run(cmd: string, args: string[], dgt: DoneDg, log: FILE*)
 	{
-		// Wait untill we have a free slot.
+		run(cmd, args, dgt, log, log);
+	}
+
+	fn run(cmd: string, args: string[], dgt: DoneDg, outLog: FILE*, errLog: FILE*)
+	{
+		// Wait until we have a free slot.
 		while (waiting >= maxWaiting) {
 			waitOne();
 		}
 
-		pid := spawnProcess(cmd, args, null, log, log, env);
+		pid := spawnProcess(cmd, args, null, outLog, errLog, env);
 
 		version (Windows) {
 

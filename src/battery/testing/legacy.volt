@@ -26,7 +26,10 @@ public:
 	test: string;
 
 	outFile: string;
-	logFile: string;
+	ologFile: string;
+	olog: FILE*;
+	elogFile: string;
+	elog: FILE*;
 	srcFile: string;
 	args: string[];
 
@@ -86,8 +89,10 @@ public:
 		srcFile = srcFile[0 .. srcFile.length - 1];
 		outDirAppendable = ".obj" ~ dirSeparator ~ test ~ dirSeparator;
 		outFile = outDirAppendable ~ "output.exe";
-		logFile = outDirAppendable ~ "log.txt\0";
-		logFile = logFile[0 .. logFile.length - 1];
+		ologFile = outDirAppendable ~ "outlog.txt\0";
+		ologFile = ologFile[0 .. ologFile.length - 1];
+		elogFile = outDirAppendable ~ "errlog.txt\0";
+		elogFile = elogFile[0 .. elogFile.length - 1];
 
 		mkdirP(outDirAppendable);
 
@@ -179,9 +184,15 @@ public:
 		fclose(data);
 		data = null;
 
-		log = fopen(logFile.ptr, "w".ptr);
-		if (log is null) {
-			couldNotOpenLog(logFile);
+		olog = fopen(ologFile.ptr, "w".ptr);
+		if (olog is null) {
+			couldNotOpenLog(ologFile);
+			return;
+		}
+
+		elog = fopen(elogFile.ptr, "w".ptr);
+		if (elog is null) {
+			couldNotOpenLog(elogFile);
 			return;
 		}
 
@@ -203,7 +214,17 @@ public:
 		args = c.args ~ args;
 
 		// Finally run the compliler command.
-		cmdGroup.run(cmd, args, compileDone, log);
+		cmdGroup.run(cmd, args, compileDone, olog, elog);
+	}
+
+	override fn getOutput() string
+	{
+		return cast(string)read(ologFile);
+	}
+
+	override fn getError() string
+	{
+		return cast(string)read(elogFile);
 	}
 
 private:
@@ -244,7 +265,7 @@ private:
 		if (expectedErrorLine == 0 && expectedErrorMessage.length == 0) {
 			return true;
 		}
-		logtxt := cast(string)read(logFile);
+		logtxt := cast(string)read(elogFile);
 		firstColon := logtxt.indexOf(':');
 		if (firstColon == -1) {
 			malformedError();
@@ -312,7 +333,7 @@ private:
 		}
 
 		// Run the outputed file.
-		cmdGroup.run(outFile, null, outputDone, log);
+		cmdGroup.run(outFile, null, outputDone, olog, elog);
 	}
 
 	fn outputDone(retval: int)
@@ -343,9 +364,13 @@ private:
 		}
 
 		// Close the log.
-		if (log !is null) {
-			fclose(log);
-			log = null;
+		if (olog !is null) {
+			fclose(olog);
+			olog = null;
+		}
+		if (elog !is null) {
+			fclose(elog);
+			elog = null;
 		}
 	}
 

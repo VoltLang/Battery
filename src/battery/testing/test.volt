@@ -29,9 +29,10 @@ public:
 	prefix: string;
 
 	result: Result;
-	log: FILE*;
 
 
 public:
 	abstract fn runTest(CmdGroup);
+	abstract fn getOutput() string;
+	abstract fn getError() string;
 }
