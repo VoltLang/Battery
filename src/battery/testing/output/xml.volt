@@ -3,7 +3,7 @@
 module battery.testing.output.xml;
 
 import core.stdc.stdio : FILE, fprintf, fopen, fflush, fclose;
-import watt.text.format : formatSink;
+import watt.text.format : format;
 import watt.text.sink : Sink;
 import watt.conv : toStringz;
 import watt.text.html : htmlEscape;
@@ -32,9 +32,9 @@ fn writeXmlFile(ident: string, filename: string, tests: Test[])
 	}
 
 	print("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n");
-	formatSink(print, "<testsuites errors=\"%s\" failures=\"%s\" tests=\"%s\">\n",
+	format(print, "<testsuites errors=\"%s\" failures=\"%s\" tests=\"%s\">\n",
 	        fail, xfail, total);
-	formatSink(print, "\t<testsuite name=\"%s\" errors=\"%s\" failures=\"%s\" tests=\"%s\">\n",
+	format(print, "\t<testsuite name=\"%s\" errors=\"%s\" failures=\"%s\" tests=\"%s\">\n",
 	        ident, fail, xfail, total);
 
 	foreach (test; tests) {
@@ -82,7 +82,7 @@ fn printXmlBad(print: Sink, ident: string, test: Test)
 
 fn printTestCase(print: Sink, ident: string, test: Test, stopTag: bool)
 {
-	formatSink(print, "\t\t<testcase classname=\"%s/%s\" name=\"%s\"",
+	format(print, "\t\t<testcase classname=\"%s/%s\" name=\"%s\"",
 		ident, test.project.name, test.name);
 
 	if (stopTag) {
