@@ -19,11 +19,15 @@ fn writeXmlFile(ident: string, filename: string, tests: Test[])
 
 	total, fail, xfail: int;
 	foreach (test; tests) {
+		if (test.result == Result.SKIPPED) {
+			continue;
+		}
 		total++;
 		final switch(test.result) with (Result) {
 		case FAIL: fail++; break;
 		case XFAIL: xfail++; break;
 		case PASS, XPASS: break;
+		case SKIPPED: assert(false);
 		}
 	}
 
@@ -41,6 +45,7 @@ fn writeXmlFile(ident: string, filename: string, tests: Test[])
 		final switch(test.result) with (Result) {
 		case PASS, XPASS: printXmlOk(print, ident, test); break;
 		case FAIL, XFAIL: printXmlBad(print, ident, test); break;
+		case SKIPPED: break;
 		}
 	}
 

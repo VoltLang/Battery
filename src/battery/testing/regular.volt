@@ -94,13 +94,11 @@ public:
 				return true;
 			}
 			if (line.startsWith(mRunPrefix)) {
-				if (!parseRunCommand(line)) {
-					return false;
-				}
+				return parseRunCommand(line);
 			} else if (line.startsWith(mRetvalPrefix)) {
 				parseRetvalCommand(line);
 			} else if (line.startsWith(mRequiresPrefix)) {
-				parseRequiresCommand(line);
+				return parseRequiresCommand(line);
 			} else {
 				testFailure(format("unknown regular test command line: '%s''", line));
 				return false;
@@ -180,10 +178,38 @@ private:
 		cmdGroup.run(cmd, args, runRuns, mOutputLog, mErrorLog);
 	}
 
-	fn parseRequiresCommand(line: string)
+	fn parseRequiresCommand(line: string) bool
 	{
 		command := strip(line[mRequiresPrefix.length .. $]);
-		writefln("requires command found: %s", command);
+		tokens := command.split(' ');
+		reqexp: RequireExpression;
+		root: RequireExpression;
+		foreach (token; tokens) {
+			if (reqexp is null) {
+				reqexp = new RequireExpression(token);
+				root = reqexp;
+			} else {
+				reqexp = reqexp.nextToken(token);
+				if (reqexp is null) {
+					testFailure("malformed requires command");
+					return false;
+				}
+			}
+		}
+		if (root is null) {
+			testFailure("malformed requires command");
+			return false;
+		}
+		b := root.evaluate(mCommandStore.arch, mCommandStore.platform);
+		if (root.err.length > 0) {
+			testFailure("bad requires: " ~ root.err);
+			return false;
+		}
+		if (!b) {
+			testSkip();
+			return false;
+		}
+		return true;
 	}
 
 	fn parseRunCommand(line: string) bool
@@ -232,6 +258,16 @@ private:
 		mErrorLog = null;
 	}
 
+	fn testSkip()
+	{
+		this.msg = "skipped";
+		result = Result.SKIPPED;
+		fclose(mOutputLog);
+		mOutputLog = null;
+		fclose(mErrorLog);
+		mErrorLog = null;
+	}
+
 	fn testOk()
 	{
 		completelyDone(true, "ok");
@@ -240,5 +276,85 @@ private:
 	fn testFailure(msg: string)
 	{
 		completelyDone(false, msg);
+	}
+}
+
+class RequireExpression
+{
+	enum Type
+	{
+		None,
+		And,
+		Or
+	}
+
+	type: Type;
+	isNot: bool;
+	val: string;
+	next: RequireExpression;
+	err: string;
+
+	this(val: string)
+	{
+		if (val[0] == '!') {
+			isNot = true;
+			val = val[1 .. $];
+		}
+		this.val = val;
+	}
+
+	fn nextToken(s: string) RequireExpression
+	{
+		switch (s) {
+		case "&&": type = Type.And; return this;
+		case "||": type = Type.Or; return this;
+		default:
+			if (type == Type.None) {
+				return null;
+			}
+			next = new RequireExpression(s);
+			return next;
+		}
+	}
+
+	/// Is this entire chain true or false?
+	fn evaluate(arch: Arch, platform: Platform) bool
+	{
+		b := evaluateBase(arch, platform);
+		if (isNot) {
+			b = !b;
+		}
+		final switch (type) with (Type) {
+		case None:
+			return b;
+		case And:
+			nb := next.evaluate(arch, platform);
+			if (next.err.length > 0) {
+				err = next.err;
+			}
+			return b && nb;
+		case Or:
+			nb := next.evaluate(arch, platform);
+			if (next.err.length > 0) {
+				err = next.err;
+			}
+			return b || nb;
+		} 
+	}
+
+	/// Is the underlying condition true or false, ignore next and isNot.
+	fn evaluateBase(arch: Arch, platform: Platform) bool
+	{
+		if (!isArch(val) && !isPlatform(val)) {
+			err = "unknown requires string";
+			return false;
+		}
+		if (isArch(val)) {
+			b := stringToArch(val) == arch;
+			return b;
+		} else {
+			b := stringToPlatform(val) == platform;
+			return b;
+		}
 	}
 }
