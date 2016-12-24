@@ -52,6 +52,7 @@ private:
 	mOutDir: string;
 	mOutFile: string;
 	mCommandStore: Configuration;
+	mConfig: Configuration;
 	mOutputLog: FILE*;
 	mOlogFile: string;
 	mErrorLog: FILE*;
@@ -60,7 +61,7 @@ private:
 public:
 	this(srcDir: string, test: string, testFileName: string,
 		commandPrefix: string, project: Project, cs: Configuration,
-		defaultCommands: string[])
+		defaultCommands: string[], cfg: Configuration)
 	{
 		this.srcDir = srcDir;
 		this.srcFile = srcDir ~ dirSeparator ~ testFileName;
@@ -68,6 +69,7 @@ public:
 		this.name = test;
 		this.project = project;
 		this.mCommandStore = cs;
+		this.mConfig = cfg;
 
 		this.commandPrefix = commandPrefix;
 		this.defaultCommands = defaultCommands;
@@ -200,7 +202,7 @@ private:
 			testFailure("malformed requires command");
 			return false;
 		}
-		b := root.evaluate(mCommandStore.arch, mCommandStore.platform);
+		b := root.evaluate(mConfig.arch, mConfig.platform);
 		if (root.err.length > 0) {
 			testFailure("bad requires: " ~ root.err);
 			return false;
@@ -350,11 +352,9 @@ class RequireExpression
 			return false;
 		}
 		if (isArch(val)) {
-			b := stringToArch(val) == arch;
-			return b;
+			return stringToArch(val) == arch;
 		} else {
-			b := stringToPlatform(val) == platform;
-			return b;
+			return stringToPlatform(val) == platform;
 		}
 	}
 }

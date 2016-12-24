@@ -88,7 +88,7 @@ public:
 				cfg.addTool(k, v.cmd, v.args);
 			}
 
-			s := new Searcher(cfg);
+			s := new Searcher(cfg, mConfig);
 			tests ~= s.search(project, project.path);
 		}
 
