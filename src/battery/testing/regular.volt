@@ -40,6 +40,9 @@ public:
 	/// What lines containing test commands start with.
 	commandPrefix: string;
 
+	/// Process these commands before anny specified in the file.
+	defaultCommands: string[];
+
 	cmdGroup: CmdGroup;
 
 private:
@@ -56,7 +59,8 @@ private:
 
 public:
 	this(srcDir: string, test: string, testFileName: string,
-		commandPrefix: string, project: Project, cs: Configuration)
+		commandPrefix: string, project: Project, cs: Configuration,
+		defaultCommands: string[])
 	{
 		this.srcDir = srcDir;
 		this.srcFile = srcDir ~ dirSeparator ~ testFileName;
@@ -66,6 +70,7 @@ public:
 		this.mCommandStore = cs;
 
 		this.commandPrefix = commandPrefix;
+		this.defaultCommands = defaultCommands;
 		this.mRunPrefix = commandPrefix ~ "run:";
 		this.mRetvalPrefix = commandPrefix ~ "retval:";
 		this.mRequiresPrefix = commandPrefix ~ "requires:";
@@ -82,15 +87,15 @@ public:
 		mOutputLog = fopen(toStringz(mOlogFile), "w");
 		mErrorLog = fopen(toStringz(mElogFile), "w");
 
-		ifs := new InputFileStream(srcFile);
-		while (!ifs.eof()) {
-			line := ifs.readln();
+		// Returns false if this function should cease.
+		fn parseCommand(line: string) bool
+		{
 			if (!line.startsWith(commandPrefix)) {
-				continue;
+				return true;
 			}
 			if (line.startsWith(mRunPrefix)) {
 				if (!parseRunCommand(line)) {
-					return;
+					return false;
 				}
 			} else if (line.startsWith(mRetvalPrefix)) {
 				parseRetvalCommand(line);
@@ -98,10 +103,26 @@ public:
 				parseRequiresCommand(line);
 			} else {
 				testFailure(format("unknown regular test command line: '%s''", line));
+				return false;
+			}
+			return true;
+		}
+
+		foreach (defaultCommand; defaultCommands) {
+			if (!parseCommand(defaultCommand)) {
+				return;
+			}
+		}
+
+		ifs := new InputFileStream(srcFile);
+		while (!ifs.eof()) {
+			line := ifs.readln();
+			if (!parseCommand(line)) {
 				return;
 			}
 		}
 		ifs.close();
+
 		if (runs.length == 0) {
 			testFailure("no run command");
 			return;

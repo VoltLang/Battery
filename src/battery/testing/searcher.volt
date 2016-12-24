@@ -103,7 +103,8 @@ private:
 				if (globMatch(file, btj.pattern)) {
 					test := dir[base.length + 1 .. $];
 					mTests ~= new Regular(dir, test, file,
-						btj.testCommandPrefix, project, mCommandStore);
+						btj.testCommandPrefix, project, mCommandStore,
+						btj.defaultCommands);
 					return;
 				}
 				fullpath := dir ~ dirSeparator ~ file;
@@ -122,6 +123,7 @@ struct BatteryTestsJson
 {
 	pattern: string;
 	testCommandPrefix: string;
+	defaultCommands: string[];
 
 	fn parse(jsonPath: string)
 	{
@@ -148,7 +150,31 @@ struct BatteryTestsJson
 			return val.str();
 		}
 
+		fn getStringArray(fieldName: string) string[]
+		{
+			if (!rootValue.hasObjectKey("defaultCommands")) {
+				error(format("root object does not declare field '%s'", fieldName));
+			}
+			val := rootValue.lookupObjectKey(fieldName);
+			if (val.type() != json.DomType.ARRAY) {
+				error(format("field '%s' is not an array of strings", fieldName));
+			}
+			vals := val.array();
+			strings := new string[](vals.length);
+			for (size_t i = 0; i < strings.length; ++i) {
+				if (vals[i].type() != json.DomType.STRING) {
+					error(format("%s element number %s is not a string",
+						fieldName, i));
+				}
+				strings[i] = vals[i].str();
+			}
+			return strings;
+		}
+
 		pattern = getStringField("pattern");
 		testCommandPrefix = getStringField("testCommandPrefix");
+		if (rootValue.hasObjectKey("defaultCommands")) {
+			defaultCommands = getStringArray("defaultCommands");
+		}
 	}
 }
