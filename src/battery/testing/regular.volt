@@ -45,6 +45,7 @@ public:
 private:
 	mRunPrefix: string;
 	mRetvalPrefix: string;
+	mRequiresPrefix: string;
 	mOutDir: string;
 	mOutFile: string;
 	mCommandStore: Configuration;
@@ -67,6 +68,7 @@ public:
 		this.commandPrefix = commandPrefix;
 		this.mRunPrefix = commandPrefix ~ "run:";
 		this.mRetvalPrefix = commandPrefix ~ "retval:";
+		this.mRequiresPrefix = commandPrefix ~ "requires:";
 	}
 
 	override fn runTest(cmdGroup: CmdGroup)
@@ -92,6 +94,8 @@ public:
 				}
 			} else if (line.startsWith(mRetvalPrefix)) {
 				parseRetvalCommand(line);
+			} else if (line.startsWith(mRequiresPrefix)) {
+				parseRequiresCommand(line);
 			} else {
 				testFailure(format("unknown regular test command line: '%s''", line));
 				return;
@@ -153,6 +157,12 @@ private:
 			args = c.args ~ args;
 		}
 		cmdGroup.run(cmd, args, runRuns, mOutputLog, mErrorLog);
+	}
+
+	fn parseRequiresCommand(line: string)
+	{
+		command := strip(line[mRequiresPrefix.length .. $]);
+		writefln("requires command found: %s", command);
 	}
 
 	fn parseRunCommand(line: string) bool
