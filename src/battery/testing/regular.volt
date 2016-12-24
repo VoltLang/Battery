@@ -52,16 +52,27 @@ private:
 	mOutDir: string;
 	mOutFile: string;
 	mCommandStore: Configuration;
-	mConfig: Configuration;
 	mOutputLog: FILE*;
 	mOlogFile: string;
 	mErrorLog: FILE*;
 	mElogFile: string;
 
 public:
+	/**
+	 * Construct a new Regular test.
+	 * Params:
+	 *   srcDir: The directory that contains the test.
+	 *   test: The name of the test.
+	 *   testFileName: The filename of the primary test file.
+	 *   commandPrefix: The string that precedes commands, like "//T ".
+	 *   project: The Project for this test.
+	 *   cs: A Configuration containing the tools and platform/arch information.
+	 *   defaultCommands: A list of commands to run before any of the parsed ones.
+	 *	   (these should contain the commandPrefix).
+	 */
 	this(srcDir: string, test: string, testFileName: string,
 		commandPrefix: string, project: Project, cs: Configuration,
-		defaultCommands: string[], cfg: Configuration)
+		defaultCommands: string[])
 	{
 		this.srcDir = srcDir;
 		this.srcFile = srcDir ~ dirSeparator ~ testFileName;
@@ -69,7 +80,6 @@ public:
 		this.name = test;
 		this.project = project;
 		this.mCommandStore = cs;
-		this.mConfig = cfg;
 
 		this.commandPrefix = commandPrefix;
 		this.defaultCommands = defaultCommands;
@@ -202,7 +212,7 @@ private:
 			testFailure("malformed requires command");
 			return false;
 		}
-		b := root.evaluate(mConfig.arch, mConfig.platform);
+		b := root.evaluate(mCommandStore.arch, mCommandStore.platform);
 		if (root.err.length > 0) {
 			testFailure("bad requires: " ~ root.err);
 			return false;

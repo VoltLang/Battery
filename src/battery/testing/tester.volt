@@ -84,11 +84,13 @@ public:
 		foreach (i, project; projects) {
 			mDrv.info("  TEST     %s", project.path);
 			cfg := new Configuration();
+			cfg.arch = mConfig.arch;
+			cfg.platform = mConfig.platform;
 			foreach (k, v; project.commands) {
 				cfg.addTool(k, v.cmd, v.args);
 			}
 
-			s := new Searcher(cfg, mConfig);
+			s := new Searcher(cfg);
 			tests ~= s.search(project, project.path);
 		}
 

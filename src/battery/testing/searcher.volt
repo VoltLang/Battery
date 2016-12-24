@@ -26,14 +26,12 @@ class Searcher
 public:
 	mTests: Test[];
 	mCommandStore: Configuration;
-	mConfig: Configuration;
 
 
 public:
-	this(cs: Configuration, cfg: Configuration)
+	this(cs: Configuration)
 	{
 		mCommandStore = cs;
-		mConfig = cfg;
 	}
 
 	fn search(project: Project, dir: string) Test[]
@@ -106,7 +104,7 @@ private:
 					test := dir[base.length + 1 .. $];
 					mTests ~= new Regular(dir, test, file,
 						btj.testCommandPrefix, project, mCommandStore,
-						btj.defaultCommands, mConfig);
+						btj.defaultCommands);
 					return;
 				}
 				fullpath := dir ~ dirSeparator ~ file;
