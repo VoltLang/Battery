@@ -52,6 +52,7 @@ private:
 	mRunPrefix: string;
 	mRetvalPrefix: string;
 	mRequiresPrefix: string;
+	mHasPassedPrefix: string;
 	mOutDir: string;
 	mOutFile: string;
 	mCommandStore: Configuration;
@@ -59,6 +60,7 @@ private:
 	mOlogFile: string;
 	mErrorLog: FILE*;
 	mElogFile: string;
+	mExpectFailure: bool;  // has-passed:no
 
 public:
 	/**
@@ -87,9 +89,11 @@ public:
 
 		this.commandPrefix = commandPrefix;
 		this.defaultCommands = defaultCommands;
+		// TODO: Do these once in the json parser, and pass that whole thing in.
 		this.mRunPrefix = commandPrefix ~ "run:";
 		this.mRetvalPrefix = commandPrefix ~ "retval:";
 		this.mRequiresPrefix = commandPrefix ~ "requires:";
+		this.mHasPassedPrefix = commandPrefix ~ "has-passed:no";
 		this.requiresAliases = requiresAliases;
 	}
 
@@ -116,6 +120,8 @@ public:
 				parseRetvalCommand(line);
 			} else if (line.startsWith(mRequiresPrefix)) {
 				return parseRequiresCommand(line:line, prefix:true);
+			} else if (line.startsWith(mHasPassedPrefix)) {
+				mExpectFailure = true;
 			} else {
 				testFailure(format("unknown regular test command line: '%s''", line));
 				return false;
@@ -256,14 +262,13 @@ private:
 	fn completelyDone(ok: bool, msg: string)
 	{
 		this.msg = msg;
-		hasPassed := true;
 
 		// Set the result
-		if (ok && hasPassed) {
+		if (ok && !mExpectFailure) {
 			result = Result.PASS;
 		} else if (ok) {
 			result = Result.XPASS;
-		} else if (hasPassed) {
+		} else if (!mExpectFailure) {
 			result = Result.FAIL;
 		} else {
 			result = Result.XFAIL;
