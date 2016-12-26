@@ -51,9 +51,9 @@ private:
 			case "", ".", "..":
 				return;
 			case "battery.tests.json":
-				btj: BatteryTestsJson;
+				btj := new BatteryTestsJson();
 				btj.parse(dir ~ dirSeparator ~ file);
-				searchJson(project, dir, dir, ref btj);
+				searchJson(project, dir, dir, btj);
 				return;
 			case "battery.tests.simple":
 				searchSimple(project, dir, dir);
@@ -93,7 +93,7 @@ private:
 		searchDir(dir, "*", hit);
 	}
 
-	fn searchJson(project: Project, base: string, dir: string, ref btj: BatteryTestsJson)
+	fn searchJson(project: Project, base: string, dir: string, btj: BatteryTestsJson)
 	{
 		fn hit(file: string) {
 			switch (file) {
@@ -104,14 +104,14 @@ private:
 					test := dir[base.length + 1 .. $];
 					mTests ~= new Regular(dir, test, file,
 						btj.testCommandPrefix, project, mCommandStore,
-						btj.defaultCommands);
+						btj.defaultCommands, btj.requiresAliases);
 					return;
 				}
 				fullpath := dir ~ dirSeparator ~ file;
 				if (!isDir(fullpath)) {
 					return;
 				}
-				searchJson(project, base, fullpath, ref btj);
+				searchJson(project, base, fullpath, btj);
 			}
 		}
 
@@ -119,11 +119,12 @@ private:
 	}
 }
 
-struct BatteryTestsJson
+class BatteryTestsJson
 {
 	pattern: string;
 	testCommandPrefix: string;
 	defaultCommands: string[];
+	requiresAliases: string[string];
 
 	fn parse(jsonPath: string)
 	{
@@ -175,6 +176,15 @@ struct BatteryTestsJson
 		testCommandPrefix = getStringField("testCommandPrefix");
 		if (rootValue.hasObjectKey("defaultCommands")) {
 			defaultCommands = getStringArray("defaultCommands");
+		}
+
+		if (rootValue.hasObjectKey("requiresAliases")) {
+			aliasesObj := rootValue.lookupObjectKey("requiresAliases");
+			keys := aliasesObj.keys();
+			values := aliasesObj.values();
+			foreach (i, key; keys) {
+				requiresAliases[key] = values[i].str();
+			}
 		}
 	}
 }

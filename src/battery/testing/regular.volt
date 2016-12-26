@@ -43,6 +43,9 @@ public:
 	/// Process these commands before anny specified in the file.
 	defaultCommands: string[];
 
+	/// Requires will substitute any keys found with corresponding value.
+	requiresAliases: string[string];
+
 	cmdGroup: CmdGroup;
 
 private:
@@ -69,10 +72,11 @@ public:
 	 *   cs: A Configuration containing the tools and platform/arch information.
 	 *   defaultCommands: A list of commands to run before any of the parsed ones.
 	 *	   (these should contain the commandPrefix).
+	 *   requiresAliases: Strings to be replaced by other strings in requires.
 	 */
 	this(srcDir: string, test: string, testFileName: string,
 		commandPrefix: string, project: Project, cs: Configuration,
-		defaultCommands: string[])
+		defaultCommands: string[], requiresAliases: string[string])
 	{
 		this.srcDir = srcDir;
 		this.srcFile = srcDir ~ dirSeparator ~ testFileName;
@@ -86,6 +90,7 @@ public:
 		this.mRunPrefix = commandPrefix ~ "run:";
 		this.mRetvalPrefix = commandPrefix ~ "retval:";
 		this.mRequiresPrefix = commandPrefix ~ "requires:";
+		this.requiresAliases = requiresAliases;
 	}
 
 	override fn runTest(cmdGroup: CmdGroup)
@@ -110,7 +115,7 @@ public:
 			} else if (line.startsWith(mRetvalPrefix)) {
 				parseRetvalCommand(line);
 			} else if (line.startsWith(mRequiresPrefix)) {
-				return parseRequiresCommand(line);
+				return parseRequiresCommand(line:line, prefix:true);
 			} else {
 				testFailure(format("unknown regular test command line: '%s''", line));
 				return false;
@@ -190,15 +195,16 @@ private:
 		cmdGroup.run(cmd, args, runRuns, mOutputLog, mErrorLog);
 	}
 
-	fn parseRequiresCommand(line: string) bool
+	fn parseRequiresCommand(line: string, prefix: bool) bool
 	{
-		command := strip(line[mRequiresPrefix.length .. $]);
+		prefixLength := !prefix ? 0 : mRequiresPrefix.length;
+		command := strip(line[prefixLength .. $]);
 		tokens := command.split(' ');
 		reqexp: RequireExpression;
 		root: RequireExpression;
 		foreach (token; tokens) {
 			if (reqexp is null) {
-				reqexp = new RequireExpression(token);
+				reqexp = new RequireExpression(token, this);
 				root = reqexp;
 			} else {
 				reqexp = reqexp.nextToken(token);
@@ -212,7 +218,7 @@ private:
 			testFailure("malformed requires command");
 			return false;
 		}
-		b := root.evaluate(mCommandStore.arch, mCommandStore.platform);
+		b := root.evaluate(mCommandStore.arch, mCommandStore.platform, requiresAliases);
 		if (root.err.length > 0) {
 			testFailure("bad requires: " ~ root.err);
 			return false;
@@ -305,14 +311,16 @@ class RequireExpression
 	val: string;
 	next: RequireExpression;
 	err: string;
+	test: Regular;
 
-	this(val: string)
+	this(val: string, test: Regular)
 	{
 		if (val[0] == '!') {
 			isNot = true;
 			val = val[1 .. $];
 		}
 		this.val = val;
+		this.test = test;
 	}
 
 	fn nextToken(s: string) RequireExpression
@@ -324,15 +332,15 @@ class RequireExpression
 			if (type == Type.None) {
 				return null;
 			}
-			next = new RequireExpression(s);
+			next = new RequireExpression(s, test);
 			return next;
 		}
 	}
 
 	/// Is this entire chain true or false?
-	fn evaluate(arch: Arch, platform: Platform) bool
+	fn evaluate(arch: Arch, platform: Platform, requiresAliases: string[string]) bool
 	{
-		b := evaluateBase(arch, platform);
+		b := evaluateBase(arch, platform, requiresAliases);
 		if (isNot) {
 			b = !b;
 		}
@@ -340,13 +348,13 @@ class RequireExpression
 		case None:
 			return b;
 		case And:
-			nb := next.evaluate(arch, platform);
+			nb := next.evaluate(arch, platform, requiresAliases);
 			if (next.err.length > 0) {
 				err = next.err;
 			}
 			return b && nb;
 		case Or:
-			nb := next.evaluate(arch, platform);
+			nb := next.evaluate(arch, platform, requiresAliases);
 			if (next.err.length > 0) {
 				err = next.err;
 			}
@@ -355,8 +363,12 @@ class RequireExpression
 	}
 
 	/// Is the underlying condition true or false, ignore next and isNot.
-	fn evaluateBase(arch: Arch, platform: Platform) bool
+	fn evaluateBase(arch: Arch, platform: Platform, requiresAliases: string[string]) bool
 	{
+		aliasedptr := val in requiresAliases;
+		if (aliasedptr !is null) {
+			return test.parseRequiresCommand(line:*aliasedptr, prefix:false);
+		}
 		if (!isArch(val) && !isPlatform(val)) {
 			err = "unknown requires string";
 			return false;
@@ -368,3 +380,4 @@ class RequireExpression
 		}
 	}
 }
+import watt.io;
