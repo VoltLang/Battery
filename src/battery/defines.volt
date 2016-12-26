@@ -78,7 +78,7 @@ fn toString(platform: Platform) string
 fn isPlatform(s: string) bool
 {
 	switch (s) {
-	case "msvc", "linux", "osx", "metal": return true;
+	case "windows", "msvc", "linux", "mac", "osx", "metal": return true;
 	default: return false;
 	}
 }
@@ -86,9 +86,9 @@ fn isPlatform(s: string) bool
 fn stringToPlatform(s: string) Platform
 {
 	switch (s) {
-	case "msvc": return Platform.MSVC;
+	case "windows", "msvc": return Platform.MSVC;
 	case "linux": return Platform.Linux;
-	case "osx": return Platform.OSX;
+	case "mac", "osx": return Platform.OSX;
 	case "metal": return Platform.Metal;
 	default: throw new Exception("unknown platform");
 	}
