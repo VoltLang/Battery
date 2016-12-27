@@ -53,6 +53,7 @@ private:
 	mRetvalPrefix: string;
 	mRequiresPrefix: string;
 	mHasPassedPrefix: string;
+	mNoDefaultPrefix: string;
 	mOutDir: string;
 	mOutFile: string;
 	mCommandStore: Configuration;
@@ -94,6 +95,7 @@ public:
 		this.mRetvalPrefix = commandPrefix ~ "retval:";
 		this.mRequiresPrefix = commandPrefix ~ "requires:";
 		this.mHasPassedPrefix = commandPrefix ~ "has-passed:no";
+		this.mNoDefaultPrefix = commandPrefix ~ "default:no";
 		this.requiresAliases = requiresAliases;
 	}
 
@@ -122,6 +124,8 @@ public:
 				return parseRequiresCommand(line:line, prefix:true);
 			} else if (line.startsWith(mHasPassedPrefix)) {
 				mExpectFailure = true;
+			} else if (line.startsWith(mNoDefaultPrefix)) {
+				// Handled specially.
 			} else {
 				testFailure(format("unknown regular test command line: '%s''", line));
 				return false;
@@ -129,15 +133,34 @@ public:
 			return true;
 		}
 
-		foreach (defaultCommand; defaultCommands) {
-			if (!parseCommand(defaultCommand)) {
-				return;
+		// Check for default:no.
+		ifs := new InputFileStream(srcFile);
+		noDefault := false;
+		while (!ifs.eof() && !noDefault) {
+			line := ifs.readln();
+			if (!line.startsWith(commandPrefix)) {
+				break;
+			}
+			noDefault = line.startsWith(mNoDefaultPrefix) != 0;
+		}
+		ifs.close();
+
+		// Run default commands.
+		if (!noDefault) {
+			foreach (defaultCommand; defaultCommands) {
+				if (!parseCommand(defaultCommand)) {
+					return;
+				}
 			}
 		}
 
-		ifs := new InputFileStream(srcFile);
+		// Run the commands in the file.
+		ifs = new InputFileStream(srcFile);
 		while (!ifs.eof()) {
 			line := ifs.readln();
+			if (!line.startsWith(commandPrefix)) {
+				break;
+			}
 			if (!parseCommand(line)) {
 				return;
 			}
