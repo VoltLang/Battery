@@ -273,11 +273,19 @@ private:
 		} else {
 			result = Result.XFAIL;
 		}
+		closeLogs();
+	}
 
+	fn closeLogs()
+	{
 		// Close the log.
-		fclose(mOutputLog);
+		if (mOutputLog !is null) {
+			fclose(mOutputLog);
+		}
 		mOutputLog = null;
-		fclose(mErrorLog);
+		if (mErrorLog !is null) {
+			fclose(mErrorLog);
+		}
 		mErrorLog = null;
 	}
 
@@ -285,10 +293,7 @@ private:
 	{
 		this.msg = "skipped";
 		result = Result.SKIPPED;
-		fclose(mOutputLog);
-		mOutputLog = null;
-		fclose(mErrorLog);
-		mErrorLog = null;
+		closeLogs();
 	}
 
 	fn testOk()
