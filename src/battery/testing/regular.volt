@@ -75,6 +75,31 @@ public:
 		this.btj = btj;
 	}
 
+	// Returns false if this function should cease.
+	fn parseCommand(line: string) bool
+	{
+		if (!line.startsWith(btj.prefix)) {
+			return true;
+		}
+		if (line.startsWith(btj.runPrefix)) {
+			return parseRunCommand(line);
+		} else if (line.startsWith(btj.retvalPrefix)) {
+			parseRetvalCommand(line);
+		} else if (line.startsWith(btj.requiresPrefix)) {
+			return parseRequiresCommand(line:line, prefix:true);
+		} else if (line.startsWith(btj.hasPassedPrefix)) {
+			mExpectFailure = true;
+		} else if (line.startsWith(btj.macroPrefix)) {
+			return parseMacroCommand(line);
+		} else if (line.startsWith(btj.noDefaultPrefix)) {
+			// Handled specially.
+		} else {
+			testFailure(format("unknown regular test command line: '%s''", line));
+			return false;
+		}
+		return true;
+	}
+
 	override fn runTest(cmdGroup: CmdGroup)
 	{
 		this.cmdGroup = cmdGroup;
@@ -85,29 +110,6 @@ public:
 		mElogFile = mOutDir ~ dirSeparator ~ "errlog.txt";
 		mOutputLog = fopen(toStringz(mOlogFile), "w");
 		mErrorLog = fopen(toStringz(mElogFile), "w");
-
-		// Returns false if this function should cease.
-		fn parseCommand(line: string) bool
-		{
-			if (!line.startsWith(btj.prefix)) {
-				return true;
-			}
-			if (line.startsWith(btj.runPrefix)) {
-				return parseRunCommand(line);
-			} else if (line.startsWith(btj.retvalPrefix)) {
-				parseRetvalCommand(line);
-			} else if (line.startsWith(btj.requiresPrefix)) {
-				return parseRequiresCommand(line:line, prefix:true);
-			} else if (line.startsWith(btj.hasPassedPrefix)) {
-				mExpectFailure = true;
-			} else if (line.startsWith(btj.noDefaultPrefix)) {
-				// Handled specially.
-			} else {
-				testFailure(format("unknown regular test command line: '%s''", line));
-				return false;
-			}
-			return true;
-		}
 
 		// Check for default:no.
 		ifs := new InputFileStream(srcFile);
@@ -198,6 +200,22 @@ private:
 			args = c.args ~ args;
 		}
 		cmdGroup.run(cmd, args, runRuns, mOutputLog, mErrorLog);
+	}
+
+	fn parseMacroCommand(line: string) bool
+	{
+		macroStr := strip(line[btj.macroPrefix.length .. $]);
+		commandsPtr := macroStr in btj.macros;
+		if (commandsPtr is null) {
+			testFailure("unknown macro");
+			return false;
+		}
+		foreach (command; *commandsPtr) {
+			if (!parseCommand(command)) {
+				return false;
+			}
+		}
+		return true;
 	}
 
 	fn parseRequiresCommand(line: string, prefix: bool) bool
@@ -389,4 +407,3 @@ class RequireExpression
 		}
 	}
 }
-import watt.io;

@@ -16,6 +16,7 @@ class BatteryTestsJson
 	prefix: string;
 	defaultCommands: string[];
 	requiresAliases: string[string];
+	macros: string[][string];
 
 	/// How each command will start, 
 	runPrefix: string;
@@ -23,6 +24,7 @@ class BatteryTestsJson
 	requiresPrefix: string;
 	hasPassedPrefix: string;
 	noDefaultPrefix: string;
+	macroPrefix: string;
 
 	fn parse(jsonPath: string)
 	{
@@ -49,12 +51,12 @@ class BatteryTestsJson
 			return val.str();
 		}
 
-		fn getStringArray(fieldName: string) string[]
+		fn getStringArray(rv: json.Value, fieldName: string) string[]
 		{
-			if (!rootValue.hasObjectKey("defaultCommands")) {
-				error(format("root object does not declare field '%s'", fieldName));
+			if (!rv.hasObjectKey(fieldName)) {
+				error(format("object does not declare field '%s'", fieldName));
 			}
-			val := rootValue.lookupObjectKey(fieldName);
+			val := rv.lookupObjectKey(fieldName);
 			if (val.type() != json.DomType.ARRAY) {
 				error(format("field '%s' is not an array of strings", fieldName));
 			}
@@ -73,7 +75,7 @@ class BatteryTestsJson
 		pattern = getStringField("pattern");
 		prefix = getStringField("testCommandPrefix");
 		if (rootValue.hasObjectKey("defaultCommands")) {
-			defaultCommands = getStringArray("defaultCommands");
+			defaultCommands = getStringArray(rootValue, "defaultCommands");
 		}
 
 		if (rootValue.hasObjectKey("requiresAliases")) {
@@ -82,6 +84,14 @@ class BatteryTestsJson
 			values := aliasesObj.values();
 			foreach (i, key; keys) {
 				requiresAliases[key] = values[i].str();
+			}
+		}
+
+		if (rootValue.hasObjectKey("macros")) {
+			macroObj := rootValue.lookupObjectKey("macros");
+			keys := macroObj.keys();
+			foreach (key; keys) {
+				macros[key] = getStringArray(macroObj, key);
 			}
 		}
 
@@ -95,5 +105,6 @@ class BatteryTestsJson
 		requiresPrefix = prefix ~ "requires:";
 		hasPassedPrefix = prefix ~ "has-passed:no";
 		noDefaultPrefix = prefix ~ "default:no";
+		macroPrefix = prefix ~ "macro:";
 	}
 }
