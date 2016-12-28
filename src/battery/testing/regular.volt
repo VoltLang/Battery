@@ -14,6 +14,7 @@ import watt.text.format;
 import battery.configuration;
 import battery.testing.test;
 import battery.testing.project;
+import battery.testing.btj;
 import build.util.cmdgroup;
 
 class Regular : Test
@@ -37,23 +38,11 @@ public:
 	/// Actual test file's name.
 	testFileName: string;
 
-	/// What lines containing test commands start with.
-	commandPrefix: string;
-
-	/// Process these commands before anny specified in the file.
-	defaultCommands: string[];
-
-	/// Requires will substitute any keys found with corresponding value.
-	requiresAliases: string[string];
-
 	cmdGroup: CmdGroup;
 
+	btj: BatteryTestsJson;
+
 private:
-	mRunPrefix: string;
-	mRetvalPrefix: string;
-	mRequiresPrefix: string;
-	mHasPassedPrefix: string;
-	mNoDefaultPrefix: string;
 	mOutDir: string;
 	mOutFile: string;
 	mCommandStore: Configuration;
@@ -70,16 +59,12 @@ public:
 	 *   srcDir: The directory that contains the test.
 	 *   test: The name of the test.
 	 *   testFileName: The filename of the primary test file.
-	 *   commandPrefix: The string that precedes commands, like "//T ".
+	 *   btj: The parsed battery.tests.json.
 	 *   project: The Project for this test.
 	 *   cs: A Configuration containing the tools and platform/arch information.
-	 *   defaultCommands: A list of commands to run before any of the parsed ones.
-	 *	   (these should contain the commandPrefix).
-	 *   requiresAliases: Strings to be replaced by other strings in requires.
 	 */
 	this(srcDir: string, test: string, testFileName: string,
-		commandPrefix: string, project: Project, cs: Configuration,
-		defaultCommands: string[], requiresAliases: string[string])
+		btj: BatteryTestsJson, project: Project, cs: Configuration)
 	{
 		this.srcDir = srcDir;
 		this.srcFile = srcDir ~ dirSeparator ~ testFileName;
@@ -87,16 +72,7 @@ public:
 		this.name = test;
 		this.project = project;
 		this.mCommandStore = cs;
-
-		this.commandPrefix = commandPrefix;
-		this.defaultCommands = defaultCommands;
-		// TODO: Do these once in the json parser, and pass that whole thing in.
-		this.mRunPrefix = commandPrefix ~ "run:";
-		this.mRetvalPrefix = commandPrefix ~ "retval:";
-		this.mRequiresPrefix = commandPrefix ~ "requires:";
-		this.mHasPassedPrefix = commandPrefix ~ "has-passed:no";
-		this.mNoDefaultPrefix = commandPrefix ~ "default:no";
-		this.requiresAliases = requiresAliases;
+		this.btj = btj;
 	}
 
 	override fn runTest(cmdGroup: CmdGroup)
@@ -113,18 +89,18 @@ public:
 		// Returns false if this function should cease.
 		fn parseCommand(line: string) bool
 		{
-			if (!line.startsWith(commandPrefix)) {
+			if (!line.startsWith(btj.prefix)) {
 				return true;
 			}
-			if (line.startsWith(mRunPrefix)) {
+			if (line.startsWith(btj.runPrefix)) {
 				return parseRunCommand(line);
-			} else if (line.startsWith(mRetvalPrefix)) {
+			} else if (line.startsWith(btj.retvalPrefix)) {
 				parseRetvalCommand(line);
-			} else if (line.startsWith(mRequiresPrefix)) {
+			} else if (line.startsWith(btj.requiresPrefix)) {
 				return parseRequiresCommand(line:line, prefix:true);
-			} else if (line.startsWith(mHasPassedPrefix)) {
+			} else if (line.startsWith(btj.hasPassedPrefix)) {
 				mExpectFailure = true;
-			} else if (line.startsWith(mNoDefaultPrefix)) {
+			} else if (line.startsWith(btj.noDefaultPrefix)) {
 				// Handled specially.
 			} else {
 				testFailure(format("unknown regular test command line: '%s''", line));
@@ -138,16 +114,16 @@ public:
 		noDefault := false;
 		while (!ifs.eof() && !noDefault) {
 			line := ifs.readln();
-			if (!line.startsWith(commandPrefix)) {
+			if (!line.startsWith(btj.prefix)) {
 				break;
 			}
-			noDefault = line.startsWith(mNoDefaultPrefix) != 0;
+			noDefault = line.startsWith(btj.noDefaultPrefix) != 0;
 		}
 		ifs.close();
 
 		// Run default commands.
 		if (!noDefault) {
-			foreach (defaultCommand; defaultCommands) {
+			foreach (defaultCommand; btj.	defaultCommands) {
 				if (!parseCommand(defaultCommand)) {
 					return;
 				}
@@ -158,7 +134,7 @@ public:
 		ifs = new InputFileStream(srcFile);
 		while (!ifs.eof()) {
 			line := ifs.readln();
-			if (!line.startsWith(commandPrefix)) {
+			if (!line.startsWith(btj.prefix)) {
 				break;
 			}
 			if (!parseCommand(line)) {
@@ -226,7 +202,7 @@ private:
 
 	fn parseRequiresCommand(line: string, prefix: bool) bool
 	{
-		prefixLength := !prefix ? 0 : mRequiresPrefix.length;
+		prefixLength := !prefix ? 0 : btj.requiresPrefix.length;
 		command := strip(line[prefixLength .. $]);
 		tokens := command.split(' ');
 		reqexp: RequireExpression;
@@ -247,7 +223,7 @@ private:
 			testFailure("malformed requires command");
 			return false;
 		}
-		b := root.evaluate(mCommandStore.arch, mCommandStore.platform, requiresAliases);
+		b := root.evaluate(mCommandStore.arch, mCommandStore.platform, btj.requiresAliases);
 		if (root.err.length > 0) {
 			testFailure("bad requires: " ~ root.err);
 			return false;
@@ -261,7 +237,7 @@ private:
 
 	fn parseRunCommand(line: string) bool
 	{
-		command := strip(line[mRunPrefix.length .. $]);
+		command := strip(line[btj.runPrefix.length .. $]);
 		command = command.replace("%s", srcFile);
 		command = command.replace("%S", srcDir);
 		command = command.replace("%t", mOutFile);
@@ -279,7 +255,7 @@ private:
 
 	fn parseRetvalCommand(line: string)
 	{
-		retvals ~= toInt(line[mRetvalPrefix.length .. $]);
+		retvals ~= toInt(line[btj.retvalPrefix.length .. $]);
 	}
 
 	fn completelyDone(ok: bool, msg: string)

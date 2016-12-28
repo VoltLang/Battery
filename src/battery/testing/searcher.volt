@@ -16,6 +16,7 @@ import battery.testing.test;
 import battery.testing.legacy;
 import battery.testing.project;
 import battery.testing.regular;
+import battery.testing.btj;
 
 
 /**
@@ -103,8 +104,7 @@ private:
 				if (globMatch(file, btj.pattern)) {
 					test := dir[base.length + 1 .. $];
 					mTests ~= new Regular(dir, test, file,
-						btj.testCommandPrefix, project, mCommandStore,
-						btj.defaultCommands, btj.requiresAliases);
+						btj, project, mCommandStore);
 					return;
 				}
 				fullpath := dir ~ dirSeparator ~ file;
@@ -116,75 +116,5 @@ private:
 		}
 
 		searchDir(dir, "*", hit);
-	}
-}
-
-class BatteryTestsJson
-{
-	pattern: string;
-	testCommandPrefix: string;
-	defaultCommands: string[];
-	requiresAliases: string[string];
-
-	fn parse(jsonPath: string)
-	{
-		fn error(msg: string)
-		{
-			throw new Exception(format("Malformed battery.tests.json: %s.", msg));
-		}
-
-		jsonTxt := cast(string)read(jsonPath);
-		rootValue := json.parse(jsonTxt);
-		if (rootValue.type() != json.DomType.OBJECT) {
-			error("root node not an object");
-		}
-
-		fn getStringField(fieldName: string) string
-		{
-			if (!rootValue.hasObjectKey(fieldName)) {
-				error(format("root object does not declare field '%s'", fieldName));
-			}
-			val := rootValue.lookupObjectKey(fieldName);
-			if (val.type() != json.DomType.STRING) {
-				error(format("field '%s' is not a string", fieldName));
-			}
-			return val.str();
-		}
-
-		fn getStringArray(fieldName: string) string[]
-		{
-			if (!rootValue.hasObjectKey("defaultCommands")) {
-				error(format("root object does not declare field '%s'", fieldName));
-			}
-			val := rootValue.lookupObjectKey(fieldName);
-			if (val.type() != json.DomType.ARRAY) {
-				error(format("field '%s' is not an array of strings", fieldName));
-			}
-			vals := val.array();
-			strings := new string[](vals.length);
-			for (size_t i = 0; i < strings.length; ++i) {
-				if (vals[i].type() != json.DomType.STRING) {
-					error(format("%s element number %s is not a string",
-						fieldName, i));
-				}
-				strings[i] = vals[i].str();
-			}
-			return strings;
-		}
-
-		pattern = getStringField("pattern");
-		testCommandPrefix = getStringField("testCommandPrefix");
-		if (rootValue.hasObjectKey("defaultCommands")) {
-			defaultCommands = getStringArray("defaultCommands");
-		}
-
-		if (rootValue.hasObjectKey("requiresAliases")) {
-			aliasesObj := rootValue.lookupObjectKey("requiresAliases");
-			keys := aliasesObj.keys();
-			values := aliasesObj.values();
-			foreach (i, key; keys) {
-				requiresAliases[key] = values[i].str();
-			}
-		}
 	}
 }
