@@ -25,6 +25,7 @@ class BatteryTestsJson
 	hasPassedPrefix: string;
 	noDefaultPrefix: string;
 	macroPrefix: string;
+	checkPrefix: string;
 
 	fn parse(jsonPath: string)
 	{
@@ -106,5 +107,6 @@ class BatteryTestsJson
 		hasPassedPrefix = prefix ~ "has-passed:no";
 		noDefaultPrefix = prefix ~ "default:no";
 		macroPrefix = prefix ~ "macro:";
+		checkPrefix = prefix ~ "check:";
 	}
 }

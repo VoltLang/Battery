@@ -51,6 +51,7 @@ private:
 	mErrorLog: FILE*;
 	mElogFile: string;
 	mExpectFailure: bool;  // has-passed:no
+	mCheck: string;
 
 public:
 	/**
@@ -91,6 +92,8 @@ public:
 			mExpectFailure = true;
 		} else if (line.startsWith(btj.macroPrefix)) {
 			return parseMacroCommand(line);
+		} else if (line.startsWith(btj.checkPrefix)) {
+			return parseCheckCommand(line);
 		} else if (line.startsWith(btj.noDefaultPrefix)) {
 			// Handled specially.
 		} else {
@@ -202,6 +205,13 @@ private:
 		cmdGroup.run(cmd, args, runRuns, mOutputLog, mErrorLog);
 	}
 
+	fn parseCheckCommand(line: string) bool
+	{
+		mCheck = strip(line[btj.checkPrefix.length .. $]);
+		assert(mCheck.length > 0);
+		return true;
+	}
+
 	fn parseMacroCommand(line: string) bool
 	{
 		macroStr := strip(line[btj.macroPrefix.length .. $]);
@@ -304,6 +314,24 @@ private:
 			fclose(mErrorLog);
 		}
 		mErrorLog = null;
+		testCheck();
+	}
+
+	fn testCheck()
+	{
+		if (result == Result.SKIPPED || mCheck.length == 0) {
+			return;
+		}
+		outstr := cast(string)read(mOlogFile);
+		if (outstr.indexOf(mCheck) >= 0) {
+			return;
+		}
+		errstr := cast(string)read(mElogFile);
+		if (errstr.indexOf(mCheck) >= 0) {
+			return;
+		}
+		msg = "check failed";
+		result = Result.FAIL;
 	}
 
 	fn testSkip()
