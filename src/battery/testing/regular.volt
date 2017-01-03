@@ -180,8 +180,8 @@ private:
 	fn runRuns(retval: int)
 	{
 		if (retval != retvals[0]) {
-			testFailure(format("command returned retval %s, expected %s",
-				retval, retvals[0]));
+			testFailure(format("command '%s' returned retval %s, expected %s",
+				runs[0][0], retval, retvals[0]));
 			return;
 		}
 		runs = runs[1 .. $];
