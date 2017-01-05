@@ -94,6 +94,14 @@ fn getArgsBase(b: Base, tag: string) string[]
 		ret ~= ["-L", path];
 	}
 
+	foreach (framework; b.frameworks) {
+		ret ~= ["--framework", framework];
+	}
+
+	foreach (path; b.frameworkPaths) {
+		ret ~= ["-F", path];
+	}
+
 	foreach (path; b.stringPaths) {
 		ret ~= ["-J", path];
 	}
@@ -279,6 +287,8 @@ protected:
 			case Dep: lib.deps ~= arg.extra; break;
 			case Library: lib.libs ~= arg.extra; break;
 			case LibraryPath: lib.libPaths ~= arg.extra; break;
+			case Framework: lib.frameworks ~= arg.extra; break;
+			case FrameworkPath: lib.frameworkPaths ~= arg.extra; break;
 			case StringPath: lib.stringPaths ~= arg.extra; break;
 			case ArgLD: lib.xld ~= arg.extra; break;
 			case ArgCC: lib.xcc ~= arg.extra; break;
@@ -303,6 +313,8 @@ protected:
 			case Dep: exe.deps ~= arg.extra; break;
 			case Library: exe.libs ~= arg.extra; break;
 			case LibraryPath: exe.libPaths ~= arg.extra; break;
+			case Framework: exe.frameworks ~= arg.extra; break;
+			case FrameworkPath: exe.frameworkPaths ~= arg.extra; break;
 			case StringPath: exe.stringPaths ~= arg.extra; break;
 			case Debug: exe.isDebug = true; break;
 			case InternalD: exe.isInternalD = true; break;
@@ -565,6 +577,8 @@ struct ToArgs
 			case "--cmd": argNext(Command, "expected command"); continue;
 			case "-l": argNext(Library, "expected library name"); continue;
 			case "-L": argNext(LibraryPath, "expected library path"); continue;
+			case "--framework": argNext(Framework, "expected framework name"); continue;
+			case "-F": argNext(FrameworkPath, "expected framework path"); continue;
 			case "-J": argNextPath(StringPath, "expected string path"); continue;
 			case "-d", "-debug", "--debug": arg(Debug); continue;
 			case "--internal-d": arg(InternalD); continue;

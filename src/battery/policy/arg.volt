@@ -31,6 +31,9 @@ public:
 		Library,
 		LibraryPath,
 
+		Framework,
+		FrameworkPath,
+
 		StringPath,
 
 		Debug,

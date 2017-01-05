@@ -15,6 +15,8 @@ class Base
 
 	libs: string[];
 	libPaths: string[];
+	frameworks: string[];
+	frameworkPaths: string[];
 	deps: string[];
 	defs: string[];
 	stringPaths: string[];

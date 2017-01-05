@@ -110,6 +110,14 @@ public:
 				ret ~= ["-l", l];
 			}
 
+			foreach (path; b.frameworkPaths) {
+				ret ~= ["-F", path];
+			}
+
+			foreach (framework; b.frameworks) {
+				ret ~= ["--framework", framework];
+			}
+
 			foreach (def; b.defs) {
 				ret ~= ["-D", def];
 			}
