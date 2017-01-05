@@ -128,7 +128,8 @@ public:
 
 		// Run default commands.
 		if (!noDefault) {
-			foreach (defaultCommand; btj.	defaultCommands) {
+			defaults := btj.getMacro("default");
+			foreach (defaultCommand; defaults) {
 				if (!parseCommand(defaultCommand)) {
 					return;
 				}

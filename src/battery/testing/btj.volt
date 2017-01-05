@@ -14,7 +14,6 @@ class BatteryTestsJson
 {
 	pattern: string;
 	prefix: string;
-	defaultCommands: string[];
 	requiresAliases: string[string];
 	macros: string[][string];
 
@@ -26,6 +25,16 @@ class BatteryTestsJson
 	noDefaultPrefix: string;
 	macroPrefix: string;
 	checkPrefix: string;
+
+	/// Get the commands associated with a macro, or an empty list.
+	fn getMacro(name: string) string[]
+	{
+		p := name in macros;
+		if (p is null) {
+			return null;
+		}
+		return *p;
+	}
 
 	fn parse(jsonPath: string)
 	{
@@ -75,9 +84,6 @@ class BatteryTestsJson
 
 		pattern = getStringField("pattern");
 		prefix = getStringField("testCommandPrefix");
-		if (rootValue.hasObjectKey("defaultCommands")) {
-			defaultCommands = getStringArray(rootValue, "defaultCommands");
-		}
 
 		if (rootValue.hasObjectKey("requiresAliases")) {
 			aliasesObj := rootValue.lookupObjectKey("requiresAliases");
