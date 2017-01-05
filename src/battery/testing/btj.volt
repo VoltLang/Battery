@@ -109,6 +109,9 @@ class BatteryTestsJson
 	private fn addDefaultAliases()
 	{
 		requiresAliases["windows"] = "msvc";
+		requiresAliases["posix"] = "osx || linux";
+		requiresAliases["v_p32"] = "x86";
+		requiresAliases["v_p64"] = "x86_64";
 	}
 
 	fn calculatePrefixes()

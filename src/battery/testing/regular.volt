@@ -429,6 +429,11 @@ class RequireExpression
 			err = "unknown requires string";
 			return false;
 		}
+		if (val == "all") {
+			return true;
+		} else if (val == "none") {
+			return false;
+		}
 		if (isArch(val)) {
 			return stringToArch(val) == arch;
 		} else {
