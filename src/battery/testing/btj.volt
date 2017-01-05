@@ -93,6 +93,7 @@ class BatteryTestsJson
 				requiresAliases[key] = values[i].str();
 			}
 		}
+		addDefaultAliases();
 
 		if (rootValue.hasObjectKey("macros")) {
 			macroObj := rootValue.lookupObjectKey("macros");
@@ -103,6 +104,11 @@ class BatteryTestsJson
 		}
 
 		calculatePrefixes();
+	}
+
+	private fn addDefaultAliases()
+	{
+		requiresAliases["windows"] = "msvc";
 	}
 
 	fn calculatePrefixes()
