@@ -7,6 +7,7 @@ module battery.util.system;
 
 import core.exception;
 version (Windows) import core.windows;
+else import core.posix.unistd;
 
 import watt.text.format;
 
@@ -17,8 +18,10 @@ fn processorCount() u32
 		si: SYSTEM_INFO;
 		GetSystemInfo(&si);
 		count = si.dwNumberOfProcessors;
+	}
+	version (Posix) {
+		count = cast(u32)sysconf(_SC_NPROCESSORS_ONLN);
 	} else {
-		// TODO: http://stackoverflow.com/questions/150355/programmatically-find-the-number-of-cores-on-a-machine
 		count = 9;
 	}
 	if (count == 0) {
