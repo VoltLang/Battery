@@ -106,4 +106,83 @@ Actually performs the build. If there's a `test` folder, the tests will be run a
 
 ###Test
 
-Runs tests if the `test` directory is present. Runs `build` if it has to.
+Runs tests if the `test` directory is present. Runs `build` if it has to. The tests are described in a [json](json.org) file named `battery.test.json`.
+
+####battery.test.json
+
+The file contains an object. The various properties are documented below.
+
+	pattern            a string, like "*.volt" or "test.volt" that
+	                   describes what files contain tests. (non-optional).
+	testCommandPrefix  a string that describes what lines that contain
+	                   test commands (more on them later). (non-optional).
+	macros             an object containing lists of commands that can be
+	                   invoked with the macro: command. (optional).
+	requiresAliases    an object containing strings that are expanded in
+	                   requires commands. (more on them later). (optional).
+
+####Commands
+
+Each individual test is described with various commands. The commands consist of a word and an argument, separated by a colon. The lines containing commands are prefixed by a string (usually a comment and a special character) given in `battery.test.json` with the `testCommandPrefix` property.
+
+`run` runs a given command. If the return value is 0, then that `run` is considered okay. (This can be overriden with the `retval` command). There are some special variables that can be expanded:
+
+	%s - the path to the test file
+	%S - the path to the test directory
+	%t - a unique name for that test -- useful for output filenames etc.
+	%T - a unique output directory for that test.
+
+So for instance. Let's say we were writing a C compiler, and we wanted battery to test it. Given a `pattern` of `hello.c`, and `testCommandPrefix` of `/*T `, a very simple C test could be as follows:
+
+	/*T run:cc -o %t %s */
+	/*T run:./%t */
+	int main() { return 0; }
+
+So if the compilation failed, or the output didn't return 0, then the test would be marked as a failure. What if we wanted our program to return 3? Or to test that the compilation failed? How would we do that? Enter the `retval` command:
+
+	/*T retval:0 */
+	/*T run:cc -o %t %s */
+	/*T retval:3 */
+	/*T run:./%t */
+	int main() { return 3; }
+
+The `retval` command gives the expected return value for the *next* `run` command that appears. Note that if you give one retval command, every run command must have an explicit retval command, even if you're expecting zero.
+
+A good test suite has a lot of tests. And if you have a lot of tests of the same format, you don't want to have to specify the above every single time. `macro` will save the day here.
+
+First, in our `battery.tests.json` file, add a "macros" property, and add a few entries.
+
+	"macros": {
+		"default": [
+			"/*T run:cc -o %t %s */",
+			"/*T run:./%t */"
+		],
+		"failure": [
+			"/*T retval:1 */",
+			"/*T run:cc -o %t %s */"
+		]
+	}
+
+The `default` macro will be used for every test with no action. So our simplest test becomes:
+
+	int main() { return 0; }
+
+Then, we can check for failure in compilation with our `failure` macro. First, disable the default macro with `default:no`, then just use `macro:` and then the name of the macro to invoke. It will be as if the commands were written out explicitly.
+
+	/*T default:no */
+	/*T macro:failure */
+	int main() return 0 }
+
+The `check` command checks the stdout and stderr of the runs, and passes if the given string occurs anywhere in that output, and fails otherwise.
+
+	/*T check:hello, world */
+	#include <stdio.h>
+	int main() { printf("hello, world\n"); return 0; }
+
+The `requires` command allows you to check simple platform and architecture conditions, skipping platforms that fail. This allows you to check OS specific things in a clean fashion. The `requiresAliases` property of `battery.tests.json` allows you to define new keywords with the same expression syntax.
+
+	requires:windows && !x86
+
+This test will only be run on windows, and will be skipped on x86. These platforms and architectures are the same used elsewhere in battery, run `battery help config` for details.
+
+And finally, `has-passed:no` denotes that you are aware that a test is failing, and not to mark it as a regression.
