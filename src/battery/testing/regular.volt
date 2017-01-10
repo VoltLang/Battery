@@ -332,7 +332,11 @@ private:
 			return;
 		}
 		msg = "check failed";
-		result = Result.FAIL;
+		if (!mExpectFailure) {
+			result = Result.FAIL;
+		} else {
+			result = Result.XFAIL;
+		}
 	}
 
 	fn testSkip()
