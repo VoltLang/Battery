@@ -5,6 +5,9 @@
  */
 module battery.policy.config;
 
+import watt.text.string : join;
+import watt.text.format : format;
+import watt.text.path : normalizePath;
 import watt.process : retrieveEnvironment, Environment, searchPath;
 import battery.interfaces;
 import battery.configuration;
@@ -59,23 +62,74 @@ fn doEnv(drv: Driver, config: Configuration)
 	copyIfNotSet("PATH");
 
 	version (Windows) {
+
+		if (config.platform != Platform.MSVC) {
+			drv.abort("can not cross compile on Windows");
+		}
+
 		// Volta needs the temp dir.
 		copyIfNotSet("TEMP");
-
-		// CL and Link needs these.
-		copyIfNotSet("LIB");
-		copyIfNotSet("LIBPATH");
-
-		// CL need these.
-		copyIfNotSet("INCLUDE");
-		copyIfNotSet("SYSTEMROOT");
 
 		// Only needed for RDMD if the installer wasn't used.
 		copyIfNotSet("VCINSTALLDIR");
 		copyIfNotSet("WindowsSdkDir");
+		copyIfNotSet("WindowsSDKVersion");
 		copyIfNotSet("UniversalCRTSdkDir");
 		copyIfNotSet("UCRTVersion");
+
+		// CL need these.
+		copyIfNotSet("SYSTEMROOT");
+
+		// Setup 
+		doEnvMSVC(drv, config, outside);
 	}
+}
+
+fn doEnvMSVC(drv: Driver, config: Configuration, outside: Environment)
+{
+	inc, lib: string[];
+
+	getDirsForMSVC(drv, outside, out inc, out lib);
+
+	// Set the built env vars.
+	config.env.set("INCLUDE", join(inc, ";"));
+	config.env.set("LIB", join(lib, ";"));
+}
+
+fn getDirsForMSVC(drv: Driver, outside: Environment, out inc: string[], out lib: string[])
+{
+	fn getOrWarn(name: string) string {
+		value := outside.getOrNull(name);
+		if (value.length == 0) {
+			drv.info("error: need to set env var '%s'", name);
+		}
+		return value;
+	}
+
+	dirVC := getOrWarn("VCINSTALLDIR");
+	dirUCRT := getOrWarn("UniversalCRTSdkDir");
+	dirWinSDK := getOrWarn("WindowsSdkDir");
+	numUCRT := getOrWarn("UCRTVersion");
+	numWinSDK := getOrWarn("WindowsSDKVersion");
+
+	if (dirVC.length == 0 || dirUCRT.length == 0 || dirWinSDK.length == 0 ||
+	    numUCRT.length == 0 || numWinSDK.length == 0) {
+		drv.abort("missing environmental variable");
+	}
+
+	inc = [
+		normalizePath(format("%s/include", dirVC)),
+		normalizePath(format("%s/include/%s/ucrt", dirUCRT, numUCRT)),
+		normalizePath(format("%s/include/%s/shared", dirWinSDK, numWinSDK)),
+		normalizePath(format("%s/include/%s/um", dirWinSDK, numWinSDK)),
+		normalizePath(format("%s/include/%s/winrt", dirWinSDK, numWinSDK))
+	];
+
+	lib = [
+		normalizePath(format("%s/lib/amd64", dirVC)),
+		normalizePath(format("%s/lib/%s/ucrt/x64", dirUCRT, numUCRT)),
+		normalizePath(format("%s/lib/%s/um/x64", dirWinSDK, numWinSDK))
+	];
 }
 
 
