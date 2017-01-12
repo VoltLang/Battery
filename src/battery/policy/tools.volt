@@ -22,12 +22,14 @@ enum NasmCommand = "nasm";
 enum RdmdCommand = "rdmd";
 enum CLCommand = "cl.exe";
 enum LinkCommand = "link.exe";
+enum LLDLinkCommand = "lld-link";
 
 enum VoltaPrint =      "  VOLTA    ";
 enum ClangPrint =      "  CLANG    ";
 enum NasmPrint =       "  NASM     ";
 enum RdmdPrint =       "  RDMD     ";
 enum LinkPrint =       "  LINK     ";
+enum LLDLinkPrint =    "  LLD-LINK ";
 enum CLPrint   =       "  CL       ";
 
 enum HostRdmdPrint =   "  HOSTRDMD ";
@@ -40,13 +42,21 @@ enum HostRdmdPrint =   "  HOSTRDMD ";
 fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
 {
 	cmd := c.getTool(name);
+
 	if (cmd is null) {
 		switch (name) {
 		case "nasm": cmd = getNasm(drv, c, name); break;
 		case "clang": cmd = getClang(drv, c, name); break;
-		case "cl": cmd = getCL(drv, c, name); break;
-		case "link": cmd = getLink(drv, c, name); break;
 		case "rdmd": cmd = getRdmd(drv, c, name); break;
+		case "cl": cmd = getCL(drv, c, name); break;
+		case "link": {
+			if (c.isCross) {
+				cmd = getLLDLink(drv, c, name);
+			} else {
+				cmd = getLink(drv, c, name);
+			}
+			break;
+		}
 		default: assert(false);
 		}
 	} else {
@@ -173,6 +183,11 @@ fn getCL(drv: Driver, config: Configuration, name: string) Command
 fn getLink(drv: Driver, config: Configuration, name: string) Command
 {
 	return drv.makeCommand(config, name, LinkCommand, LinkPrint);
+}
+
+fn getLLDLink(drv: Driver, config: Configuration, name: string) Command
+{
+	return drv.makeCommand(config, name, LLDLinkCommand, LLDLinkPrint);
 }
 
 

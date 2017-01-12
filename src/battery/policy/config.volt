@@ -5,6 +5,7 @@
  */
 module battery.policy.config;
 
+import watt.io.file : isDir;
 import watt.text.string : join;
 import watt.text.format : format;
 import watt.text.path : normalizePath;
@@ -26,24 +27,28 @@ fn getBaseConfig(drv: Driver, arch: Arch, platform: Platform) Configuration
 
 fn doConfig(drv: Driver, config: Configuration)
 {
-	doEnv(drv, config);
+	outside := retrieveEnvironment();
+	doEnv(drv, config, outside);
 
-	// Need either MSVC or clang.
-	if (config.platform == Platform.MSVC) {
-		drv.setTool(config.isHost, CLName, drv.fillInCommand(config, CLName));
-		drv.setTool(config.isHost, LinkName, drv.fillInCommand(config, LinkName));
-	} else {
-		drv.setTool(config.isHost, ClangName, drv.fillInCommand(config, ClangName));
-	}
-
-	drv.setTool(config.isHost, NasmName, drv.fillInCommand(config, NasmName));
 	drv.setTool(config.isHost, RdmdName, drv.fillInCommand(config, RdmdName));
+	drv.setTool(config.isHost, NasmName, drv.fillInCommand(config, NasmName));
+
+	final switch (config.platform) with (Platform) {
+	case MSVC:
+		if (config.isCross) {
+			doToolChainCrossMSVC(drv, config, outside);
+		} else {
+			doToolChainNativeMSVC(drv, config, outside);
+		}
+		break;
+	case Metal, Linux, OSX:
+		doToolChainClang(drv, config, outside);
+		break;
+	}
 }
 
-fn doEnv(drv: Driver, config: Configuration)
+fn doEnv(drv: Driver, config: Configuration, outside: Environment)
 {
-	outside := retrieveEnvironment();
-
 	fn copyIfNotSet(name: string) {
 
 		if (config.env.isSet(name)) {
@@ -70,66 +75,166 @@ fn doEnv(drv: Driver, config: Configuration)
 		// Volta needs the temp dir.
 		copyIfNotSet("TEMP");
 
+		// CL need these.
+		copyIfNotSet("SYSTEMROOT");
+
 		// Only needed for RDMD if the installer wasn't used.
 		copyIfNotSet("VCINSTALLDIR");
 		copyIfNotSet("WindowsSdkDir");
 		copyIfNotSet("WindowsSDKVersion");
 		copyIfNotSet("UniversalCRTSdkDir");
 		copyIfNotSet("UCRTVersion");
-
-		// CL need these.
-		copyIfNotSet("SYSTEMROOT");
-
-		// Setup 
-		doEnvMSVC(drv, config, outside);
 	}
 }
 
-fn doEnvMSVC(drv: Driver, config: Configuration, outside: Environment)
+
+/*
+ *
+ * Clang based Toolchain.
+ *
+ */
+
+fn doToolChainClang(drv: Driver, config: Configuration, outside: Environment)
 {
-	inc, lib: string[];
-
-	getDirsForMSVC(drv, outside, out inc, out lib);
-
-	// Set the built env vars.
-	config.env.set("INCLUDE", join(inc, ";"));
-	config.env.set("LIB", join(lib, ";"));
+	drv.setTool(config.isHost, ClangName, drv.fillInCommand(config, ClangName));
 }
 
-fn getDirsForMSVC(drv: Driver, outside: Environment, out inc: string[], out lib: string[])
+
+/*
+ *
+ * MSVC Toolchain.
+ *
+ */
+
+struct VarsForMSVC
+{
+public:
+	dirVC: string;
+	dirUCRT: string;
+	dirWinSDK: string;
+	numUCRT: string;
+	numWinSDK: string;
+
+	/// Include directories, derived from the above fields.
+	inc: string[];
+	/// Library directories, derived from the above fields.
+	lib: string[];
+	/// Extra path, for binaries.
+	path: string[];
+
+
+public:
+	fn addIncIfIsDir(dir: string) {
+		dir = normalizePath(dir);
+		if (isDir(dir)) {
+			inc ~= dir;
+		}
+	}
+
+	fn addLibIfIsDir(dir: string) {
+		dir = normalizePath(dir);
+		if (isDir(dir)) {
+			lib ~= dir;
+		}
+	}
+}
+
+fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environment)
+{
+	drv.setTool(config.isHost, CLName, drv.fillInCommand(config, CLName));
+	drv.setTool(config.isHost, LinkName, drv.fillInCommand(config, LinkName));
+
+	vars: VarsForMSVC;
+	getDirsFromEnv(drv, outside, ref vars);
+	fillInListsForMSVC(ref vars);
+
+	// Set the built env vars.
+	config.env.set("INCLUDE", join(vars.inc, ";"));
+	config.env.set("LIB", join(vars.lib, ";"));
+}
+
+fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment)
+{
+	assert(!config.isHost);
+
+	drv.setTool(false, ClangName, drv.fillInCommand(config, ClangName));
+	drv.setTool(false, LinkName, drv.fillInCommand(config, LinkName));
+
+	vars: VarsForMSVC;
+	getDirsFromEnv(drv, outside, ref vars);
+	fillInListsForMSVC(ref vars);
+
+	clang := drv.getTool(false, ClangName);
+	foreach (i; vars.inc) {
+		clang.args ~= "-I" ~ i;
+	}
+
+	link := drv.getTool(false, LinkName);
+	foreach (l; vars.lib) {
+		link.args ~= format("/LIBPATH:%s", l);
+	}
+}
+
+fn getDirsFromEnv(drv: Driver, env: Environment, ref vars: VarsForMSVC)
 {
 	fn getOrWarn(name: string) string {
-		value := outside.getOrNull(name);
+		value := env.getOrNull(name);
 		if (value.length == 0) {
 			drv.info("error: need to set env var '%s'", name);
 		}
 		return value;
 	}
 
-	dirVC := getOrWarn("VCINSTALLDIR");
-	dirUCRT := getOrWarn("UniversalCRTSdkDir");
-	dirWinSDK := getOrWarn("WindowsSdkDir");
-	numUCRT := getOrWarn("UCRTVersion");
-	numWinSDK := getOrWarn("WindowsSDKVersion");
+	vars.dirVC = getOrWarn("VCINSTALLDIR");
+	vars.dirUCRT = getOrWarn("UniversalCRTSdkDir");
+	vars.dirWinSDK = getOrWarn("WindowsSdkDir");
+	vars.numUCRT = getOrWarn("UCRTVersion");
+	vars.numWinSDK = getOrWarn("WindowsSDKVersion");
 
-	if (dirVC.length == 0 || dirUCRT.length == 0 || dirWinSDK.length == 0 ||
-	    numUCRT.length == 0 || numWinSDK.length == 0) {
+	if (vars.dirVC.length == 0 || vars.dirUCRT.length == 0 ||
+	    vars.dirWinSDK.length == 0 || vars.numUCRT.length == 0 ||
+	    vars.numWinSDK.length == 0) {
 		drv.abort("missing environmental variable");
 	}
+}
 
-	inc = [
-		normalizePath(format("%s/include", dirVC)),
-		normalizePath(format("%s/include/%s/ucrt", dirUCRT, numUCRT)),
-		normalizePath(format("%s/include/%s/shared", dirWinSDK, numWinSDK)),
-		normalizePath(format("%s/include/%s/um", dirWinSDK, numWinSDK)),
-		normalizePath(format("%s/include/%s/winrt", dirWinSDK, numWinSDK))
-	];
+fn fillInListsForMSVC(ref vars: VarsForMSVC)
+{
+	fn tPath(dir: string) {
+		dir = normalizePath(dir);
+		if (isDir(dir)) {
+			vars.path ~= dir;
+		}
+	}
 
-	lib = [
-		normalizePath(format("%s/lib/amd64", dirVC)),
-		normalizePath(format("%s/lib/%s/ucrt/x64", dirUCRT, numUCRT)),
-		normalizePath(format("%s/lib/%s/um/x64", dirWinSDK, numWinSDK))
-	];
+	fn tInc(dir: string) {
+		dir = normalizePath(dir);
+		if (isDir(dir)) {
+			vars.inc ~= dir;
+		}
+	}
+
+	fn tLib(dir: string) {
+		dir = normalizePath(dir);
+		if (isDir(dir)) {
+			vars.lib ~= dir;
+		}
+	}
+
+	tPath(format("%s/bin/x64", vars.dirWinSDK));
+	tPath(format("%s/bin/x86", vars.dirWinSDK));
+	tPath(format("%s/VCPackages", vars.dirVC));
+	tPath(format("%s/BIN/amd64", vars.dirVC));
+
+	tInc(format("%s/include", vars.dirVC));
+	tInc(format("%s/include/%s/ucrt", vars.dirUCRT, vars.numUCRT));
+	tInc(format("%s/include/%s/shared", vars.dirWinSDK, vars.numWinSDK));
+	tInc(format("%s/include/%s/um", vars.dirWinSDK, vars.numWinSDK));
+	tInc(format("%s/include/%s/winrt", vars.dirWinSDK, vars.numWinSDK));
+
+	tLib(format("%s/lib/amd64", vars.dirVC));
+	tLib(format("%s/lib/%s/ucrt/x64", vars.dirUCRT, vars.numUCRT));
+	tLib(format("%s/lib/%s/um/x64", vars.dirWinSDK, vars.numWinSDK));
 }
 
 
@@ -149,14 +254,26 @@ fn fillInConfigCommands(drv: Driver, config: Configuration)
 
 fn fillInLinkerAndCC(drv: Driver, config: Configuration)
 {
-	if (config.platform == Platform.MSVC) {
-		fillInMSVC(drv, config);
-		return;
+	final switch (config.platform) with (Platform) {
+	case MSVC:
+		if (config.isCross) {
+			fillInClang(drv, config);
+			fillInLink(drv, config);
+		} else {
+			fillInCL(drv, config);
+			fillInLink(drv, config);
+		}
+		break;
+	case Metal, Linux, OSX:
+		fillInClang(drv, config);
+		break;
 	}
+}
 
+fn fillInClang(drv: Driver, config: Configuration)
+{
 	// Try clang from the given tools.
 	clang := config.getTool(ClangName);
-	assert(clang !is null);
 
 	config.ccCmd = clang;
 	config.ccKind = CCKind.Clang;
@@ -164,14 +281,17 @@ fn fillInLinkerAndCC(drv: Driver, config: Configuration)
 	config.linkerKind = LinkerKind.Clang;
 }
 
-fn fillInMSVC(drv: Driver, config: Configuration)
+fn fillInLink(drv: Driver, config: Configuration)
 {
-	cl := config.getTool(CLName);
 	link := config.getTool(LinkName);
-
-	config.ccCmd = cl;
-	config.ccKind = CCKind.CL;
 
 	config.linkerCmd = link;
 	config.linkerKind = LinkerKind.Link;
+}
+
+fn fillInCL(drv: Driver, config: Configuration)
+{
+	cl := config.getTool(CLName);
+	config.ccCmd = cl;
+	config.ccKind = CCKind.CL;
 }
