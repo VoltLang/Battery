@@ -161,7 +161,7 @@ public:
 		//
 
 		name := exe.bin is null ? exe.name : exe.bin;
-		version (Windows) if (!endsWith(name, ".exe")) {
+		if (mGen.config.platform == Platform.MSVC && !endsWith(name, ".exe")) {
 			name ~= ".exe";
 		}
 
