@@ -50,13 +50,11 @@ fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
 		default: assert(false);
 		}
 	} else {
-		str := c.isHost ? "host " : "";
-		drv.info("got '%s' from the %scommand line '%s'.", name, str, cmd.cmd);
+		drv.info("got '%s' from the %scommand line '%s'.", name, c.getCmdPre(), cmd.cmd);
 	}
 
 	if (cmd is null) {
-		str := c.isHost ? "host " : "";
-		drv.abort("could not find the %scommand '%s'", str, name);
+		drv.abort("could not find the %scommand '%s'", c.getCmdPre(), name);
 	}
 
 	switch (name) {
@@ -220,8 +218,7 @@ fn makeCommand(drv: Driver, config: Configuration, name: string, cmd: string,
 	if (cmd is null) {
 		return null;
 	} else {
-		str := config.isHost ? "host " : "";
-		drv.info("found %s'%s' on the path '%s'.", str, name, cmd);
+		drv.info("found %s'%s' on the path '%s'.", config.getCmdPre(), name, cmd);
 	}
 
 	c := new Command();
@@ -250,4 +247,14 @@ fn searchPath(cmd: string, env: Environment) string
 	}
 
 	return null;
+}
+
+fn getCmdPre(c: Configuration) string
+{
+	final switch (c.kind) with (ConfigKind) {
+	case Invalid: return "invalid ";
+	case Native: return "";
+	case Host: return "host ";
+	case Cross: return "cross ";
+	}
 }

@@ -26,6 +26,14 @@ enum CCKind
 	Clang, // LLVM Clang
 }
 
+enum ConfigKind
+{
+	Invalid,
+	Native,
+	Host,
+	Cross,
+}
+
 /**
  * A build configuration for one or more builds.
  *
@@ -36,7 +44,7 @@ class Configuration
 {
 public:
 	env: Environment;
-	isHost: bool;
+	kind: ConfigKind;
 
 	arch: Arch;
 	platform: Platform;
@@ -89,4 +97,8 @@ public:
 		c.args ~= arg;
 	}
 */
+
+	@property fn isNative() bool { return kind == ConfigKind.Native; }
+	@property fn isHost() bool { return kind == ConfigKind.Host; }
+	@property fn isCross() bool { return kind == ConfigKind.Cross; }
 }

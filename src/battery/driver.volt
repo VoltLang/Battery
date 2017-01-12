@@ -80,10 +80,13 @@ public:
 		if (arch == mHostConfig.arch &&
 		    platform == mHostConfig.platform) {
 			mHostConfig = null;
+			mConfig.kind = ConfigKind.Native;
 			info("native compile");
 		} else {
 			info("cross compiling to %s-%s",
 			     .toString(arch), .toString(platform));
+			mHostConfig.kind = ConfigKind.Host;
+			mConfig.kind = ConfigKind.Cross;
 		}
 
 		// Parse arguments.
@@ -183,9 +186,12 @@ public:
 		    platform != mHostConfig.platform) {
 			// Need fill in host commands.
 			fillInConfigCommands(this, mHostConfig);
+			mHostConfig.kind = ConfigKind.Host;
+			mConfig.kind = ConfigKind.Cross;
 		} else {
 			// Just reuse the host config.
 			mHostConfig = null;
+			mConfig.kind = ConfigKind.Native;
 		}
 
 		// Do this after the arguments has been parsed.
