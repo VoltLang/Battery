@@ -6,14 +6,9 @@
 module battery.util.path;
 
 import watt.text.string : replace;
-import watt.text.path : normalizePath;
-
+import watt.text.path : normalizePath, makePathAppendable;
 
 fn cleanPath(s: string) string
 {
-	version (Windows) {
-		return normalizePath(s.replace(":", ""));
-	} else {
-		return normalizePath(s);
-	}
+	return normalizePath(makePathAppendable(s));
 }
