@@ -265,18 +265,18 @@ protected:
 	{
 		lib := cast(Lib)base;
 		if (lib !is null) {
-			parse(lib);
+			parseLib(lib);
 			verify(lib);
 		}
 
 		exe := cast(Exe)base;
 		if (exe !is null) {
-			parse(exe);
+			parseExe(exe);
 			verify(exe);
 		}
 	}
 
-	fn parse(lib: Lib)
+	fn parseLib(lib: Lib)
 	{
 		for (; mPos < mArgs.length; mPos++) {
 			arg := mArgs[mPos];
@@ -302,7 +302,7 @@ protected:
 		}
 	}
 
-	fn parse(exe: Exe)
+	fn parseExe(exe: Exe)
 	{
 		for (; mPos < mArgs.length; mPos++) {
 			arg := mArgs[mPos];

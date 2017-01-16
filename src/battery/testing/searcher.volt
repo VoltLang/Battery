@@ -37,14 +37,14 @@ public:
 
 	fn search(project: Project, dir: string) Test[]
 	{
-		search(project, dir, dir);
+		searchBase(project, dir, dir);
 
 		return mTests;
 	}
 
 
 private:
-	fn search(project: Project, base: string, dir: string)
+	fn searchBase(project: Project, base: string, dir: string)
 	{
 		fn hit(file: string)
 		{
@@ -64,7 +64,7 @@ private:
 				if (!isDir(fullpath)) {
 					return;
 				}
-				search(project, base, fullpath);
+				searchBase(project, base, fullpath);
 				return;
 			}
 		}
