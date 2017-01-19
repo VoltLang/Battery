@@ -203,6 +203,11 @@ private:
 			cmd = c.cmd;
 			args = c.args ~ args;
 		}
+		version (Windows) {
+			if (!cmd.endsWith(".exe")) {
+				cmd ~= ".exe";
+			}
+		}
 		cmdGroup.run(cmd, args, runRuns, mOutputLog, mErrorLog);
 	}
 
