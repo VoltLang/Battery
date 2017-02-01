@@ -9,14 +9,14 @@ class Project
 {
 public:
 	name: string;
-	path: string;
+	paths: string[];
 	commands: Command[string];
 
 public:
-	this(name: string, path: string)
+	this(name: string, paths: string[])
 	{
 		this.name = name;
-		this.path = path;
+		this.paths = paths;
 	}
 
 	fn addCommand(id: string, command: Command)

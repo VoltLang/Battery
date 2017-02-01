@@ -30,7 +30,7 @@ class Base
 
 	srcAsm: string[];
 
-	testDir: string;
+	testDirs: string[];
 }
 
 class Lib : Base

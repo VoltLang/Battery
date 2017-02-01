@@ -78,8 +78,8 @@ fn getArgsBase(b: Base, tag: string) string[]
 		b.name
 	];
 
-	if (b.testDir !is null) {
-		ret ~= ["--test-dir", b.testDir];
+	foreach (dir; b.testDirs) {
+		ret ~= ["--test-dir", dir];
 	}
 
 	foreach (dep; b.deps) {
@@ -283,7 +283,7 @@ protected:
 			switch (arg.kind) with (Arg.Kind) {
 			case Name: lib.name = arg.extra; break;
 			case SrcDir: lib.srcDir = arg.extra; break;
-			case TestDir: lib.testDir = arg.extra; break;
+			case TestDir: lib.testDirs ~= arg.extra; break;
 			case Dep: lib.deps ~= arg.extra; break;
 			case Library: lib.libs ~= arg.extra; break;
 			case LibraryPath: lib.libPaths ~= arg.extra; break;
@@ -309,7 +309,7 @@ protected:
 			switch (arg.kind) with (Arg.Kind) {
 			case Name: exe.name = arg.extra; break;
 			case SrcDir: exe.srcDir = arg.extra; break;
-			case TestDir: exe.testDir = arg.extra; break;
+			case TestDir: exe.testDirs ~= arg.extra; break;
 			case Dep: exe.deps ~= arg.extra; break;
 			case Library: exe.libs ~= arg.extra; break;
 			case LibraryPath: exe.libPaths ~= arg.extra; break;

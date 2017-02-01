@@ -21,10 +21,11 @@ import battery.frontend.parameters : ArgParser;
 enum PathRt         = "rt";
 enum PathSrc        = "src";
 enum PathRes        = "res";
-enum PathTest       = "test";
 enum PathMainD      = "main.d";
 enum PathMainVolt   = "main.volt";
 enum PathBatteryTxt = "battery.txt";
+enum PathTestJson   = "battery.tests.json";
+enum PathTestSimple = "battery.tests.simple";
 
 /**
  * Scan a directory and see what it holds.
@@ -62,9 +63,14 @@ fn scanDir(drv: Driver, path: string) Base
 		ret = lib;
 	}
 
-	if (s.hasTest) {
-		drv.info("%s detected tests in folder '%s'", ret.name, s.pathTest);
-		ret.testDir = s.pathTest;
+	foreach (p; s.pathSimpleTests) {
+		drv.info("detected %s simple test config '%s'", ret.name, p);
+		ret.testDirs ~= dirName(p);
+	}
+
+	foreach (p; s.pathJsonTests) {
+		drv.info("detected %s test config '%s'", ret.name, p);
+		ret.testDirs ~= dirName(p);
 	}
 
 	if (s.hasRes) {
@@ -133,7 +139,6 @@ public:
 	hasMainD: bool;
 	hasMainVolt: bool;
 	hasBatteryCmd: bool;
-	hasTest: bool;
 
 	path: string;
 	pathRt: string;
@@ -143,7 +148,8 @@ public:
 	pathMainVolt: string;
 	pathBatteryTxt: string;
 	pathDerivedBin: string;
-	pathTest: string;
+	pathSimpleTests: string[];
+	pathJsonTests: string[];
 
 	filesC: string[];
 	filesVolt: string[];
@@ -160,15 +166,16 @@ public:
 			return;
 		}
 
-		name           = toLower(baseName(path));
-		pathRt         = getInPath(PathRt);
-		pathSrc        = getInPath(PathSrc);
-		pathRes        = getInPath(PathRes);
-		pathMainD      = pathSrc ~ dirSeparator ~ PathMainD;
-		pathMainVolt   = pathSrc ~ dirSeparator ~ PathMainVolt;
-		pathBatteryTxt = getInPath(PathBatteryTxt);
-		pathDerivedBin = getInPath(name);
-		pathTest       = getInPath(PathTest);
+		name            = toLower(baseName(path));
+		pathRt          = getInPath(PathRt);
+		pathSrc         = getInPath(PathSrc);
+		pathRes         = getInPath(PathRes);
+		pathMainD       = pathSrc ~ dirSeparator ~ PathMainD;
+		pathMainVolt    = pathSrc ~ dirSeparator ~ PathMainVolt;
+		pathBatteryTxt  = getInPath(PathBatteryTxt);
+		pathDerivedBin  = getInPath(name);
+		pathSimpleTests = drv.deepScan(path, PathTestSimple);
+		pathJsonTests   = drv.deepScan(path, PathTestJson);
 
 		hasPath        = isDir(path);
 		hasRt          = isDir(pathRt);
@@ -177,7 +184,6 @@ public:
 		hasMainD       = exists(pathMainD);
 		hasMainVolt    = exists(pathMainVolt);
 		hasBatteryCmd  = exists(pathBatteryTxt);
-		hasTest        = isDir(pathTest);
 
 		if (!hasSrc) {
 			return;
@@ -221,7 +227,7 @@ fn deepScan(drv: Driver, path: string, ending: string) string[]
 
 	fn hit(p: string) {
 		switch (p) {
-		case ".", "..": return;
+		case ".", "..", ".git": return;
 		default:
 		}
 

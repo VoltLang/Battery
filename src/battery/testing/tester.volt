@@ -49,24 +49,24 @@ public:
 		projects: Project[];
 
 		foreach (exe; exes) {
-			if (exe.testDir is null) {
+			if (exe.testDirs.length == 0) {
 				continue;
 			}
 
 			exeTool := getCommandFromExe(exe);
 			voltaTool := getVoltaCommand(exe);
-			projects ~= new Project(exe.name, exe.testDir);
+			projects ~= new Project(exe.name, exe.testDirs);
 			projects[$-1].addCommand("volta", voltaTool);
 			projects[$-1].addCommand(exe.name, exeTool);
 		}
 
 		foreach (lib; libs) {
-			if (lib.testDir is null) {
+			if (lib.testDirs.length == 0) {
 				continue;
 			}
 
 			voltaTool := getVoltaCommand(lib);
-			projects ~= new Project(lib.name, lib.testDir);
+			projects ~= new Project(lib.name, lib.testDirs);
 			projects[$-1].addCommand("volta", voltaTool);
 		}
 
@@ -82,16 +82,18 @@ public:
 		cmdGroup := new CmdGroup(retrieveEnvironment(), processorCount());
 		tests: Test[];
 		foreach (i, project; projects) {
-			mDrv.info("  TEST     %s", project.path);
-			cfg := new Configuration();
-			cfg.arch = mConfig.arch;
-			cfg.platform = mConfig.platform;
-			foreach (k, v; project.commands) {
-				cfg.addTool(k, v.cmd, v.args);
-			}
+			foreach (path; project.paths) {
+				mDrv.info("  TEST     %s", path);
+				cfg := new Configuration();
+				cfg.arch = mConfig.arch;
+				cfg.platform = mConfig.platform;
+				foreach (k, v; project.commands) {
+					cfg.addTool(k, v.cmd, v.args);
+				}
 
-			s := new Searcher(cfg);
-			tests ~= s.search(project, project.path);
+				s := new Searcher(cfg);
+				tests ~= s.search(project, path);
+			}
 		}
 
 		foreach (test; tests) {
