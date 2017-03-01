@@ -2,7 +2,7 @@
 // See copyright notice in src/tesla/license.volt (BOOST ver. 1.0).
 module battery.testing.output.xml;
 
-import core.stdc.stdio : FILE, fprintf, fopen, fflush, fclose;
+import core.c.stdio : FILE, fprintf, fopen, fflush, fclose;
 import watt.text.format : format;
 import watt.text.sink : Sink;
 import watt.conv : toStringz;

@@ -9,7 +9,7 @@ import watt.text.format;
 import watt.text.string;
 import json = watt.text.json;
 import core.exception;
-import core.stdc.stdio;
+import core.c.stdio;
 
 import battery.configuration;
 import battery.testing.test;

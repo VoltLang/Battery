@@ -5,7 +5,7 @@
  */
 module battery.driver;
 
-import core.stdc.stdlib : exit;
+import core.c.stdlib : exit;
 import core.varargs : va_list, va_start, va_end;
 import io = watt.io;
 import watt.text.path;

@@ -6,8 +6,8 @@
 module battery.util.system;
 
 import core.exception;
-version (Windows) import core.windows;
-else import core.posix.unistd;
+version (Windows) import core.c.windows;
+else import core.c.posix.unistd;
 
 import watt.text.format;
 

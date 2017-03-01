@@ -2,11 +2,11 @@
 // See copyright notice in src/battery/license.d (BOOST ver. 1.0).
 module build.util.cmdgroup;
 
-import core.stdc.stdio : FILE, fileno, stdin, stdout, stderr;
+import core.c.stdio : FILE, fileno, stdin, stdout, stderr;
 import core.exception;
 
 version(Windows) {
-	import core.windows.windows;
+	import core.c.windows.windows;
 }
 
 import watt.conv;

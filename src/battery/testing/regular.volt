@@ -3,7 +3,7 @@
 module battery.testing.regular;
 
 import core.exception;
-import core.stdc.stdio;
+import core.c.stdio;
 import watt.io;
 import watt.path;
 import watt.conv;

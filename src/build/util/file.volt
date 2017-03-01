@@ -9,9 +9,9 @@ module build.util.file;
 import core.exception;
 
 version (Linux || OSX) {
-	import core.posix.sys.stat : stat_t, stat;
+	import core.c.posix.sys.stat : stat_t, stat;
 } else {
-	import core.windows.windows : MultiByteToWideChar, CP_UTF8,
+	import core.c.windows.windows : MultiByteToWideChar, CP_UTF8,
 		GetFileAttributesExW, GET_FILEEX_INFO_LEVELS,
 		WIN32_FILE_ATTRIBUTE_DATA;
 }

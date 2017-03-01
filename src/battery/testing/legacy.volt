@@ -9,8 +9,8 @@ import watt.text.sink;
 import watt.text.format : format;
 import watt.text.string : indexOf, split, strip, startsWith;
 import watt.io.file : read;
-import core.stdc.stdio : printf, FILE, fprintf, fopen, fgets, fclose, fflush, stdout, stdin;
-import core.stdc.string : strlen;
+import core.c.stdio : printf, FILE, fprintf, fopen, fgets, fclose, fflush, stdout, stdin;
+import core.c.string : strlen;
 
 import battery.configuration;
 import battery.util.system;

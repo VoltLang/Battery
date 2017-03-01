@@ -2,7 +2,7 @@
 // See copyright notice in src/tesla/license.volt (BOOST ver. 1.0).
 module battery.testing.test;
 
-import core.stdc.stdio : FILE;
+import core.c.stdio : FILE;
 
 import build.util.cmdgroup;
 import battery.testing.project;
