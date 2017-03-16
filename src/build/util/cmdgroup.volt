@@ -29,7 +29,7 @@ private:
 	env: Environment;
 
 	/// For Windows waitOne, to avoid unneeded allocations.
-	version (Windows) __handles: Pid.NativeID[];
+	version (Windows) __handles: Pid.OsHandle[];
 
 	/// Number of simultanious jobs.
 	maxWaiting: uint;
@@ -53,7 +53,7 @@ private:
 		done: DoneDg;
 
 		/// System specific process handle.
-		handle: Pid.NativeID;
+		handle: Pid.OsHandle;
 
 		/// In use.
 		used: bool;
@@ -64,7 +64,7 @@ private:
 		 * Initialize all the fields.
 		 */
 		fn set(cmd: string, args: string[], dgt: DoneDg,
-		       handle: Pid.NativeID)
+		       handle: Pid.OsHandle)
 		{
 			used = true;
 			this.cmd = cmd;
@@ -97,7 +97,7 @@ public:
 		this.maxWaiting = maxWaiting;
 
 		cmdStore = new Cmd[](maxWaiting);
-		version (Windows) __handles = new Pid.NativeID[](maxWaiting);
+		version (Windows) __handles = new Pid.OsHandle[](maxWaiting);
 
 		foreach (ref cmd; cmdStore) {
 			cmd = new Cmd();
@@ -120,12 +120,12 @@ public:
 
 		version (Windows) {
 
-			newCmd(cmd, args, dgt, pid._handle);
+			newCmd(cmd, args, dgt, pid.osHandle);
 			waiting++;
 
 		} else version(Posix) {
 
-			newCmd(cmd, args, dgt, pid._pid);
+			newCmd(cmd, args, dgt, pid.osHandle);
 			waiting++;
 
 		} else {
@@ -235,7 +235,7 @@ public:
 	}
 
 private:
-	fn newCmd(cmd: string, args: string[], dgt: DoneDg, handle: Pid.NativeID) Cmd
+	fn newCmd(cmd: string, args: string[], dgt: DoneDg, handle: Pid.OsHandle) Cmd
 	{
 		foreach (c; cmdStore) {
 			if (c is null) {
