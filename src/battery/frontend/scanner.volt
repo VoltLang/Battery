@@ -9,6 +9,7 @@ module battery.frontend.scanner;
 import io = watt.io;
 import watt.io.file : exists, searchDir, isDir;
 import watt.path : baseName, dirName, dirSeparator;
+import watt.text.format : format;
 import watt.text.string : endsWith, replace;
 import watt.conv : toLower;
 
@@ -231,7 +232,7 @@ fn deepScan(drv: Driver, path: string, ending: string) string[]
 		default:
 		}
 
-		full := path ~ dirSeparator ~ p;
+		full := format("%s%s%s", path, dirSeparator, p);
 
 		if (isDir(full)) {
 			ret ~= deepScan(drv, full, ending);

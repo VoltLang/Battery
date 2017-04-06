@@ -53,14 +53,14 @@ private:
 				return;
 			case "battery.tests.json":
 				btj := new BatteryTestsJson();
-				btj.parse(dir ~ dirSeparator ~ file);
+				btj.parse(format("%s%s%s", dir, dirSeparator, file));
 				searchJson(project, dir, dir, btj);
 				return;
 			case "battery.tests.simple":
 				searchSimple(project, dir, dir);
 				return;
 			default:
-				fullpath := dir ~ dirSeparator ~ file;
+				fullpath := format("%s%s%s", dir, dirSeparator, file);
 				if (!isDir(fullpath)) {
 					return;
 				}
@@ -83,7 +83,7 @@ private:
 				mTests ~= new Legacy(dir, test, mCommandStore, project);
 				return;
 			default:
-				fullpath := dir ~ dirSeparator ~ file;
+				fullpath := format("%s%s%s", dir, dirSeparator, file);
 				if (!isDir(fullpath)) {
 					return;
 				}
@@ -107,7 +107,7 @@ private:
 						btj, project, mCommandStore);
 					return;
 				}
-				fullpath := dir ~ dirSeparator ~ file;
+				fullpath := format("%s%s%s", dir, dirSeparator, file);
 				if (!isDir(fullpath)) {
 					return;
 				}
