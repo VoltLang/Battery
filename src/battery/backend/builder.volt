@@ -137,9 +137,6 @@ public:
 		bc := makeTargetExeBc(ref gen, exe);
 		o := makeHelperBitcodeToObj(ref gen, bc, oName);
 
-		// Flatten the dep graph.
-		mega.deps ~= bc;
-
 		// For the bitcode file and extra inputs.
 		aux : uni.Target[] = [o];
 
