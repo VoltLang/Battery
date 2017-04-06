@@ -43,6 +43,9 @@ protected:
 	mLib: Lib[];
 	mPwd: string;
 
+	mTargetCommands: Command[string];
+	mHostCommands: Command[string];
+
 
 public:
 	this()
@@ -117,7 +120,8 @@ public:
 			ofs.write(r);
 			ofs.put('\n');
 		}
-		foreach (r; getArgs(false, mConfig.commands.values)) {
+
+		foreach (r; getArgs(false, mConfig.tools.values)) {
 			ofs.write(r);
 			ofs.put('\n');
 		}
@@ -126,7 +130,7 @@ public:
 				ofs.write(r);
 				ofs.put('\n');
 			}
-			foreach (r; getArgs(true, mHostConfig.commands.values)) {
+			foreach (r; getArgs(true, mHostConfig.tools.values)) {
 				ofs.write(r);
 				ofs.put('\n');
 			}
@@ -185,6 +189,9 @@ public:
 		if (arch != mHostConfig.arch ||
 		    platform != mHostConfig.platform) {
 			// Need fill in host commands.
+			foreach (k, v; mHostCommands) {
+				mHostConfig.tools[k] = v;
+			}
 			fillInConfigCommands(this, mHostConfig);
 			mHostConfig.kind = ConfigKind.Host;
 			mConfig.kind = ConfigKind.Cross;
@@ -195,6 +202,9 @@ public:
 		}
 
 		// Do this after the arguments has been parsed.
+		foreach (k, v; mTargetCommands) {
+			mConfig.tools[k] = v;
+		}
 		fillInConfigCommands(this, mConfig);
 
 		// Do the actual build now.
@@ -319,9 +329,9 @@ Normal usecase when standing in a project directory.
 	{
 		isCross := mHostConfig !is null;
 		hasRtDir := mStore.get("rt", null) !is null;
-		hasRdmdTool := getTool(false, "rdmd") !is null;
+		hasRdmdTool := mConfig.getTool(RdmdName) !is null;
 		hasVoltaDir := mStore.get("volta", null) !is null;
-		hasVoltaTool := getTool(false, "volta") !is null;
+		hasVoltaTool := mConfig.getTool(VoltaName) !is null;
 
 		if (isCross && !hasVoltaTool) {
 			abort("Must use --volta-cmd when cross compiling");
@@ -379,37 +389,30 @@ Normal usecase when standing in a project directory.
 		(host ? mHostConfig : mConfig).env.set(name, value);
 	}
 
-	override fn setTool(host: bool, name: string, c: Command)
+	override fn setCmd(host: bool, name: string, c: Command)
 	{
 		if (host && mHostConfig is null) {
 			abort("can not use host commands when not cross compiling");
 		}
-		(host ? mHostConfig : mConfig).commands[name] = c;
+		if (host) {
+			mHostCommands[name] = c;
+		} else {
+			mTargetCommands[name] = c;
+		}
 	}
 
-	override fn addToolCmd(host: bool, name: string, cmd: string)
+	override fn addCmd(host: bool, name: string, cmd: string)
 	{
 		c := new Command();
 		c.name = name;
 		c.cmd = cmd;
 
-		switch (name) {
-		case "clang": c.print = ClangPrint; break;
-		case "link": c.print = LinkPrint; break;
-		case "cl": c.print = CLPrint; break;
-		case "volta": c.print = VoltaPrint; break;
-		case "rdmd": c.print = RdmdPrint; break;
-		case "nasm": c.print = NasmPrint; break;
-		default:
-			abort("unknown tool '%s' (%s)", name, cmd);
-		}
-
-		setTool(host, name, c);
+		setCmd(host, name, c);
 	}
 
-	override fn addToolArg(host: bool, name: string, arg: string)
+	override fn addCmdArg(host: bool, name: string, arg: string)
 	{
-		c := getTool(host, name);
+		c := getCmd(host, name);
 		if (c is null) {
 			abort("tool not defined '%s'", name);
 		}
@@ -466,13 +469,18 @@ Normal usecase when standing in a project directory.
 		exit(-1);
 	}
 
-	override fn getTool(host: bool, name: string) Command
+	override fn getCmd(host: bool, name: string) Command
 	{
 		if (host && mHostConfig is null) {
 			abort("can not use host commands when not cross compiling");
 		}
-		conf := (host ? mHostConfig : mConfig);
-		c := name in conf.commands;
+
+		c: Command*;
+		if (host) {
+			c = name in mHostCommands;
+		} else {
+			c = name in mTargetCommands;
+		}
 		if (c is null) {
 			return null;
 		}

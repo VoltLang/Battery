@@ -91,9 +91,6 @@ public:
 		if (kind & Kind.AnyVolta) {
 			ret ~= voltaArgs;
 		}
-		if (kind & Kind.LinkLink) {
-			ret ~= config.linkerCmd.args;
-		}
 
 		fn traverse(b: Base)
 		{

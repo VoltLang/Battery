@@ -123,12 +123,12 @@ public:
 		gen.setup(mHostConfig is null ? mConfig : mHostConfig, mLib, mExe);
 
 		volta := new Command();
-		volta.name = "volta";
+		volta.name = VoltaName;
 		volta.print = VoltaPrint;
 		volta.cmd = gen.genVolted();
 
 		// Should we replace the command with the one given on the command line.
-		tool := mDrv.getTool(false, "volta");
+		tool := gen.config.getTool(VoltaName);
 		if (tool !is null) {
 			volta.cmd = tool.cmd;
 			volta.args = volta.args;

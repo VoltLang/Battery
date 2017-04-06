@@ -30,8 +30,16 @@ fn doConfig(drv: Driver, config: Configuration)
 	outside := retrieveEnvironment();
 	doEnv(drv, config, outside);
 
-	drv.setTool(config.isHost, RdmdName, drv.fillInCommand(config, RdmdName));
-	drv.setTool(config.isHost, NasmName, drv.fillInCommand(config, NasmName));
+	drvVolta := drv.getCmd(config.isHost, "volta");
+	if (drvVolta !is null) {
+		config.addTool("volta", drvVolta.cmd, drvVolta.args);
+	}
+
+	drvRdmd := drv.fillInCommand(config, RdmdName);
+	drvNasm := drv.fillInCommand(config, NasmName);
+
+	config.addTool(RdmdName, drvRdmd.cmd, drvRdmd.args);
+	config.addTool(NasmName, drvNasm.cmd, drvNasm.args);
 
 	final switch (config.platform) with (Platform) {
 	case MSVC:
@@ -96,7 +104,11 @@ fn doEnv(drv: Driver, config: Configuration, outside: Environment)
 
 fn doToolChainClang(drv: Driver, config: Configuration, outside: Environment)
 {
-	drv.setTool(config.isHost, ClangName, drv.fillInCommand(config, ClangName));
+	drvClang := drv.fillInCommand(config, ClangName);
+
+	linker := config.addTool(LinkerName, drvClang.cmd, drvClang.args);
+	clang := config.addTool(ClangName, drvClang.cmd, drvClang.args);
+	cc := config.addTool(CCName, drvClang.cmd, drvClang.args);
 }
 
 
@@ -141,8 +153,12 @@ public:
 
 fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environment)
 {
-	drv.setTool(config.isHost, ClangName, drv.fillInCommand(config, ClangName));
-	drv.setTool(config.isHost, LinkName, drv.fillInCommand(config, LinkName));
+	drvClang := drv.fillInCommand(config, ClangName);
+	drvLink := drv.fillInCommand(config, LinkName);
+
+	linker := config.addTool(LinkerName, drvLink.cmd, drvLink.args);
+	clang := config.addTool(ClangName, drvClang.cmd, drvClang.args);
+	cc := config.addTool(CCName, drvClang.cmd, drvClang.args);
 
 	vars: VarsForMSVC;
 	getDirsFromEnv(drv, outside, ref vars);
@@ -151,10 +167,7 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 	// Set the built env vars.
 	config.env.set("INCLUDE", join(vars.inc, ";"));
 	config.env.set("LIB", join(vars.lib, ";"));
-
-
-	link := drv.getTool(false, LinkName);
-	link.args ~= [
+	linker.args ~= [
 		"/nologo",
 		"/defaultlib:libcmt",
 		"/defaultlib:oldnames",
@@ -166,20 +179,22 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 {
 	assert(!config.isHost);
 
-	drv.setTool(false, ClangName, drv.fillInCommand(config, ClangName));
-	drv.setTool(false, LinkName, drv.fillInCommand(config, LinkName));
+	drvClang := drv.fillInCommand(config, ClangName);
+	drvLink := drv.fillInCommand(config, LinkName);
+
+	linker := config.addTool(LinkerName, drvLink.cmd, drvLink.args);
+	clang := config.addTool(ClangName, drvClang.cmd, drvClang.args);
+	cc := config.addTool(CCName, drvClang.cmd, drvClang.args);
 
 	vars: VarsForMSVC;
 	getDirsFromEnv(drv, outside, ref vars);
 	fillInListsForMSVC(ref vars);
 
-	clang := drv.getTool(false, ClangName);
 	foreach (i; vars.inc) {
-		clang.args ~= "-I" ~ i;
+		cc.args ~= "-I" ~ i;
 	}
 
-	link := drv.getTool(false, LinkName);
-	link.args ~= [
+	linker.args ~= [
 		"/nologo",
 		"/defaultlib:libcmt",
 		"/defaultlib:oldnames",
@@ -187,7 +202,7 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 	];
 
 	foreach (l; vars.lib) {
-		link.args ~= format("/LIBPATH:%s", l);
+		linker.args ~= format("/LIBPATH:%s", l);
 	}
 }
 
@@ -262,52 +277,37 @@ fn fillInListsForMSVC(ref vars: VarsForMSVC)
 
 fn fillInConfigCommands(drv: Driver, config: Configuration)
 {
-	fillInLinkerAndCC(drv, config);
+	volta := drv.getCmd(config.isHost, VoltaName);
+	if (volta !is null) {
+		volta.print = VoltaPrint;
+	}
 
+	config.linkerCmd = config.getTool(LinkerName);
+	config.clangCmd = config.getTool(ClangName);
 	config.rdmdCmd = config.getTool(RdmdName);
 	config.nasmCmd = config.getTool(NasmName);
-}
+	config.ccCmd = config.getTool(CCName);
 
-fn fillInLinkerAndCC(drv: Driver, config: Configuration)
-{
+	assert(config.linkerCmd !is null);
+	assert(config.clangCmd !is null);
+	assert(config.rdmdCmd !is null);
+	assert(config.nasmCmd !is null);
+	assert(config.ccCmd !is null);
+
+	config.clangCmd.print = ClangPrint;
+	config.rdmdCmd.print = RdmdPrint;
+	config.nasmCmd.print = NasmPrint;
+	config.ccCmd.print = ClangPrint;
+	config.ccKind = CCKind.Clang;
+
 	final switch (config.platform) with (Platform) {
 	case MSVC:
-		if (config.isCross) {
-			fillInClang(drv, config);
-			fillInLink(drv, config);
-		} else {
-			fillInClang(drv, config);
-			fillInLink(drv, config);
-		}
+		config.linkerCmd.print = LinkPrint;
+		config.linkerKind = LinkerKind.Link;
 		break;
 	case Metal, Linux, OSX:
-		fillInClang(drv, config);
+		config.linkerCmd.print = ClangPrint;
+		config.linkerKind = LinkerKind.Clang;
 		break;
 	}
-}
-
-fn fillInClang(drv: Driver, config: Configuration)
-{
-	// Try clang from the given tools.
-	clang := config.getTool(ClangName);
-
-	config.ccCmd = clang;
-	config.ccKind = CCKind.Clang;
-	config.linkerCmd = clang;
-	config.linkerKind = LinkerKind.Clang;
-}
-
-fn fillInLink(drv: Driver, config: Configuration)
-{
-	link := config.getTool(LinkName);
-
-	config.linkerCmd = link;
-	config.linkerKind = LinkerKind.Link;
-}
-
-fn fillInCL(drv: Driver, config: Configuration)
-{
-	cl := config.getTool(CLName);
-	config.ccCmd = cl;
-	config.ccKind = CCKind.CL;
 }

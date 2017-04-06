@@ -11,11 +11,14 @@ import battery.configuration;
 import battery.driver;
 
 
+enum VoltaName = "volta";
 enum ClangName = "clang";
 enum NasmName = "nasm";
 enum RdmdName = "rdmd";
-enum CLName= "cl";
+enum CLName = "cl";
 enum LinkName = "link";
+enum CCName = "ccompiler";
+enum LinkerName = "linker";
 
 enum ClangCommand = "clang";
 enum NasmCommand = "nasm";

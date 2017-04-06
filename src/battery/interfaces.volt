@@ -70,6 +70,14 @@ class Command
 		this.cmd = cmd;
 		this.args = args;
 	}
+
+	this(name: string, c: Command)
+	{
+		this.name = name;
+		this.cmd = c.cmd;
+		this.print = c.print;
+		this.args = new string[](c.args);
+	}
 }
 
 abstract class Driver
@@ -99,16 +107,16 @@ public:
 	abstract fn addEnv(host: bool, name: string, value: string);
 
 	/// Set a tool that has been found.
-	abstract fn setTool(host: bool, name: string, c: Command);
+	abstract fn setCmd(host: bool, name: string, c: Command);
 
 	/// Get a tool.
-	abstract fn getTool(host: bool, name: string) Command;
+	abstract fn getCmd(host: bool, name: string) Command;
 
 	/// Add a tool, will reset the tool if already given.
-	abstract fn addToolCmd(host: bool, name: string, cmd: string);
+	abstract fn addCmd(host: bool, name: string, cmd: string);
 
 	/// Add a argument for tool.
-	abstract fn addToolArg(host: bool, name: string, arg: string);
+	abstract fn addCmdArg(host: bool, name: string, arg: string);
 
 	/**
 	 * Prints a action string.

@@ -242,19 +242,19 @@ protected:
 				break;
 			case ToolCmd:
 				assert(arg.flag.length > 6);
-				mDrv.addToolCmd(false, arg.flag[6 .. $], arg.extra);
+				mDrv.addCmd(false, arg.flag[6 .. $], arg.extra);
 				break;
 			case ToolArg:
 				assert(arg.flag.length > 6);
-				mDrv.addToolArg(false, arg.flag[6 .. $], arg.extra);
+				mDrv.addCmdArg(false, arg.flag[6 .. $], arg.extra);
 				break;
 			case HostToolCmd:
 				assert(arg.flag.length > 11);
-				mDrv.addToolCmd(true, arg.flag[11 .. $], arg.extra);
+				mDrv.addCmd(true, arg.flag[11 .. $], arg.extra);
 				break;
 			case HostToolArg:
 				assert(arg.flag.length > 11);
-				mDrv.addToolArg(true, arg.flag[11 .. $], arg.extra);
+				mDrv.addCmdArg(true, arg.flag[11 .. $], arg.extra);
 				break;
 			default: mDrv.abort("unknown argument '%s'", arg.flag);
 			}

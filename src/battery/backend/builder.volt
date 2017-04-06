@@ -58,7 +58,7 @@ public:
 		mHostGen.setup(host !is null ? host : config, libs, exes);
 
 		// Setup volta
-		voltaTool := config.getTool("volta");
+		voltaTool := config.getTool(VoltaName);
 		if (voltaTool !is null) {
 			// --cmd-volta on command line, use supplied Volta.
 			voltaBin = ins.fileNoRule(voltaTool.cmd);
@@ -183,38 +183,30 @@ public:
 			return ret;
 		}
 
-		// Get clang
-		clang := gen.config.getTool("clang");
+		// Get the linker.
 		linker := gen.config.linkerCmd;
+		args: string[];
 
-		if (clang !is linker) {
-			assert(gen.config.linkerKind == LinkerKind.Link);
-
+		final switch (gen.config.linkerKind) with (LinkerKind) {
+		case Link: // MSVC
 			// Generate arguments and collect deps.
-			args := gen.genVoltArgs(exe, ArgsKind.LinkLink, cb) ~
+			args = gen.genVoltArgs(exe, ArgsKind.LinkLink, cb) ~
 				["/out:" ~ name];
-
-			// Make the rule.
-			t.rule = new uni.Rule();
-			t.rule.cmd = linker.cmd;
-			t.rule.print = linker.print ~ t.name;
-			t.rule.args = linker.args ~ args;
-			t.rule.outputs = [t];
-
-		} else {
-			assert(gen.config.linkerKind == LinkerKind.Clang);
-
+			break;
+		case Clang:
 			// Generate arguments and collect deps.
-			args := gen.genVoltArgs(exe, ArgsKind.ClangLink, cb) ~
+			args = gen.genVoltArgs(exe, ArgsKind.ClangLink, cb) ~
 				["-o", name];
-
-			// Make the rule.
-			t.rule = new uni.Rule();
-			t.rule.cmd = clang.cmd;
-			t.rule.print = clang.print ~ t.name;
-			t.rule.args = args;
-			t.rule.outputs = [t];
+			break;
+		case Invalid: assert(false);
 		}
+
+		// Make the rule.
+		t.rule = new uni.Rule();
+		t.rule.cmd = linker.cmd;
+		t.rule.print = linker.print ~ t.name;
+		t.rule.args = linker.args ~ args;
+		t.rule.outputs = [t];
 
 		return t;
 	}
@@ -359,7 +351,7 @@ public:
 		o.deps = [voltaBin, bc];
 
 		// Get clang
-		clang := gen.config.getTool("clang");
+		clang := gen.config.clangCmd;
 
 		// Make the rule.
 		o.rule = new uni.Rule();

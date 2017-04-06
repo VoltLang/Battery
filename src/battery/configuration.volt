@@ -49,6 +49,7 @@ public:
 	arch: Arch;
 	platform: Platform;
 
+	clangCmd: Command;
 
 	linkerCmd: Command;
 	linkerKind: LinkerKind;
@@ -60,21 +61,21 @@ public:
 	rdmdCmd: Command;
 	dmdCmd: Command;
 
-	commands: Command[string];
+	tools: Command[string];
 
 
 public:
 	/// Get a tool that has been added.
 	final fn getTool(name: string) Command
 	{
-		c := name in commands;
+		c := name in tools;
 		if (c is null) {
 			return null;
 		}
 		return *c;
 	}
 
-	final fn addTool(name: string, cmd: string, args: string[])
+	final fn addTool(name: string, cmd: string, args: string[]) Command
 	{
 		c := getTool(name);
 		if (c !is null) {
@@ -84,7 +85,9 @@ public:
 		c.name = name;
 		c.cmd = cmd;
 		c.args = args;
-		commands[name] = c;
+		tools[name] = c;
+
+		return c;
 	}
 
 /*
