@@ -141,7 +141,7 @@ public:
 
 fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environment)
 {
-	drv.setTool(config.isHost, CLName, drv.fillInCommand(config, CLName));
+	drv.setTool(config.isHost, ClangName, drv.fillInCommand(config, ClangName));
 	drv.setTool(config.isHost, LinkName, drv.fillInCommand(config, LinkName));
 
 	vars: VarsForMSVC;
@@ -260,7 +260,7 @@ fn fillInLinkerAndCC(drv: Driver, config: Configuration)
 			fillInClang(drv, config);
 			fillInLink(drv, config);
 		} else {
-			fillInCL(drv, config);
+			fillInClang(drv, config);
 			fillInLink(drv, config);
 		}
 		break;
