@@ -219,23 +219,13 @@ public:
 		tc.deps = [ins.file(src)];
 
 		c := gen.config.ccCmd;
-		final switch (gen.config.ccKind) with (CCKind) {
-		case GCC, Clang:
-			tc.rule = new uni.Rule();
-			tc.rule.cmd = c.cmd;
-			tc.rule.args = c.args ~ [src, "-c", "-o", obj];
-			tc.rule.print = c.print ~ obj;
-			tc.rule.outputs = [tc];
-			break;
-		case CL:
-			tc.rule = new uni.Rule();
-			tc.rule.cmd = c.cmd;
-			tc.rule.args = c.args ~ [src, "/c", "/Fo" ~ obj];
-			tc.rule.print = c.print ~ obj;
-			tc.rule.outputs = [tc];
-			break;
-		case Invalid: assert(false);
-		}
+		assert(gen.config.ccKind == CCKind.Clang);
+
+		tc.rule = new uni.Rule();
+		tc.rule.cmd = c.cmd;
+		tc.rule.args = c.args ~ [src, "-c", "-o", obj];
+		tc.rule.print = c.print ~ obj;
+		tc.rule.outputs = [tc];
 
 		return tc;
 	}

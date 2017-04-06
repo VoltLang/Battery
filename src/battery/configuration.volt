@@ -12,8 +12,6 @@ public import battery.interfaces;
 enum LinkerKind
 {
 	Invalid,
-	LD,    // LD
-	GCC,   // GCC
 	Link,  // MSVC
 	Clang, // LLVM Clang
 }
@@ -21,8 +19,6 @@ enum LinkerKind
 enum CCKind
 {
 	Invalid,
-	CL,    // MSVC
-	GCC,   // GCC
 	Clang, // LLVM Clang
 }
 
