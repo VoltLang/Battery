@@ -23,6 +23,8 @@ import watt.io;
 class Builder
 {
 public:
+	alias ArgsKind = ArgsGenerator.Kind;
+
 	mDrv: Driver;
 
 	mega: uni.Target;
@@ -104,7 +106,7 @@ public:
 		bc.deps ~= [voltaBin];
 
 		// Get all of the arguments.
-		args := gen.genVoltaArgs(exe, null) ~
+		args := gen.genVoltArgs(exe, ArgsKind.VoltaSrc, null) ~
 			["-o", bcName, "--emit-bitcode", "-c",
 			"--dep", depName] ~ exe.srcVolt;
 
@@ -181,15 +183,38 @@ public:
 			return ret;
 		}
 
-		// Generate arguments and collect deps.
-		args := gen.genVoltaArgs(exe, cb) ~ ["-o", name];
+		// Get clang
+		clang := gen.config.getTool("clang");
+		linker := gen.config.linkerCmd;
 
-		// Make the rule.
-		t.rule = new uni.Rule();
-		t.rule.cmd = voltaBin.name;
-		t.rule.print = voltaPrint ~ t.name;
-		t.rule.args = args;
-		t.rule.outputs = [t];
+		if (clang !is linker) {
+			assert(gen.config.linkerKind == LinkerKind.Link);
+
+			// Generate arguments and collect deps.
+			args := gen.genVoltArgs(exe, ArgsKind.LinkLink, cb) ~
+				["/out:" ~ name];
+
+			// Make the rule.
+			t.rule = new uni.Rule();
+			t.rule.cmd = linker.cmd;
+			t.rule.print = linker.print ~ t.name;
+			t.rule.args = linker.args ~ args;
+			t.rule.outputs = [t];
+
+		} else {
+			assert(gen.config.linkerKind == LinkerKind.Clang);
+
+			// Generate arguments and collect deps.
+			args := gen.genVoltArgs(exe, ArgsKind.ClangLink, cb) ~
+				["-o", name];
+
+			// Make the rule.
+			t.rule = new uni.Rule();
+			t.rule.cmd = clang.cmd;
+			t.rule.print = clang.print ~ t.name;
+			t.rule.args = args;
+			t.rule.outputs = [t];
+		}
 
 		return t;
 	}
@@ -307,7 +332,7 @@ public:
 		bc.rule.cmd = voltaBin.name;
 		bc.rule.print = voltaPrint ~ bcName;
 		bc.rule.outputs = [bc];
-		bc.rule.args = gen.genVoltaArgs(lib, null) ~
+		bc.rule.args = gen.genVoltArgs(lib, ArgsKind.VoltaSrc, null) ~
 			["-o", bcName, "-c", "--emit-bitcode"] ~ files;
 
 		// Create the object file for the library.
@@ -333,13 +358,16 @@ public:
 		// Depend on the compiler and bitcode file.
 		o.deps = [voltaBin, bc];
 
+		// Get clang
+		clang := gen.config.getTool("clang");
+
 		// Make the rule.
 		o.rule = new uni.Rule();
-		o.rule.cmd = voltaBin.name;
-		o.rule.print = voltaPrint ~ oName;
+		o.rule.cmd = clang.cmd;
+		o.rule.print = clang.print ~ oName;
 		o.rule.outputs = [o];
-		o.rule.args = gen.voltaArgs ~
-			["-o", oName, "-c", bc.name];
+		o.rule.args = clang.args ~ ["-Wno-override-module", // TODO: fix
+			"-o", oName, "-c", bc.name];
 
 		return o;
 	}

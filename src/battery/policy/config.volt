@@ -151,6 +151,15 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 	// Set the built env vars.
 	config.env.set("INCLUDE", join(vars.inc, ";"));
 	config.env.set("LIB", join(vars.lib, ";"));
+
+
+	link := drv.getTool(false, LinkName);
+	link.args ~= [
+		"/nologo",
+		"/defaultlib:libcmt",
+		"/defaultlib:oldnames",
+		"legacy_stdio_definitions.lib",
+	];
 }
 
 fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment)
@@ -170,6 +179,13 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 	}
 
 	link := drv.getTool(false, LinkName);
+	link.args ~= [
+		"/nologo",
+		"/defaultlib:libcmt",
+		"/defaultlib:oldnames",
+		"legacy_stdio_definitions.lib",
+	];
+
 	foreach (l; vars.lib) {
 		link.args ~= format("/LIBPATH:%s", l);
 	}

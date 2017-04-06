@@ -16,6 +16,20 @@ struct ArgsGenerator
 public:
 	alias Callback = scope dg(b: Base) string[];
 
+	enum Kind
+	{
+		VoltaSrc      = 0x01,
+		VoltaLink     = 0x02,
+		ClangAssemble = 0x04,
+		ClangLink     = 0x08,
+		LinkLink      = 0x10,
+
+		AnyLdLink     = VoltaLink | ClangLink,
+		AnyLink       = VoltaLink | ClangLink | LinkLink,
+		AnyVolta      = VoltaSrc | VoltaLink,
+		AnyClang      = ClangAssemble | ClangLink,
+	}
+
 
 public:
 	config: Configuration;
@@ -67,13 +81,19 @@ public:
 	/**
 	 * Generates a Volta command line to build a binary.
 	 */
-	fn genVoltaArgs(base: Base, cb: Callback) string[]
+	fn genVoltArgs(base: Base, kind: Kind, cb: Callback) string[]
 	{
 		added: Base[string];
+		ret: string[];
 		exe := cast(Exe)base;
 
 		// Copy the default command line.
-		ret := voltaArgs;
+		if (kind & Kind.AnyVolta) {
+			ret ~= voltaArgs;
+		}
+		if (kind & Kind.LinkLink) {
+			ret ~= config.linkerCmd.args;
+		}
 
 		fn traverse(b: Base)
 		{
@@ -90,48 +110,88 @@ public:
 				ret ~= cb(b);
 			}
 
-			lib := cast(Lib)b;
+			// Only needed when compiling source.
+			if (kind & Kind.VoltaSrc) {
+				lib := cast(Lib)b;
 
-			if (lib !is null) {
-				ret ~= ["--lib-I", b.srcDir];
-			} else {
-				ret ~= ["--src-I", b.srcDir];
+				if (lib !is null) {
+					ret ~= ["--lib-I", b.srcDir];
+				} else {
+					ret ~= ["--src-I", b.srcDir];
+				}
+
+				foreach (def; b.defs) {
+					ret ~= ["-D", def];
+				}
+
+				foreach (path; b.stringPaths) {
+					ret ~= ["-J", path];
+				}
 			}
 
-			foreach (path; b.libPaths) {
-				ret ~= ["-L", path];
+			// Shared with clang and volta.
+			if (kind & Kind.AnyLdLink) {
+				foreach (path; b.frameworkPaths) {
+					ret ~= ["-F", path];
+				}
+
+				foreach (framework; b.frameworks) {
+					ret ~= ["--framework", framework];
+				}
+
+				foreach (path; b.libPaths) {
+					ret ~= ["-L", path];
+				}
+
+				foreach (l; b.libs) {
+					ret ~= ["-l", l];
+				}
 			}
 
-			foreach (path; b.stringPaths) {
-				ret ~= ["-J", path];
+			if (kind & Kind.LinkLink) {
+				foreach (lib; b.libs) {
+					ret ~= lib;
+				}
+
+				foreach (path; b.libPaths) {
+					ret ~= "/LIBPATH:" ~ path;
+				}
+
+				foreach (arg; b.xlink) {
+					ret ~= arg;
+				}
+
+				foreach (arg; b.xlinker) {
+					ret ~= arg;
+				}
 			}
 
-			foreach (l; b.libs) {
-				ret ~= ["-l", l];
+			if (kind & Kind.ClangLink) {
+				foreach (arg; b.xcc) {
+					ret ~= arg;
+				}
+
+				foreach (arg; b.xlink) {
+					ret ~= ["-Xlinker", arg];
+				}
+
+				foreach (arg; b.xlinker) {
+					ret ~= ["-Xlinker", arg];
+				}
 			}
 
-			foreach (path; b.frameworkPaths) {
-				ret ~= ["-F", path];
-			}
+			if (kind & Kind.VoltaLink) {
+				foreach (arg; b.xcc) {
+					ret ~= ["--Xcc", arg];
+				}
 
-			foreach (framework; b.frameworks) {
-				ret ~= ["--framework", framework];
-			}
+				foreach (arg; b.xlink) {
+					ret ~= ["--Xlink", arg];
+				}
 
-			foreach (def; b.defs) {
-				ret ~= ["-D", def];
-			}
-
-			foreach (arg; b.xcc) {
-				ret ~= ["--Xcc", arg];
-			}
-
-			foreach (arg; b.xlink) {
-				ret ~= ["--Xlink", arg];
-			}
-
-			foreach (arg; b.xlinker) {
-				ret ~= ["--Xlinker", arg];
+				foreach (arg; b.xlinker) {
+					ret ~= ["--Xlinker", arg];
+				}
 			}
 
 			foreach (dep; b.deps) {
