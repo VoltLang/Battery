@@ -175,8 +175,8 @@ public:
 		pathMainVolt    = pathSrc ~ dirSeparator ~ PathMainVolt;
 		pathBatteryTxt  = getInPath(PathBatteryTxt);
 		pathDerivedBin  = getInPath(name);
-		pathSimpleTests = drv.deepScan(path, PathTestSimple);
-		pathJsonTests   = drv.deepScan(path, PathTestJson);
+		pathSimpleTests = deepScan(path, PathTestSimple);
+		pathJsonTests   = deepScan(path, PathTestJson);
 
 		hasPath        = isDir(path);
 		hasRt          = isDir(pathRt);
@@ -190,8 +190,8 @@ public:
 			return;
 		}
 
-		filesC    = drv.deepScan(pathSrc, "c");
-		filesVolt = drv.deepScan(pathSrc, "volt");
+		filesC    = deepScan(pathSrc, ".c");
+		filesVolt = deepScan(pathSrc, ".volt");
 	}
 
 	fn getInPath(file: string) string
@@ -222,7 +222,7 @@ public:
 	}
 }
 
-fn deepScan(drv: Driver, path: string, ending: string) string[]
+fn deepScan(path: string, ending: string) string[]
 {
 	ret: string[];
 
@@ -235,7 +235,7 @@ fn deepScan(drv: Driver, path: string, ending: string) string[]
 		full := format("%s%s%s", path, dirSeparator, p);
 
 		if (isDir(full)) {
-			ret ~= deepScan(drv, full, ending);
+			ret ~= deepScan(full, ending);
 		} else if (endsWith(p, ending)) {
 			ret ~= full;
 		}

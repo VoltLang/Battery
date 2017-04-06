@@ -251,7 +251,7 @@ public:
 	{
 		srcDir := exe.srcDir;
 		mainFile := srcDir ~ dirSeparator ~ "main.d";
-		files := deepScan(mDrv, srcDir, ".d");
+		files := deepScan(srcDir, ".d");
 		name := gen.genVolted();
 
 		t := ins.fileNoRule(name);
@@ -294,7 +294,7 @@ public:
 
 	fn makeTargetVoltLibrary(ref gen: ArgsGenerator, lib: Lib) uni.Target
 	{
-		files := deepScan(mDrv, lib.srcDir, ".volt");
+		files := deepScan(lib.srcDir, ".volt");
 		bcName := gen.genVoltLibraryBc(lib.name);
 		oName := gen.genVoltLibraryO(lib.name);
 
