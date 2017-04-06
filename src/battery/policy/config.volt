@@ -109,6 +109,12 @@ fn doToolChainClang(drv: Driver, config: Configuration, outside: Environment)
 	linker := config.addTool(LinkerName, drvClang.cmd, drvClang.args);
 	clang := config.addTool(ClangName, drvClang.cmd, drvClang.args);
 	cc := config.addTool(CCName, drvClang.cmd, drvClang.args);
+
+	if (config.isRelease) {
+		clang.args ~= "-O3";
+	} else { // Debug.
+		cc.args ~= "-g";
+	}
 }
 
 
@@ -167,6 +173,13 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 	// Set the built env vars.
 	config.env.set("INCLUDE", join(vars.inc, ";"));
 	config.env.set("LIB", join(vars.lib, ";"));
+
+	if (config.isRelease) {
+		clang.args ~= "-O3";
+	} else { // Debug
+		cc.args ~= "-g";
+	}
+
 	linker.args ~= [
 		"/nologo",
 		"/defaultlib:libcmt",
@@ -189,6 +202,12 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 	vars: VarsForMSVC;
 	getDirsFromEnv(drv, outside, ref vars);
 	fillInListsForMSVC(ref vars);
+
+	if (config.isRelease) {
+		clang.args ~= "-O3";
+	} else { // Debug
+		cc.args ~= "-g";
+	}
 
 	foreach (i; vars.inc) {
 		cc.args ~= "-I" ~ i;

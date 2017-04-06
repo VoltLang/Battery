@@ -16,12 +16,16 @@ import battery.policy.arg;
 import battery.frontend.scanner;
 
 
-fn getArgs(arch: Arch, platform: Platform) string[]
+fn getArgs(arch: Arch, platform: Platform, isRelease: bool) string[]
 {
-	return [
+	ret: string[] = [
 		"--arch", toString(arch),
 		"--platform", toString(platform)
 		];
+	if (isRelease) {
+		ret ~= "--release";
+	}
+	return ret;
 }
 
 fn getArgs(host: bool, env: Environment) string[]
@@ -141,10 +145,6 @@ fn getArgsLib(l: Lib) string[]
 fn getArgsExe(e: Exe) string[]
 {
 	ret := getArgsBase(e, "exe");
-
-	if (e.isDebug) {
-		ret ~= "-debug";
-	}
 
 	if (e.isInternalD) {
 		ret ~= "--internal-d";
@@ -316,7 +316,6 @@ protected:
 			case Framework: exe.frameworks ~= arg.extra; break;
 			case FrameworkPath: exe.frameworkPaths ~= arg.extra; break;
 			case StringPath: exe.stringPaths ~= arg.extra; break;
-			case Debug: exe.isDebug = true; break;
 			case InternalD: exe.isInternalD = true; break;
 			case Output: exe.bin = arg.extra; break;
 			case Identifier: exe.defs ~= arg.extra; break;
@@ -413,7 +412,8 @@ fn parsePlatform(driver: Driver, p: string) Platform
 }
 
 fn findArchAndPlatform(driver: Driver, ref args: string[],
-                       ref arch: Arch, ref platform: Platform)
+                       ref arch: Arch, ref platform: Platform,
+                       ref isRelease: bool)
 {
 	isArch, isPlatform: bool;
 	pos: size_t;
@@ -440,6 +440,14 @@ fn findArchAndPlatform(driver: Driver, ref args: string[],
 			pos++;
 			isPlatform = true;
 			continue;
+		case "--debug":
+			pos++;
+			isRelease = false;
+			continue;
+		case "--release":
+			pos++;
+			isRelease = true;
+			continue;
 		default:
 		}
 		break;
@@ -449,6 +457,9 @@ fn findArchAndPlatform(driver: Driver, ref args: string[],
 	}
 	if (isPlatform) {
 		driver.abort("expected platform");
+	}
+	if (pos >= args.length) {
+		driver.abort("expected more arguments");
 	}
 
 	// Update length
@@ -568,6 +579,8 @@ struct ToArgs
 			switch (tmp) with (Arg.Kind) {
 			case "--arch": mDrv.abort("--arch argument must be first argument after config"); continue;
 			case "--platform": mDrv.abort("--platform argument must be first argument after config"); continue;
+			case "--debug": mDrv.abort("--debug argument must be first argument after config"); continue;
+			case "--release": mDrv.abort("--release argument must be first argument after config"); continue;
 			case "--exe": argNext(Exe, "expected name"); continue;
 			case "--lib": argNext(Lib, "expected name"); continue;
 			case "--name": argNext(Name, "expected name"); continue;
@@ -580,7 +593,6 @@ struct ToArgs
 			case "--framework": argNext(Framework, "expected framework name"); continue;
 			case "-F": argNext(FrameworkPath, "expected framework path"); continue;
 			case "-J": argNextPath(StringPath, "expected string path"); continue;
-			case "-d", "-debug", "--debug": arg(Debug); continue;
 			case "--internal-d": arg(InternalD); continue;
 			case "-D": argNext(Identifier, "expected version identifier"); continue;
 			case "-Xld", "--Xld": argNext(ArgLD, "expected ld arg"); continue;

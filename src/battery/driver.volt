@@ -74,8 +74,10 @@ public:
 
 	fn config(args: string[])
 	{
-		// Filter out --arch and --platform arguments.
-		findArchAndPlatform(this, ref args, ref arch, ref platform);
+		// Filter out --release, --arch and --platform arguments.
+		isRelease: bool;
+		findArchAndPlatform(this, ref args, ref arch, ref platform,
+		                    ref isRelease);
 		mHostConfig = getBaseHostConfig(this);
 		mConfig = getBaseConfig(this, arch, platform);
 
@@ -84,12 +86,15 @@ public:
 		    platform == mHostConfig.platform) {
 			mHostConfig = null;
 			mConfig.kind = ConfigKind.Native;
+			mConfig.isRelease = isRelease;
 			info("native compile");
 		} else {
 			info("cross compiling to %s-%s",
 			     .toString(arch), .toString(platform));
 			mHostConfig.kind = ConfigKind.Host;
+			mHostConfig.isRelease = true;
 			mConfig.kind = ConfigKind.Cross;
+			mConfig.isRelease = isRelease;
 		}
 
 		// Parse arguments.
@@ -112,7 +117,7 @@ public:
 		verifyConfig();
 
 		ofs := new OutputFileStream(BatteryConfigFile);
-		foreach (r; getArgs(arch, platform)) {
+		foreach (r; getArgs(arch, platform, mConfig.isRelease)) {
 			ofs.write(r);
 			ofs.put('\n');
 		}
@@ -174,8 +179,10 @@ public:
 			return abort("must first run the 'config' command");
 		}
 
-		// Filter out --arch and --platform arguments.
-		findArchAndPlatform(this, ref args, ref arch, ref platform);
+		// Filter out --release, --arch and --platform arguments.
+		isRelease: bool;
+		findArchAndPlatform(this, ref args, ref arch, ref platform,
+		                    ref isRelease);
 
 		// Get the configs.
 		mHostConfig = getBaseHostConfig(this);
@@ -194,11 +201,14 @@ public:
 			}
 			fillInConfigCommands(this, mHostConfig);
 			mHostConfig.kind = ConfigKind.Host;
+			mHostConfig.isRelease = true;
 			mConfig.kind = ConfigKind.Cross;
+			mConfig.isRelease = isRelease;
 		} else {
 			// Just reuse the host config.
 			mHostConfig = null;
 			mConfig.kind = ConfigKind.Native;
+			mConfig.isRelease = isRelease;
 		}
 
 		// Do this after the arguments has been parsed.
@@ -279,6 +289,7 @@ Normal usecase when standing in a project directory.
 		info("Not all combinations are supported.");
 		info("\t--arch arch      Selects arch (x86, x86_64).");
 		info("\t--platform plat  Selects platform (osx, msvc, linux).");
+		info("\t--release        Builds optimized release binaries.");
 		info("");
 		info("The three following arguments create a new target.");
 		info("");

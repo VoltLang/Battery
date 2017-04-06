@@ -36,7 +36,6 @@ public:
 
 		StringPath,
 
-		Debug,
 		InternalD,
 		Identifier,
 		Output,

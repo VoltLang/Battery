@@ -213,21 +213,22 @@ public:
 
 	fn makeTargetC(ref gen: ArgsGenerator, src: string) uni.Target
 	{
-		obj := gen.genFileO(src);
+		oName := gen.genFileO(src);
+		bcName := gen.genFileBC(src);
 
-		tc := ins.fileNoRule(obj);
-		tc.deps = [ins.file(src)];
+		bc := ins.fileNoRule(bcName);
+		bc.deps = [ins.file(src)];
 
 		c := gen.config.ccCmd;
 		assert(gen.config.ccKind == CCKind.Clang);
 
-		tc.rule = new uni.Rule();
-		tc.rule.cmd = c.cmd;
-		tc.rule.args = c.args ~ [src, "-c", "-o", obj];
-		tc.rule.print = c.print ~ obj;
-		tc.rule.outputs = [tc];
+		bc.rule = new uni.Rule();
+		bc.rule.cmd = c.cmd;
+		bc.rule.args = c.args ~ [src, "-c", "-emit-llvm", "-o", bcName];
+		bc.rule.print = c.print ~ bcName;
+		bc.rule.outputs = [bc];
 
-		return tc;
+		return makeHelperBitcodeToObj(ref gen, bc, oName);
 	}
 
 	fn makeTargetAsm(ref gen: ArgsGenerator, src: string) uni.Target

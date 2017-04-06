@@ -60,6 +60,7 @@ public:
 			"--no-stdlib",
 			"--platform", platformStr,
 			"--arch", archStr,
+			config.isRelease ? "--release" : "--debug",
 			getLinkerFlag(config),
 			config.linkerCmd.cmd,
 		];
@@ -206,11 +207,6 @@ public:
 		// Implictly add rt as a dependancy
 		traverse(store["rt"]);
 
-		// Set debug.
-		if (exe !is null && exe.isDebug) {
-			ret ~= "-d";
-		}
-
 		return ret;
 	}
 
@@ -223,6 +219,11 @@ public:
 			}
 		}
 		return cmd;
+	}
+
+	fn genFileBC(name: string) string
+	{
+		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".bc");
 	}
 
 	fn genFileO(name: string) string

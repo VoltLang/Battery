@@ -41,7 +41,6 @@ class Exe : Base
 {
 	bin: string;
 
-	isDebug: bool;
 	isInternalD: bool;
 
 	srcC: string[];
