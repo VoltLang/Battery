@@ -4,10 +4,12 @@ module battery.testing.regular;
 
 import core.exception;
 import core.c.stdio;
-import watt.io;
 import watt.path;
 import watt.conv;
+import watt.io;
 import watt.io.file;
+import watt.io.streams;
+
 import watt.text.string;
 import watt.text.format;
 
