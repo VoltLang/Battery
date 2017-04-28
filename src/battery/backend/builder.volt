@@ -107,7 +107,7 @@ public:
 
 		// Get all of the arguments.
 		args := gen.genVoltArgs(exe, ArgsKind.VoltaSrc, null) ~
-			["-o", bcName, "--emit-bitcode", "-c",
+			["-o", bcName, "-c", "--emit-llvm",
 			"--dep", depName] ~ exe.srcVolt;
 
 		// This is mostly for Volta.
@@ -316,7 +316,7 @@ public:
 		bc.rule.print = voltaPrint ~ bcName;
 		bc.rule.outputs = [bc];
 		bc.rule.args = gen.genVoltArgs(lib, ArgsKind.VoltaSrc, null) ~
-			["-o", bcName, "-c", "--emit-bitcode"] ~ files;
+			["-o", bcName, "-c", "--emit-llvm"] ~ files;
 
 		// Create the object file for the library.
 		o := makeHelperBitcodeToObj(ref gen, bc, oName);
