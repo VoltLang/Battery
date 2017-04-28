@@ -9,6 +9,7 @@ import watt.process : retriveEnvironment, Environment;
 import battery.interfaces;
 import battery.configuration;
 import battery.driver;
+import battery.util.path : searchPath;
 
 
 enum VoltaName = "volta";
@@ -244,27 +245,6 @@ fn makeCommand(drv: Driver, config: Configuration, name: string, cmd: string,
 	c.name = name;
 	c.print = print;
 	return c;
-}
-
-fn searchPath(cmd: string, env: Environment) string
-{
-	path := env.getOrNull("PATH");
-	assert(path !is null);
-	assert(pathSeparator.length == 1);
-
-	fmt := "%s%s%s";
-	version (Windows) if (!endsWith(cmd, ".exe")) {
-		fmt = "%s%s%s.exe";
-	}
-
-	foreach (p; split(path, pathSeparator[0])) {
-		t := format(fmt, p, dirSeparator, cmd);
-		if (exists(t)) {
-			return t;
-		}
-	}
-
-	return null;
 }
 
 fn getCmdPre(c: Configuration) string
