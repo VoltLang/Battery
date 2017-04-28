@@ -273,11 +273,20 @@ public:
 		foreach (arg; exe.srcObj) {
 			args ~= arg;
 		}
-		foreach (arg; exe.libPaths) {
-			args ~= ("-L-L" ~ arg);
-		}
-		foreach (arg; exe.libs) {
-			args ~= ("-L-l" ~ arg);
+		version (!Windows) {
+			foreach (arg; exe.libPaths) {
+				args ~= ("-L-L" ~ arg);
+			}
+			foreach (arg; exe.libs) {
+				args ~= ("-L-l" ~ arg);
+			}
+		} else {
+			foreach (arg; exe.libPaths) {
+				args ~= ("-L/LIBPATH:" ~ arg);
+			}
+			foreach (arg; exe.libs) {
+				args ~= ("-L" ~ arg);
+			}	
 		}
 		foreach (arg; exe.xlinker) {
 			args ~= ("-L" ~ arg);
