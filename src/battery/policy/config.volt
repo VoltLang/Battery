@@ -9,10 +9,11 @@ import watt.io.file : isDir;
 import watt.text.string : join;
 import watt.text.format : format;
 import watt.text.path : normalizePath;
-import watt.process : retrieveEnvironment, Environment, searchPath;
+import watt.process : retrieveEnvironment, Environment;
 import battery.interfaces;
 import battery.configuration;
 import battery.policy.tools;
+import battery.util.path : searchPath;
 
 
 fn getBaseConfig(drv: Driver, arch: Arch, platform: Platform) Configuration
@@ -30,17 +31,6 @@ fn doConfig(drv: Driver, config: Configuration)
 	outside := retrieveEnvironment();
 	doEnv(drv, config, outside);
 
-	drvVolta := drv.getCmd(config.isHost, "volta");
-	if (drvVolta !is null) {
-		config.addTool("volta", drvVolta.cmd, drvVolta.args);
-	}
-
-	drvRdmd := drv.fillInCommand(config, RdmdName);
-	drvNasm := drv.fillInCommand(config, NasmName);
-
-	config.addTool(RdmdName, drvRdmd.cmd, drvRdmd.args);
-	config.addTool(NasmName, drvNasm.cmd, drvNasm.args);
-
 	final switch (config.platform) with (Platform) {
 	case MSVC:
 		if (config.isCross) {
@@ -53,6 +43,18 @@ fn doConfig(drv: Driver, config: Configuration)
 		doToolChainClang(drv, config, outside);
 		break;
 	}
+
+	drvVolta := drv.getCmd(config.isHost, "volta");
+	if (drvVolta !is null) {
+		config.addTool("volta", drvVolta.cmd, drvVolta.args);
+		drv.infoCmd(config, drvVolta, true);
+	}
+
+	drvRdmd := drv.fillInCommand(config, RdmdName);
+	drvNasm := drv.fillInCommand(config, NasmName);
+
+	config.addTool(RdmdName, drvRdmd.cmd, drvRdmd.args);
+	config.addTool(NasmName, drvNasm.cmd, drvNasm.args);
 }
 
 fn doEnv(drv: Driver, config: Configuration, outside: Environment)
@@ -102,9 +104,99 @@ fn doEnv(drv: Driver, config: Configuration, outside: Environment)
  *
  */
 
+
+struct LLVMConfig
+{
+public:
+	drv: Driver;
+	suffix: string;
+
+	config: Command;
+	ar: Command;
+	clang: Command;
+	ld: Command;
+	link: Command;
+
+	allGiven: bool;
+	configGiven: bool;
+	arGiven: bool;
+	clangGiven: bool;
+	ldGiven: bool;
+	linkGiven: bool;
+
+
+public:
+	fn fillInFromTools(config: Configuration)
+	{
+		this.config = config.getTool(LLVMConfigName);
+		this.ar =     config.getTool(LLVMArName);
+		this.clang =  config.getTool(ClangName);
+		this.ld =     config.getTool(LDLLDName);
+		this.link =   config.getTool(LLDLinkName);
+
+		this.configGiven = this.config !is null;
+		this.arGiven = this.ar !is null;
+		this.clangGiven = this.clang !is null;
+		this.ldGiven = this.ld !is null;
+		this.linkGiven = this.link !is null;
+		this.allGiven = hasNeeded;
+	}
+
+	fn fillFromPath(config: Configuration, suffix: string)
+	{
+		cmd: string;
+
+		if (this.config is null) {
+			this.config = config.makeCommandFromPath(LLVMConfigCommand ~ suffix, LLVMConfigName);
+		}
+		if (this.ar is null) {
+			this.ar = config.makeCommandFromPath(LLVMArCommand ~ suffix, LLVMArName);
+		}
+		if (this.clang is null) {
+			this.clang = config.makeCommandFromPath(ClangCommand ~ suffix, ClangName);
+			addClangArgs(drv, config, this.clang);
+		}
+		if (this.ld is null) {
+			this.ld = config.makeCommandFromPath(LDLLDCommand ~ suffix, LDLLDName);
+		}
+		if (this.link is null) {
+			this.link = config.makeCommandFromPath(LLDLinkCommand ~ suffix, LLDLinkName);
+		}
+	}
+
+	@property fn hasNeeded() bool
+	{
+		return this.config !is null && this.clang !is null;
+	}
+
+	fn addSuffixedCmdIfOkay(config: Configuration, suffix: string) bool
+	{
+		test := this;
+		test.suffix = suffix;
+		test.fillFromPath(config, suffix);
+		if (!test.hasNeeded) {
+			return false;
+		}
+		this = test;
+		return true;
+	}
+}
+
 fn doToolChainClang(drv: Driver, config: Configuration, outside: Environment)
 {
-	drvClang := drv.fillInCommand(config, ClangName);
+	llvm: LLVMConfig;
+	llvm.drv = drv;
+	llvm.fillInFromTools(config);
+
+	if (!llvm.allGiven &&
+	    !llvm.addSuffixedCmdIfOkay(config, null) &&
+	    !llvm.addSuffixedCmdIfOkay(config, "-5.0") &&
+	    !llvm.addSuffixedCmdIfOkay(config, "-4.0") &&
+	    !llvm.addSuffixedCmdIfOkay(config, "-3.9")) {
+		drv.abort("could not find a valid llvm toolchain");
+	}
+
+	drvClang := llvm.clang;
 
 	linker := config.addTool(LinkerName, drvClang.cmd, drvClang.args);
 	clang := config.addTool(ClangName, drvClang.cmd, drvClang.args);
@@ -115,6 +207,13 @@ fn doToolChainClang(drv: Driver, config: Configuration, outside: Environment)
 	} else { // Debug.
 		cc.args ~= "-g";
 	}
+
+	drv.info("llvm%s toolchain was %s.", llvm.suffix, llvm.allGiven ? "from arguments" : "from path");
+	if (llvm.config !is null) drv.infoCmd(config, llvm.config);
+	if (llvm.ar !is null) drv.infoCmd(config, llvm.ar);
+	if (llvm.clang !is null) drv.infoCmd(config, llvm.clang);
+	if (llvm.ld !is null) drv.infoCmd(config, llvm.ld);
+	if (llvm.link !is null) drv.infoCmd(config, llvm.link);
 }
 
 
@@ -329,4 +428,25 @@ fn fillInConfigCommands(drv: Driver, config: Configuration)
 		config.linkerKind = LinkerKind.Clang;
 		break;
 	}
+}
+
+
+/*
+ *
+ * Helpers.
+ *
+ */
+
+
+fn makeCommandFromPath(config: Configuration, cmd: string, name: string) Command
+{
+	cmd = searchPath(cmd, config.env);
+	if (cmd is null) {
+		return null;
+	}
+
+	c := new Command();
+	c.cmd = cmd;
+	c.name = name;
+	return c;
 }

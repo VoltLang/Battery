@@ -12,32 +12,52 @@ import battery.driver;
 import battery.util.path : searchPath;
 
 
+
 enum VoltaName = "volta";
-enum ClangName = "clang";
 enum NasmName = "nasm";
 enum RdmdName = "rdmd";
 enum CLName = "cl";
 enum LinkName = "link";
 enum CCName = "ccompiler";
 enum LinkerName = "linker";
+enum LLVMConfigName = "llvm-config";
+enum LLVMArName = "llvm-ar";
+enum ClangName = "clang";
+enum LDLLDName = "ld.lld";
+enum LLDLinkName = "lld-link";
 
-enum ClangCommand = "clang";
-enum NasmCommand = "nasm";
-enum RdmdCommand = "rdmd";
+enum NasmCommand = NasmName;
+enum RdmdCommand = RdmdName;
 enum CLCommand = "cl.exe";
 enum LinkCommand = "link.exe";
-enum LLDLinkCommand = "lld-link";
+enum LLVMConfigCommand = LLVMConfigName;
+enum LLVMArCommand = LLVMArName;
+enum ClangCommand = ClangName;
+enum LDLLDCommand = LDLLDName;
+enum LLDLinkCommand = LLDLinkName;
 
 enum VoltaPrint =      "  VOLTA    ";
-enum ClangPrint =      "  CLANG    ";
 enum NasmPrint =       "  NASM     ";
 enum RdmdPrint =       "  RDMD     ";
 enum LinkPrint =       "  LINK     ";
-enum LLDLinkPrint =    "  LLD-LINK ";
 enum CLPrint   =       "  CL       ";
+enum LLVMConfigPrint = "  LLVM-CONFIG  ";
+enum LLVMArPrint =     "  LLVM-AR  ";
+enum ClangPrint =      "  CLANG    ";
+enum LDLLDPrint =      "  LD.LLD   ";
+enum LLDLinkPrint =    "  LLD-LINK ";
 
 enum HostRdmdPrint =   "  HOSTRDMD ";
 
+
+fn infoCmd(drv: Driver, c: Configuration, cmd: Command, given: bool = false)
+{
+	if (given) {
+		drv.info("%scmd %s: '%s' from arguments.", c.getCmdPre(), cmd.name, cmd.cmd);
+	} else {
+		drv.info("%scmd %s: '%s' from path.", c.getCmdPre(), cmd.name, cmd.cmd);
+	}
+}
 
 /**
  * Ensures that a command/tool is there.
@@ -64,7 +84,7 @@ fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
 		default: assert(false);
 		}
 	} else {
-		drv.info("got '%s' from the %scommand line '%s'.", name, c.getCmdPre(), cmd.cmd);
+		drv.infoCmd(c, cmd, true);
 	}
 
 	if (cmd is null) {
@@ -236,14 +256,15 @@ fn makeCommand(drv: Driver, config: Configuration, name: string, cmd: string,
 	cmd = searchPath(cmd, config.env);
 	if (cmd is null) {
 		return null;
-	} else {
-		drv.info("found %s'%s' on the path '%s'.", config.getCmdPre(), name, cmd);
 	}
 
 	c := new Command();
 	c.cmd = cmd;
 	c.name = name;
 	c.print = print;
+
+	drv.infoCmd(config, c);
+
 	return c;
 }
 
