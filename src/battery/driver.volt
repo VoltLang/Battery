@@ -63,13 +63,16 @@ public:
 		}
 
 		switch (args[1]) {
-		case "help": return help(args[2 .. $]);
-		case "build": return build(args[2 .. $]);
-		case "config": return config(args[2 .. $]);
-		case "test": return test(args[2 .. $]);
-		case "version": return printVersion();
-		default: return printUsage();
+		case "help": help(args[2 .. $]); break;
+		case "build": build(args[2 .. $]); break;
+		case "config": config(args[2 .. $]); break;
+		case "test": test(args[2 .. $]); break;
+		case "version": printVersion(); break;
+		default: printUsage(); break;
 		}
+
+		io.output.flush();
+		io.error.flush();
 	}
 
 	fn config(args: string[])
