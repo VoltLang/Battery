@@ -2,7 +2,7 @@
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 module main;
 
-import watt.io : writefln;
+import io = watt.io;
 
 import battery.driver;
 import battery.license;
@@ -19,6 +19,6 @@ fn main(args: string[]) int
 fn printLicense()
 {
 	foreach (l; licenseArray) {
-		writefln(l);
+		io.writefln(l);
 	}
 }
