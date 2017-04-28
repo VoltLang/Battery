@@ -53,35 +53,51 @@ fn scanDir(drv: Driver, path: string) Base
 	}
 
 	// Create exectuable or library.
-	ret: Base;
+	ret: Base; exe: Exe; lib: Lib;
 	if (s.hasMainVolt) {
-		drv.info("detected executable project in folder '%s'", s.inputPath);
-		exe := s.buildExe();
-		ret = exe;
+		ret = exe = s.buildExe();
+		drv.info("executable %s: '%s'", ret.name, s.inputPath);
 	} else {
-		drv.info("detected library project in folder '%s'", s.inputPath);
-		lib := s.buildLib();
-		ret = lib;
+		ret = lib = s.buildLib();
+		drv.info("library %s: '%s'", ret.name, s.inputPath);
 	}
 
 	foreach (p; s.pathSimpleTests) {
-		drv.info("detected %s simple test config '%s'", ret.name, p);
 		ret.testDirs ~= dirName(p);
 	}
 
 	foreach (p; s.pathJsonTests) {
-		drv.info("detected %s test config '%s'", ret.name, p);
 		ret.testDirs ~= dirName(p);
 	}
 
 	if (s.hasRes) {
-		drv.info("%s detected resources in folder '%s'", ret.name, s.pathRes);
 		ret.stringPaths ~= s.pathRes;
 	}
 
 	processBatteryCmd(drv, ret, ref s);
 
+	foreach (p; s.pathSimpleTests) {
+		drv.info("\ttest: '%s'", rootify(s.path, p));
+	}
+
+	foreach (p; s.pathJsonTests) {
+		drv.info("\ttest: '%s'", rootify(s.path, p));
+	}
+
+	if (s.hasRes) {
+		drv.info("\tres: '%s'", rootify(s.path, s.pathRes));
+	}
+
 	return ret;
+}
+
+fn rootify(root: string, path: string) string
+{
+	if (path.length <= root.length) {
+		return path;
+	} else {
+		return format("$%s%s", dirSeparator, path[root.length + 1 .. $]);
+	}
 }
 
 fn scanVolta(drv: Driver, ref s: Scanner) Base
@@ -94,14 +110,7 @@ fn scanVolta(drv: Driver, ref s: Scanner) Base
 		drv.abort("volta needs 'src/main.d'");
 	}
 
-	drv.info("detected Volta compiler in folder '%s'", s.inputPath);
-
-	// Scan the runtime.
-	rt := cast(Lib)scanDir(drv, s.inputPath ~ dirSeparator ~ PathRt);
-	if (rt is null) {
-		drv.abort("Volta '%s' runtime must be a library", s.inputPath);
-	}
-	drv.add(rt);
+	drv.info("compiler volta: '%s'", s.inputPath);
 
 	exe := new Exe();
 	exe.name = s.name;
@@ -111,6 +120,13 @@ fn scanVolta(drv: Driver, ref s: Scanner) Base
 	exe.srcVolt ~= s.pathMainD;
 
 	processBatteryCmd(drv, exe, ref s);
+
+	// Scan the runtime.
+	rt := cast(Lib)scanDir(drv, s.inputPath ~ dirSeparator ~ PathRt);
+	if (rt is null) {
+		drv.abort("Volta '%s' runtime must be a library", s.inputPath);
+	}
+	drv.add(rt);
 
 	return exe;
 }
