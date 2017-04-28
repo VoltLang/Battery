@@ -100,9 +100,9 @@ public:
 			mConfig.isRelease = isRelease;
 		}
 
-		// Parse arguments.
+		// Parse arguments only the config arguments.
 		arg := new ArgParser(this);
-		arg.parse(args);
+		arg.parseConfig(args);
 
 		// Handle cross compiling.
 		if (mHostConfig !is null) {
@@ -114,6 +114,9 @@ public:
 		// Do this after the arguments has been parsed.
 		doConfig(this, mConfig);
 		fillInConfigCommands(this, mConfig);
+
+		// Parse the rest of the arguments.
+		arg.parseProjects();
 
 		configSanity();
 
@@ -191,9 +194,9 @@ public:
 		mHostConfig = getBaseHostConfig(this);
 		mConfig = getBaseConfig(this, arch, platform);
 
-		// Parse arguments.
+		// Parse arguments only the config arguments.
 		arg := new ArgParser(this);
-		arg.parse(args);
+		arg.parseConfig(args);
 
 		// Handle cross compiling.
 		if (arch != mHostConfig.arch ||
@@ -219,6 +222,9 @@ public:
 			mConfig.tools[k] = v;
 		}
 		fillInConfigCommands(this, mConfig);
+
+		// Parse the rest of the arguments.
+		arg.parseProjects();
 
 		// Do the actual build now.
 		builder := new Builder(this);

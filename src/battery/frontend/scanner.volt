@@ -121,7 +121,7 @@ fn processBatteryCmd(drv: Driver, b: Base, ref s: Scanner)
 		args : string[];
 		getLinesFromFile(s.pathBatteryTxt, ref args);
 		ap := new ArgParser(drv);
-		ap.parse(args, s.path ~ dirSeparator, b);
+		ap.parseProjects(args, s.path ~ dirSeparator, b);
 	}
 }
 

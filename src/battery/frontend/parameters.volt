@@ -179,7 +179,7 @@ public:
 		mDrv = drv;
 	}
 
-	fn parse(args: string[])
+	fn parseConfig(args: string[])
 	{
 		toArgs: ToArgs;
 		mPos = 0;
@@ -187,11 +187,50 @@ public:
 		filterArgs(ref mArgs, mDrv.arch, mDrv.platform);
 
 		for (; mPos < mArgs.length; mPos++) {
+			arg := mArgs[mPos];
+			switch (arg.kind) with (Arg.Kind) {
+			case Exe:
+			case Lib:
+			case Directory:
+				return;
+			case Env:
+				assert(arg.flag.length > 6);
+				mDrv.addEnv(false, arg.flag[6 .. $], arg.extra);
+				break;
+			case HostEnv:
+				assert(arg.flag.length > 11);
+				mDrv.addEnv(true, arg.flag[11 .. $], arg.extra);
+				break;
+			case ToolCmd:
+				assert(arg.flag.length > 6);
+				mDrv.addCmd(false, arg.flag[6 .. $], arg.extra);
+				break;
+			case ToolArg:
+				assert(arg.flag.length > 6);
+				mDrv.addCmdArg(false, arg.flag[6 .. $], arg.extra);
+				break;
+			case HostToolCmd:
+				assert(arg.flag.length > 11);
+				mDrv.addCmd(true, arg.flag[11 .. $], arg.extra);
+				break;
+			case HostToolArg:
+				assert(arg.flag.length > 11);
+				mDrv.addCmdArg(true, arg.flag[11 .. $], arg.extra);
+				break;
+			default: mDrv.abort("unknown argument '%s'", arg.flag);
+			}
+		}
+
+	}
+
+	fn parseProjects()
+	{
+		for (; mPos < mArgs.length; mPos++) {
 			parseDefault();
 		}
 	}
 
-	fn parse(args: string[], path: string, base: Base)
+	fn parseProjects(args: string[], path: string, base: Base)
 	{
 		toArgs: ToArgs;
 		mPos = 0;
@@ -233,28 +272,12 @@ protected:
 				}
 				return;
 			case Env:
-				assert(arg.flag.length > 6);
-				mDrv.addEnv(false, arg.flag[6 .. $], arg.extra);
-				break;
 			case HostEnv:
-				assert(arg.flag.length > 11);
-				mDrv.addEnv(true, arg.flag[11 .. $], arg.extra);
-				break;
 			case ToolCmd:
-				assert(arg.flag.length > 6);
-				mDrv.addCmd(false, arg.flag[6 .. $], arg.extra);
-				break;
 			case ToolArg:
-				assert(arg.flag.length > 6);
-				mDrv.addCmdArg(false, arg.flag[6 .. $], arg.extra);
-				break;
 			case HostToolCmd:
-				assert(arg.flag.length > 11);
-				mDrv.addCmd(true, arg.flag[11 .. $], arg.extra);
-				break;
 			case HostToolArg:
-				assert(arg.flag.length > 11);
-				mDrv.addCmdArg(true, arg.flag[11 .. $], arg.extra);
+				mDrv.abort("argument '%s' can't be used after projects", arg.flag);
 				break;
 			default: mDrv.abort("unknown argument '%s'", arg.flag);
 			}
@@ -368,7 +391,18 @@ protected:
 			return;
 		}
 
-		str := getOutput(args[0], args[1 .. $]);
+		cmd = args[0];
+		args = args[1 .. $];
+
+		// See if there is a cmd added with this name.
+		// Helps llvm-config to match what for the entire build.
+		if (tool := mDrv.getCmd(false, cmd)) {
+			cmd = tool.cmd;
+			args = tool.args ~ args;
+		}
+
+		// Run the command and read the output.
+		str := getOutput(cmd, args);
 
 		args = parseArguments(str);
 
