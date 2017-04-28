@@ -33,6 +33,10 @@ fn doConfig(drv: Driver, config: Configuration)
 
 	final switch (config.platform) with (Platform) {
 	case MSVC:
+		// Always setup a basic LLVM toolchain.
+		doToolChainLLVM(drv, config, UseAsLinker.NO);
+
+		// Overwrite the LLVM toolchain a tiny bit.
 		if (config.isCross) {
 			doToolChainCrossMSVC(drv, config, outside);
 		} else {
@@ -40,7 +44,8 @@ fn doConfig(drv: Driver, config: Configuration)
 		}
 		break;
 	case Metal, Linux, OSX:
-		doToolChainClang(drv, config, outside);
+		// Always setup a basic LLVM toolchain.
+		doToolChainLLVM(drv, config, UseAsLinker.YES);
 		break;
 	}
 
@@ -154,7 +159,9 @@ public:
 		}
 		if (this.clang is null) {
 			this.clang = config.makeCommandFromPath(ClangCommand ~ suffix, ClangName);
-			addClangArgs(drv, config, this.clang);
+			if (this.clang !is null) {
+				addClangArgs(drv, config, this.clang);
+			}
 		}
 		if (this.ld is null) {
 			this.ld = config.makeCommandFromPath(LDLLDCommand ~ suffix, LDLLDName);
@@ -166,7 +173,8 @@ public:
 
 	@property fn hasNeeded() bool
 	{
-		return this.config !is null && this.clang !is null;
+		version (!Windows) if (this.config is null) return false;
+		return this.clang !is null;
 	}
 
 	fn addSuffixedCmdIfOkay(config: Configuration, suffix: string) bool
@@ -182,7 +190,13 @@ public:
 	}
 }
 
-fn doToolChainClang(drv: Driver, config: Configuration, outside: Environment)
+enum UseAsLinker
+{
+	NO,
+	YES,
+}
+
+fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 {
 	llvm: LLVMConfig;
 	llvm.drv = drv;
@@ -198,7 +212,9 @@ fn doToolChainClang(drv: Driver, config: Configuration, outside: Environment)
 
 	drvClang := llvm.clang;
 
-	linker := config.addTool(LinkerName, drvClang.cmd, drvClang.args);
+	if (useLinker) {
+		linker := config.addTool(LinkerName, drvClang.cmd, drvClang.args);
+	}
 	clang := config.addTool(ClangName, drvClang.cmd, drvClang.args);
 	cc := config.addTool(CCName, drvClang.cmd, drvClang.args);
 
@@ -258,12 +274,11 @@ public:
 
 fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environment)
 {
-	drvClang := drv.fillInCommand(config, ClangName);
 	drvLink := drv.fillInCommand(config, LinkName);
 
 	linker := config.addTool(LinkerName, drvLink.cmd, drvLink.args);
-	clang := config.addTool(ClangName, drvClang.cmd, drvClang.args);
-	cc := config.addTool(CCName, drvClang.cmd, drvClang.args);
+	clang := config.getTool(ClangName);
+	cc := config.getTool(CCName);
 
 	vars: VarsForMSVC;
 	getDirsFromEnv(drv, outside, ref vars);
@@ -272,12 +287,6 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 	// Set the built env vars.
 	config.env.set("INCLUDE", join(vars.inc, ";"));
 	config.env.set("LIB", join(vars.lib, ";"));
-
-	if (config.isRelease) {
-		clang.args ~= "-O3";
-	} else { // Debug
-		cc.args ~= "-g";
-	}
 
 	linker.args ~= [
 		"/nologo",
@@ -291,22 +300,15 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 {
 	assert(!config.isHost);
 
-	drvClang := drv.fillInCommand(config, ClangName);
 	drvLink := drv.fillInCommand(config, LinkName);
 
 	linker := config.addTool(LinkerName, drvLink.cmd, drvLink.args);
-	clang := config.addTool(ClangName, drvClang.cmd, drvClang.args);
-	cc := config.addTool(CCName, drvClang.cmd, drvClang.args);
+	clang := config.getTool(ClangName);
+	cc := config.getTool(CCName);
 
 	vars: VarsForMSVC;
 	getDirsFromEnv(drv, outside, ref vars);
 	fillInListsForMSVC(ref vars);
-
-	if (config.isRelease) {
-		clang.args ~= "-O3";
-	} else { // Debug
-		cc.args ~= "-g";
-	}
 
 	foreach (i; vars.inc) {
 		cc.args ~= "-I" ~ i;
