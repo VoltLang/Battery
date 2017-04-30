@@ -211,7 +211,15 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 	}
 
 	drvClang := llvm.clang;
+	drvConfig := llvm.config;
+	drvAr := llvm.ar;
 
+	if (drvConfig) {
+		config.addTool(LLVMConfigName, drvConfig.cmd, drvConfig.args);
+	}
+	if (drvAr) {
+		config.addTool(LLVMArName, drvAr.cmd, drvAr.args);
+	}
 	if (useLinker) {
 		linker := config.addTool(LinkerName, drvClang.cmd, drvClang.args);
 	}
