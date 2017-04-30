@@ -116,7 +116,7 @@ public:
 		fillInConfigCommands(this, mConfig);
 
 		// Parse the rest of the arguments.
-		arg.parseProjects();
+		arg.parseProjects(mConfig);
 
 		configSanity();
 
@@ -224,7 +224,7 @@ public:
 		fillInConfigCommands(this, mConfig);
 
 		// Parse the rest of the arguments.
-		arg.parseProjects();
+		arg.parseProjects(mConfig);
 
 		// Do the actual build now.
 		builder := new Builder(this);

@@ -31,13 +31,13 @@ enum PathTestSimple = "battery.tests.simple";
 /**
  * Scan a directory and see what it holds.
  */
-fn scanDir(drv: Driver, path: string) Base
+fn scanDir(drv: Driver, c: Configuration, path: string) Base
 {
 	s: Scanner;
 	s.scan(drv, path);
 
 	if (s.name == "volta") {
-		return scanVolta(drv, ref s);
+		return scanVolta(drv, c, ref s);
 	}
 
 	if (!s.hasPath) {
@@ -74,7 +74,7 @@ fn scanDir(drv: Driver, path: string) Base
 		ret.stringPaths ~= s.pathRes;
 	}
 
-	processBatteryCmd(drv, ret, ref s);
+	processBatteryCmd(drv, c, ret, ref s);
 
 	foreach (p; s.pathSimpleTests) {
 		drv.info("\ttest: '%s'", rootify(s.path, p));
@@ -100,7 +100,7 @@ fn rootify(root: string, path: string) string
 	}
 }
 
-fn scanVolta(drv: Driver, ref s: Scanner) Base
+fn scanVolta(drv: Driver, c: Configuration, ref s: Scanner) Base
 {
 	if (!s.hasRt) {
 		drv.abort("volta needs a 'rt' folder");
@@ -119,10 +119,10 @@ fn scanVolta(drv: Driver, ref s: Scanner) Base
 	exe.isInternalD = true;
 	exe.srcVolt ~= s.pathMainD;
 
-	processBatteryCmd(drv, exe, ref s);
+	processBatteryCmd(drv, c, exe, ref s);
 
 	// Scan the runtime.
-	rt := cast(Lib)scanDir(drv, s.inputPath ~ dirSeparator ~ PathRt);
+	rt := cast(Lib)scanDir(drv, c, s.inputPath ~ dirSeparator ~ PathRt);
 	if (rt is null) {
 		drv.abort("Volta '%s' runtime must be a library", s.inputPath);
 	}
@@ -131,13 +131,13 @@ fn scanVolta(drv: Driver, ref s: Scanner) Base
 	return exe;
 }
 
-fn processBatteryCmd(drv: Driver, b: Base, ref s: Scanner)
+fn processBatteryCmd(drv: Driver, c: Configuration, b: Base, ref s: Scanner)
 {
 	if (s.hasBatteryCmd) {
 		args : string[];
 		getLinesFromFile(s.pathBatteryTxt, ref args);
 		ap := new ArgParser(drv);
-		ap.parseProjects(args, s.path ~ dirSeparator, b);
+		ap.parseProjects(c, args, s.path ~ dirSeparator, b);
 	}
 }
 

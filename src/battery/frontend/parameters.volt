@@ -223,26 +223,26 @@ public:
 
 	}
 
-	fn parseProjects()
+	fn parseProjects(c: Configuration)
 	{
 		for (; mPos < mArgs.length; mPos++) {
-			parseDefault();
+			parseDefault(c);
 		}
 	}
 
-	fn parseProjects(args: string[], path: string, base: Base)
+	fn parseProjects(c: Configuration, args: string[], path: string, base: Base)
 	{
 		toArgs: ToArgs;
 		mPos = 0;
 		mArgs = toArgs.process(mDrv, path, args);
 		filterArgs(ref mArgs, mDrv.arch, mDrv.platform);
 
-		process(base);
+		process(c, base);
 	}
 
 
 protected:
-	fn parseDefault()
+	fn parseDefault(c: Configuration)
 	{
 		for (; mPos < mArgs.length; mPos++) {
 			arg := mArgs[mPos];
@@ -251,20 +251,20 @@ protected:
 				mPos++;
 				exe := new Exe();
 				exe.name = arg.extra;
-				process(exe);
+				process(c, exe);
 				mDrv.add(exe);
 				return;
 			case Lib:
 				mPos++;
 				lib := new Lib();
 				lib.name = arg.extra;
-				process(lib);
+				process(c, lib);
 				mDrv.add(lib);
 				return;
 			case Directory:
 				mPos++;
-				base := scanDir(mDrv, arg.extra);
-				process(base);
+				base := scanDir(mDrv, c, arg.extra);
+				process(c, base);
 				if (auto lib = cast(Lib)base) {
 					mDrv.add(lib);
 				} else if (auto exe = cast(Exe)base) {
@@ -284,22 +284,22 @@ protected:
 		}
 	}
 
-	fn process(base: Base)
+	fn process(c: Configuration, base: Base)
 	{
 		lib := cast(Lib)base;
 		if (lib !is null) {
-			parseLib(lib);
+			parseLib(c, lib);
 			verify(lib);
 		}
 
 		exe := cast(Exe)base;
 		if (exe !is null) {
-			parseExe(exe);
+			parseExe(c, exe);
 			verify(exe);
 		}
 	}
 
-	fn parseLib(lib: Lib)
+	fn parseLib(c: Configuration, lib: Lib)
 	{
 		for (; mPos < mArgs.length; mPos++) {
 			arg := mArgs[mPos];
@@ -318,14 +318,14 @@ protected:
 			case ArgLink: lib.xlink ~= arg.extra; break;
 			case ArgLinker: lib.xlinker ~= arg.extra; break;
 			case FileAsm: lib.srcAsm ~= arg.extra; break;
-			case Command: handleCommand(arg.extra); break;
+			case Command: handleCommand(c, arg.extra); break;
 			default:
-				return parseDefault();
+				return parseDefault(c);
 			}
 		}
 	}
 
-	fn parseExe(exe: Exe)
+	fn parseExe(c: Configuration, exe: Exe)
 	{
 		for (; mPos < mArgs.length; mPos++) {
 			arg := mArgs[mPos];
@@ -351,9 +351,9 @@ protected:
 			case ArgCC: exe.xcc ~= arg.extra; break;
 			case ArgLink: exe.xlink ~= arg.extra; break;
 			case ArgLinker: exe.xlinker ~= arg.extra; break;
-			case Command: handleCommand(arg.extra); break;
+			case Command: handleCommand(c, arg.extra); break;
 			default:
-				return parseDefault();
+				return parseDefault(c);
 			}
 		}
 	}
@@ -384,7 +384,7 @@ protected:
 		}
 	}
 
-	fn handleCommand(cmd: string)
+	fn handleCommand(c: Configuration, cmd: string)
 	{
 		args := parseArguments(cmd);
 		if (args.length == 0) {
@@ -396,7 +396,7 @@ protected:
 
 		// See if there is a cmd added with this name.
 		// Helps llvm-config to match what for the entire build.
-		if (tool := mDrv.getCmd(false, cmd)) {
+		if (tool := c.getTool(cmd)) {
 			cmd = tool.cmd;
 			args = tool.args ~ args;
 		}
