@@ -14,6 +14,7 @@ import battery.configuration;
 import battery.interfaces;
 import battery.policy.arg;
 import battery.frontend.scanner;
+import battery.frontend.github;
 
 
 fn getArgs(arch: Arch, platform: Platform, isRelease: bool) string[]
