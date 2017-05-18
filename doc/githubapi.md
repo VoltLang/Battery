@@ -11,3 +11,11 @@ For example.
 	curl -L https://api.github.com/repos/VoltLang/Volta/zipball/master >master.zip
 
 Will get the contents of the master branch of VoltLang/Volta as a zipfile. The initial GET will return a redirect to the actual file. The code will be in a folder in the root :owner-:repo-$shahash, e.g. `VoltaLang-Volta-76aff47`.
+
+# Releases
+
+https://developer.github.com/v3/repos/releases/
+
+A GET request to `https://api.github.com/repos/:owner/:repo/releases` will give you a list of json objects for each release. `name` is a string with the name of the release. `assets` is a list of objects for each release asset associated with that release.
+
+The asset `name` field will give you a string of the filename. The `browser_download_url` field gives you a string for a url to download the asset.
