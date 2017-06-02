@@ -1,3 +1,8 @@
+---
+layout: page
+title: Github API documentation
+---
+
 # Getting archives.
 
 To get an archive link of a repository, use
