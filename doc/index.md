@@ -4,11 +4,11 @@ title: Battery Documentation
 permalink: /doc/battery
 ---
 
-#Introduction
+# Introduction
 
 Battery is a tool for building Volt programs. In the future it will fetch code and more. But for now, it builds programs.
 
-##How To Use
+## How To Use
 
 Battery makes some assumptions about project structure. Your source code will be in a directory named `src`. If your project is an executable, its entry point will be in `src/main.volt`. If you have tests, they will be in the `test` directory. If there is a `res` folder, Volta will be told to look for string imports (`-J`) there. So for a simple executable project that only depends on Watt (Volt's standard library, you might have your code in `src/main.volt`:
 
@@ -55,7 +55,7 @@ Sometimes build steps are a little more complicated. Battery lives in the real w
 
 We'll go in depth on the commands in a later section. For now, notice we can do different things depending on the platform, and even run external tools to get library names and so on.
 
-##Commands
+## Commands
 
 Battery is built around a few 'commands'. These are our verbs. They are as follows:
 
@@ -66,11 +66,11 @@ Battery is built around a few 'commands'. These are our verbs. They are as follo
 
 All are invoked using `battery <command name>`. We used the `config` and `build` commands in the previous section.
 
-###Help
+### Help
 
 This command doesn't do anything but give information. This command can give you a quick reminder on how to use Battery, or more in depth documentation on the various commands. `battery help config` will give help on the `config` command, for instance.
 
-###Config
+### Config
 
 We've seen the `config` command already. And we've also seen some of the command line arguments it can take. `battery.txt` isn't particularly special -- it's just a list of parameters, like `--dep`, that tell it about your project. Battery command parameters come after the command; it's `battery config --dep watt`, not `battery --dep watt config`.
 
@@ -100,15 +100,15 @@ We've seen the `config` command already. And we've also seen some of the command
 
 You probably recognise quite a few of these from Volta.
 
-###Build
+### Build
 
 Actually performs the build. If there's a `test` folder, the tests will be run after the build completes. If the build failed, the return value will be non-zero. This only works after config has been run.
 
-###Test
+### Test
 
 Runs tests if the `test` directory is present. Runs `build` if it has to. The tests are described in a [json](json.org) file named `battery.test.json`.
 
-####battery.test.json
+#### battery.test.json
 
 The file contains an object. The various properties are documented below.
 
@@ -121,7 +121,7 @@ The file contains an object. The various properties are documented below.
 	requiresAliases    an object containing strings that are expanded in
 	                   requires commands. (more on them later). (optional).
 
-####Commands
+#### Commands
 
 Each individual test is described with various commands. The commands consist of a word and an argument, separated by a colon. The lines containing commands are prefixed by a string (usually a comment and a special character) given in `battery.test.json` with the `testCommandPrefix` property.
 
