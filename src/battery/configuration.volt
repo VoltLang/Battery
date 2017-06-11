@@ -45,6 +45,7 @@ public:
 	arch: Arch;
 	platform: Platform;
 	isRelease: bool;
+	isLTO: bool;
 
 	clangCmd: Command;
 

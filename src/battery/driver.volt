@@ -78,9 +78,9 @@ public:
 	fn config(args: string[])
 	{
 		// Filter out --release, --arch and --platform arguments.
-		isRelease: bool;
+		isRelease, isLTO: bool;
 		findArchAndPlatform(this, ref args, ref arch, ref platform,
-		                    ref isRelease);
+		                    ref isRelease, ref isLTO);
 		mHostConfig = getBaseHostConfig(this);
 		mConfig = getBaseConfig(this, arch, platform);
 
@@ -90,6 +90,7 @@ public:
 			mHostConfig = null;
 			mConfig.kind = ConfigKind.Native;
 			mConfig.isRelease = isRelease;
+			mConfig.isLTO = isLTO;
 			info("native compile");
 		} else {
 			info("cross compiling to %s-%s",
@@ -98,6 +99,7 @@ public:
 			mHostConfig.isRelease = true;
 			mConfig.kind = ConfigKind.Cross;
 			mConfig.isRelease = isRelease;
+			mConfig.isLTO = isLTO;
 		}
 
 		// Parse arguments only the config arguments.
@@ -123,7 +125,7 @@ public:
 		verifyConfig();
 
 		ofs := new OutputFileStream(BatteryConfigFile);
-		foreach (r; getArgs(arch, platform, mConfig.isRelease)) {
+		foreach (r; getArgs(arch, platform, mConfig.isRelease, mConfig.isLTO)) {
 			ofs.write(r);
 			ofs.put('\n');
 		}
@@ -185,9 +187,9 @@ public:
 		}
 
 		// Filter out --release, --arch and --platform arguments.
-		isRelease: bool;
+		isRelease, isLTO: bool;
 		findArchAndPlatform(this, ref args, ref arch, ref platform,
-		                    ref isRelease);
+		                    ref isRelease, ref isLTO);
 
 		// Get the configs.
 		mHostConfig = getBaseHostConfig(this);
@@ -209,11 +211,13 @@ public:
 			mHostConfig.isRelease = true;
 			mConfig.kind = ConfigKind.Cross;
 			mConfig.isRelease = isRelease;
+			mConfig.isLTO = isLTO;
 		} else {
 			// Just reuse the host config.
 			mHostConfig = null;
 			mConfig.kind = ConfigKind.Native;
 			mConfig.isRelease = isRelease;
+			mConfig.isLTO = isLTO;
 		}
 
 		// Do this after the arguments has been parsed.

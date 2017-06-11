@@ -17,7 +17,7 @@ import battery.frontend.scanner;
 import battery.frontend.github;
 
 
-fn getArgs(arch: Arch, platform: Platform, isRelease: bool) string[]
+fn getArgs(arch: Arch, platform: Platform, isRelease: bool, isLTO: bool) string[]
 {
 	ret: string[] = [
 		"--arch", toString(arch),
@@ -25,6 +25,9 @@ fn getArgs(arch: Arch, platform: Platform, isRelease: bool) string[]
 		];
 	if (isRelease) {
 		ret ~= "--release";
+	}
+	if (isLTO) {
+		ret ~= "--lto";
 	}
 	return ret;
 }
@@ -448,7 +451,7 @@ fn parsePlatform(driver: Driver, p: string) Platform
 
 fn findArchAndPlatform(driver: Driver, ref args: string[],
                        ref arch: Arch, ref platform: Platform,
-                       ref isRelease: bool)
+                       ref isRelease: bool, ref isLTO: bool)
 {
 	isArch, isPlatform: bool;
 	pos: size_t;
@@ -482,6 +485,10 @@ fn findArchAndPlatform(driver: Driver, ref args: string[],
 		case "--release":
 			pos++;
 			isRelease = true;
+			continue;
+		case "--lto":
+			pos++;
+			isLTO = true;
 			continue;
 		default:
 		}
@@ -616,6 +623,7 @@ struct ToArgs
 			case "--platform": mDrv.abort("--platform argument must be first argument after config"); continue;
 			case "--debug": mDrv.abort("--debug argument must be first argument after config"); continue;
 			case "--release": mDrv.abort("--release argument must be first argument after config"); continue;
+			case "--lto": mDrv.abort("--lto argument must be first argument after config"); continue;
 			case "--exe": argNext(Exe, "expected name"); continue;
 			case "--lib": argNext(Lib, "expected name"); continue;
 			case "--name": argNext(Name, "expected name"); continue;
