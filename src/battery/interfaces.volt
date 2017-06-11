@@ -28,6 +28,8 @@ class Base
 
 	srcDir: string;
 
+	srcC: string[];
+	srcObj: string[];
 	srcAsm: string[];
 
 	testDirs: string[];
@@ -43,9 +45,7 @@ class Exe : Base
 
 	isInternalD: bool;
 
-	srcC: string[];
 	srcD: string[];
-	srcObj: string[];
 	srcVolt: string[];
 }
 

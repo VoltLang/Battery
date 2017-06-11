@@ -221,6 +221,12 @@ public:
 		return cmd;
 	}
 
+	fn getFileOFromBC(name: string) string
+	{
+		assert(name.length > 3);
+		return name[0 .. $ - 3] ~ ".o";
+	}
+
 	fn genFileBC(name: string) string
 	{
 		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".bc");
