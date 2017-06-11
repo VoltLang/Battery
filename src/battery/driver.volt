@@ -162,18 +162,17 @@ public:
 				if (dp !is null) {
 					continue;
 				}
-				io.error.writefln("No dependency '%s' found.", dep);
 				switch (dep) {
 				case "watt":
-					io.error.writefln("Download Watt from https://github.com/VoltLang/Watt");
+					abort("Library Watt not found.\nDownload Watt from https://github.com/VoltLang/Watt");
 					break;
 				case "amp":
-					io.error.writefln("Download Amp from https://github.com/VoltLang/Amp");
+					abort("Library Amp not found.\nDownload Amp from https://github.com/VoltLang/Amp");
 					break;
 				default:
+					abort("No dependency '%s' found.", dep);
 					break;
 				}
-				exit(-1);
 			}
 		}
 	}
