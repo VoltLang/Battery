@@ -147,7 +147,7 @@ public:
 				files ~= gen.genFileO(asmpath);
 			}
 
-			files ~= gen.genVoltLibraryO(base.name);
+			files ~= gen.genVoltO(base.name);
 
 			return files;
 		}

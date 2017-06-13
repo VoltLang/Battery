@@ -129,10 +129,40 @@ public:
 	ldGiven: bool;
 	linkGiven: bool;
 
+	needConfig, needAr, needClang, needLd, needLink: bool;
+
 
 public:
+	fn fillInNeeded(config: Configuration)
+	{
+		// Must always have clang.
+		this.needClang = true;
+
+		// For Windows llvm-config is not needed.
+		version (!Windows) {
+			this.needConfig = true;
+		}
+
+		// Platform specific.
+		final switch (config.platform) with (Platform) {
+		case MSVC:
+			this.needLink = config.isLTO;
+			this.needAr = config.isLTO;
+			break;
+		case Metal, Linux:
+			this.needLd = config.isLTO;
+			this.needAr = config.isLTO;
+			break;
+		case OSX:
+			this.needAr = config.isLTO;
+			break;
+		}
+	}
+
 	fn fillInFromTools(config: Configuration)
 	{
+		fillInNeeded(config);
+
 		this.config = config.getTool(LLVMConfigName);
 		this.ar =     config.getTool(LLVMArName);
 		this.clang =  config.getTool(ClangName);
@@ -173,8 +203,12 @@ public:
 
 	@property fn hasNeeded() bool
 	{
-		version (!Windows) if (this.config is null) return false;
-		return this.clang !is null;
+		if (needConfig && (this.config is null)) return false;
+		if (needClang && (this.clang is null)) return false;
+		if (needAr && (this.ar is null)) return false;
+		if (needLink && (this.link is null)) return false;
+		if (needLd && (this.ld is null)) return false;
+		return true;
 	}
 
 	fn addSuffixedCmdIfOkay(config: Configuration, suffix: string) bool
@@ -210,34 +244,52 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 		drv.abort("could not find a valid llvm toolchain");
 	}
 
-	drvClang := llvm.clang;
-	drvConfig := llvm.config;
-	drvAr := llvm.ar;
+	assert(llvm.clang !is null);
 
-	if (drvConfig) {
-		config.addTool(LLVMConfigName, drvConfig.cmd, drvConfig.args);
+	if (llvm.config !is null && llvm.needConfig) {
+		config.addTool(LLVMConfigName, llvm.config.cmd, llvm.config.args);
 	}
-	if (drvAr) {
-		config.addTool(LLVMArName, drvAr.cmd, drvAr.args);
+	if (llvm.ar !is null && llvm.needConfig) {
+		config.addTool(LLVMArName, llvm.ar.cmd, llvm.ar.args);
 	}
+	if (llvm.ld !is null && llvm.needConfig) {
+		config.addTool(LDLLDName, llvm.ld.cmd, llvm.ld.args);
+	}
+	if (llvm.link !is null && llvm.needConfig) {
+		config.addTool(LLDLinkName, llvm.link.cmd, llvm.link.args);
+	}
+
+	// If needed setup the linker command.
+	linker: Command;
 	if (useLinker) {
-		linker := config.addTool(LinkerName, drvClang.cmd, drvClang.args);
+		linker = config.addTool(LinkerName, llvm.clang.cmd, llvm.clang.args);
 	}
-	clang := config.addTool(ClangName, drvClang.cmd, drvClang.args);
-	cc := config.addTool(CCName, drvClang.cmd, drvClang.args);
 
+	// Setup clang and cc tools.
+	clang := config.addTool(ClangName, llvm.clang.cmd, llvm.clang.args);
+	cc := config.addTool(CCName, llvm.clang.cmd, llvm.clang.args);
+
+	// Add any extra arguments.
 	if (config.isRelease) {
 		clang.args ~= "-O3";
 	} else { // Debug.
 		cc.args ~= "-g";
 	}
 
+	if (config.isLTO) {
+		clang.args ~= "-flto=thin";
+		cc.args ~= "-flto=thin";
+		if (linker !is null) {
+			linker.args ~= "-flto=thin";
+		}
+	}
+
 	drv.info("llvm%s toolchain was %s.", llvm.suffix, llvm.allGiven ? "from arguments" : "from path");
-	if (llvm.config !is null) drv.infoCmd(config, llvm.config);
-	if (llvm.ar !is null) drv.infoCmd(config, llvm.ar);
-	if (llvm.clang !is null) drv.infoCmd(config, llvm.clang);
-	if (llvm.ld !is null) drv.infoCmd(config, llvm.ld);
-	if (llvm.link !is null) drv.infoCmd(config, llvm.link);
+	if (llvm.config !is null && llvm.needConfig) drv.infoCmd(config, llvm.config);
+	if (llvm.ar     !is null && llvm.needAr)     drv.infoCmd(config, llvm.ar);
+	if (llvm.clang  !is null && llvm.needClang)  drv.infoCmd(config, llvm.clang);
+	if (llvm.ld     !is null && llvm.needLd)     drv.infoCmd(config, llvm.ld);
+	if (llvm.link   !is null && llvm.needLink)   drv.infoCmd(config, llvm.link);
 }
 
 

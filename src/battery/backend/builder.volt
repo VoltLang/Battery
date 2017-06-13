@@ -17,7 +17,7 @@ import battery.backend.command;
 import battery.frontend.scanner : deepScan;
 import battery.util.path : cleanPath;
 
-import watt.io;
+import io = watt.io;
 
 
 class Builder
@@ -36,7 +36,7 @@ public:
 
 protected:
 	/// Store of objects each Lib/Exe produces.
-	mObjs: uni.Target[][string];
+	mStore: Store[string];
 
 	mGen: ArgsGenerator;
 	mHostGen: ArgsGenerator;
@@ -72,11 +72,12 @@ public:
 
 		// Make sure each library is built.
 		foreach (lib; libs) {
-			makeTargetVoltLibrary(ref mGen, lib);
+			processLibrary(ref mGen, lib);
 		}
 
 		// Generate rules for all the executables.
 		foreach (exe; exes) {
+			processExe(ref mGen, exe);
 			mega.deps ~= makeTargetExe(ref mGen, exe);
 		}
 
@@ -88,77 +89,214 @@ public:
 		}
 	}
 
-	fn makeTargetExeBc(ref gen: ArgsGenerator, exe: Exe) uni.Target
-	{
-		bcName := gen.genVoltExeBc(exe.name);
-		depName := gen.genVoltExeDep(exe.name);
 
+	/*
+	 *
+	 * Process functions.
+	 *
+	 */
+
+	fn processBase(ref gen: ArgsGenerator, b: Base) Store
+	{
+		// Get the number of objects.
+		num := b.srcAsm.length + b.srcObj.length + b.srcC.length;
+
+		store := new Store();
+
+		// Nothing to do here.
+		if (num <= 0) {
+			return store;
+		}
+
+		// Create results list.
+		store.objs = new uni.Target[](num);
+		count: size_t;
+
+		// Setup C targets.
+		foreach (src; b.srcC) {
+			store.objs[count++] = makeTargetC(ref gen, src);
+		}
+
+		// Add store.objs into into the store.
+		foreach (a; b.srcAsm) {
+			store.objs[count++] = makeTargetAsm(ref gen, a);
+		}
+
+		// Add additional object and library files.
+		foreach (obj; b.srcObj) {
+			store.objs[count++] = ins.file(obj);
+		}
+
+		return store;
+	}
+
+	fn processLibrary(ref gen: ArgsGenerator, lib: Lib)
+	{
+		// Object where all parts of the library are stored.
+		store: Store;
+
+		// Should we include the library source directly in the binary.
+		if (gen.shouldSourceInclude(lib)) {
+			store = processBase(ref gen, lib);
+		} else if (gen.config.isLTO) {
+			store = processBase(ref gen, lib);
+			store.objs ~= makeTargetVoltLibraryAr(ref gen, lib);
+		} else {
+			store = processBase(ref gen, lib);
+			store.objs ~= makeTargetVoltLibraryO(ref gen, lib);
+		}
+
+		addStore(lib.name, store);
+	}
+
+	fn processExe(ref gen: ArgsGenerator, exe: Exe)
+	{
+		// Object where all parts of the exe are stored.
+		store: Store;
+
+		// Should we generate a 'o' or 'ar' file.
+		if (gen.config.isLTO) {
+			store = processBase(ref gen, exe);
+			store.objs ~= makeTargetExeAr(ref gen, exe);
+		} else {
+			store = processBase(ref gen, exe);
+			store.objs ~= makeTargetExeO(ref gen, exe);
+		}
+
+		addStore(exe.name, store);
+	}
+
+
+	/*
+	 *
+	 * Target library functions.
+	 *
+	 */
+
+	fn makeTargetVoltLibraryGeneric(ref gen: ArgsGenerator, lib: Lib, name: string, flags: ArgsKind) uni.Target
+	{
+		depName := gen.genVoltDep(lib.name);
+		files := deepScan(lib.srcDir, ".volt");
+
+		// Make the dependancy and target file.
 		d := ins.file(depName);
-		bc := ins.fileNoRule(bcName);
-		bc.deps = new uni.Target[](exe.srcVolt.length);
+		t := ins.fileNoRule(name);
+
+		// Depends on all of the source files.
+		t.deps = new uni.Target[](files.length);
+		foreach (i, file; files) {
+			t.deps[i] = ins.file(file);
+		}
+
+		// And depend on the compiler.
+		t.deps ~= voltaBin;
+
+		// Create arguments.
+		flags |= ArgsKind.VoltaSrc;
+		args := gen.genVoltArgs(lib, flags, null) ~
+			["-o", name, "--dep", depName] ~ files;
+
+		// Make the rule.
+		t.rule = new uni.Rule();
+		t.rule.cmd = voltaBin.name;
+		t.rule.print = voltaPrint ~ name;
+		t.rule.outputs = [t, d];
+		t.rule.args = args;
+
+		importDepFile(ins, depName);
+
+		return t;
+	}
+
+	fn makeTargetVoltLibraryBc(ref gen: ArgsGenerator, lib: Lib) uni.Target
+	{
+		bcName := gen.genVoltBc(lib.name);
+		return makeTargetVoltLibraryGeneric(ref gen, lib, bcName, ArgsKind.VoltaBc);
+	}
+
+	fn makeTargetVoltLibraryAr(ref gen: ArgsGenerator, lib: Lib) uni.Target
+	{
+		oName := gen.genVoltA(lib.name);
+		return makeTargetVoltLibraryGeneric(ref gen, lib, oName, ArgsKind.VoltaAr);
+	}
+
+	fn makeTargetVoltLibraryO(ref gen: ArgsGenerator, lib: Lib) uni.Target
+	{
+		return makeHelperBitcodeToObj(ref gen,
+			makeTargetVoltLibraryBc(ref gen, lib));
+	}
+
+
+	/*
+	 *
+	 * Target exe functions.
+	 *
+	 */
+
+	fn makeTargetExeGeneric(ref gen: ArgsGenerator, exe: Exe, name: string,
+	                        flags: ArgsKind) uni.Target
+	{
+		depName := gen.genVoltDep(exe.name);
+		files := exe.srcVolt;
+
+		// Make the dependancy and target file.
+		d := ins.file(depName);
+		t := ins.fileNoRule(name);
 
 		// Do dependancy tracking on source.
-		foreach (i, src; exe.srcVolt) {
-			bc.deps[i] = ins.file(src);
+		t.deps = new uni.Target[](files.length);
+		foreach (i, src; files) {
+			t.deps[i] = ins.file(src);
 		}
 
 		// Depend on the compiler.
-		bc.deps ~= [voltaBin];
+		t.deps ~= voltaBin;
 
 		// Get all of the arguments.
-		args := gen.genVoltArgs(exe, ArgsKind.VoltaSrc, null) ~
-			["-o", bcName, "-c", "--emit-llvm",
-			"--dep", depName] ~ exe.srcVolt;
+		flags |= ArgsKind.VoltaSrc;
+		args := gen.genVoltArgs(exe, flags, null) ~
+			["-o", name, "--dep", depName] ~ exe.srcVolt;
 
 		// This is mostly for Volta.
 		if (exe.isInternalD) {
 			args ~= "--internal-d";
+			args ~= exe.srcD;
 			foreach (src; exe.srcD) {
-				bc.deps ~= ins.file(src);
-				args ~= src;
+				t.deps ~= ins.file(src);
 			}
 		}
 
 		// Make the rule.
-		bc.rule = new uni.Rule();
-		bc.rule.cmd = voltaBin.name;
-		bc.rule.print = voltaPrint ~ bc.name;
-		bc.rule.args = args;
-		bc.rule.outputs = [bc, d];
+		t.rule = new uni.Rule();
+		t.rule.cmd = voltaBin.name;
+		t.rule.print = voltaPrint ~ name;
+		t.rule.args = args;
+		t.rule.outputs = [t, d];
 
 		importDepFile(ins, depName);
 
-		return bc;
+		return t;
+	}
+
+	fn makeTargetExeBc(ref gen: ArgsGenerator, exe: Exe) uni.Target
+	{
+		bcName := gen.genVoltBc(exe.name);
+		return makeTargetExeGeneric(ref gen, exe, bcName, ArgsKind.VoltaBc);
+	}
+
+	fn makeTargetExeAr(ref gen: ArgsGenerator, exe: Exe) uni.Target
+	{
+		oName := gen.genVoltA(exe.name);
+		return makeTargetExeGeneric(ref gen, exe, oName, ArgsKind.VoltaAr);
+	}
+
+	fn makeTargetExeO(ref gen: ArgsGenerator, exe: Exe) uni.Target
+	{
+		return makeHelperBitcodeToObj(ref gen, makeTargetExeBc(ref gen, exe));
 	}
 
 	fn makeTargetExe(ref gen: ArgsGenerator, exe: Exe) uni.Target
 	{
-		oName := gen.genVoltExeO(exe.name);
-
-		// Build bitcode and object
-		bc := makeTargetExeBc(ref gen, exe);
-		o := makeHelperBitcodeToObj(ref gen, bc, oName);
-
-		// For the bitcode file and extra inputs.
-		aux : uni.Target[] = [o];
-
-		// Setup C targets.
-		foreach (src; exe.srcC) {
-			aux ~= makeTargetC(ref gen, src);
-		}
-
-		// Add additional object and library files.
-		foreach (obj; exe.srcObj) {
-			aux ~= ins.file(obj);
-		}
-
-		// Put the extra sources here.
-		mObjs[exe.name] = aux;
-
-		//
-		// Make the binary build rule.
-		//
-
 		name := exe.bin is null ? exe.name : exe.bin;
 		if (mGen.config.platform == Platform.MSVC && !endsWith(name, ".exe")) {
 			name ~= ".exe";
@@ -168,19 +306,7 @@ public:
 
 		// Add deps and return files to be added to arguments.
 		fn cb(base: Base) string[] {
-			r := base.name in mObjs;
-			if (r is null) {
-				return null;
-			}
-
-			targets := *r;
-			t.deps ~= targets;
-
-			ret: string[];
-			foreach (d; targets) {
-				ret ~= d.name;
-			}
-			return ret;
+			return getStore(base.name, t);
 		}
 
 		// Get the linker.
@@ -211,24 +337,30 @@ public:
 		return t;
 	}
 
+
+	/*
+	 *
+	 * Other target functions.
+	 *
+	 */
+
 	fn makeTargetC(ref gen: ArgsGenerator, src: string) uni.Target
 	{
 		oName := gen.genFileO(src);
-		bcName := gen.genFileBC(src);
 
-		bc := ins.fileNoRule(bcName);
-		bc.deps = [ins.file(src)];
+		t := ins.fileNoRule(oName);
+		t.deps = [ins.file(src)];
 
 		c := gen.config.ccCmd;
 		assert(gen.config.ccKind == CCKind.Clang);
 
-		bc.rule = new uni.Rule();
-		bc.rule.cmd = c.cmd;
-		bc.rule.args = c.args ~ [src, "-c", "-emit-llvm", "-o", bcName];
-		bc.rule.print = c.print ~ bcName;
-		bc.rule.outputs = [bc];
+		t.rule = new uni.Rule();
+		t.rule.cmd = c.cmd;
+		t.rule.args = c.args ~ ["-o", oName, "-c", src];
+		t.rule.print = c.print ~ oName;
+		t.rule.outputs = [t];
 
-		return makeHelperBitcodeToObj(ref gen, bc, oName);
+		return t;
 	}
 
 	fn makeTargetAsm(ref gen: ArgsGenerator, src: string) uni.Target
@@ -245,6 +377,29 @@ public:
 		tasm.rule.outputs = [tasm];
 
 		return tasm;
+	}
+
+	fn makeHelperBitcodeToObj(ref gen: ArgsGenerator, bc: uni.Target) uni.Target
+	{
+		// Make o file.
+		oName := gen.getFileOFromBC(bc.name);
+		o := ins.fileNoRule(oName);
+
+		// Depend on the compiler and bitcode file.
+		o.deps = [voltaBin, bc];
+
+		// Get clang
+		clang := gen.config.clangCmd;
+
+		// Make the rule.
+		o.rule = new uni.Rule();
+		o.rule.cmd = clang.cmd;
+		o.rule.print = clang.print ~ oName;
+		o.rule.outputs = [o];
+		o.rule.args = clang.args ~ ["-Wno-override-module", // TODO: fix
+			"-o", oName, "-c", bc.name];
+
+		return o;
 	}
 
 	fn makeTargetVolted(ref gen: ArgsGenerator, exe: Exe) uni.Target
@@ -301,71 +456,36 @@ public:
 		return t;
 	}
 
-	fn makeTargetVoltLibrary(ref gen: ArgsGenerator, lib: Lib) uni.Target
-	{
-		files := deepScan(lib.srcDir, ".volt");
-		bcName := gen.genVoltLibraryBc(lib.name);
-		oName := gen.genVoltLibraryO(lib.name);
-
-		// Make the bitcode file.
-		bc := ins.fileNoRule(bcName);
-
-		// Depends on all of the source files.
-		bc.deps = new uni.Target[](files.length);
-		foreach (i, file; files) {
-			bc.deps[i] = ins.file(file);
-		}
-
-		// And depend on the compiler.
-		bc.deps ~= voltaBin;
-
-		// Make the rule.
-		bc.rule = new uni.Rule();
-		bc.rule.cmd = voltaBin.name;
-		bc.rule.print = voltaPrint ~ bcName;
-		bc.rule.outputs = [bc];
-		bc.rule.args = gen.genVoltArgs(lib, ArgsKind.VoltaSrc, null) ~
-			["-o", bcName, "-c", "--emit-llvm"] ~ files;
-
-		// Create the object file for the library.
-		o := makeHelperBitcodeToObj(ref gen, bc, oName);
-
-		// Add results into into the store.
-		results := [o];
-		foreach (a; lib.srcAsm) {
-			results ~= makeTargetAsm(ref gen, a);
-		}
-
-		mObjs[lib.name] = results;
-
-		return o;
-	}
-
-	fn makeHelperBitcodeToObj(ref gen: ArgsGenerator,
-	                          bc: uni.Target, oName: string) uni.Target
-	{
-		// Make o file.
-		o := ins.fileNoRule(oName);
-
-		// Depend on the compiler and bitcode file.
-		o.deps = [voltaBin, bc];
-
-		// Get clang
-		clang := gen.config.clangCmd;
-
-		// Make the rule.
-		o.rule = new uni.Rule();
-		o.rule.cmd = clang.cmd;
-		o.rule.print = clang.print ~ oName;
-		o.rule.outputs = [o];
-		o.rule.args = clang.args ~ ["-Wno-override-module", // TODO: fix
-			"-o", oName, "-c", bc.name];
-
-		return o;
-	}
-
 
 private:
+	fn addStore(name: string, store: Store)
+	{
+		if (store.bcs.length == 0 && store.objs.length == 0) {
+			return;
+		}
+
+		mStore[name] = store;
+	}
+
+	fn getStore(name: string, t: uni.Target) string[]
+	{
+		r := name in mStore;
+		if (r is null) {
+			return null;
+		}
+
+		targets := r.bcs ~ r.objs;
+
+		// Add the targets as dependancies.
+		t.deps ~= targets;
+
+		ret := new string[](targets.length);
+		foreach (i, d; targets) {
+			ret[i] = d.name;
+		}
+		return ret;
+	}
+
 	fn findVolta(exes: Exe[]) Exe
 	{
 		foreach (exe; exes) {
@@ -375,4 +495,11 @@ private:
 		}
 		assert(false);
 	}
+}
+
+class Store
+{
+public:
+	uni.Target[] bcs;
+	uni.Target[] objs;
 }

@@ -9,6 +9,7 @@ import core.c.stdlib : exit;
 import battery.interfaces;
 import battery.configuration;
 import battery.util.path : cleanPath;
+import battery.policy.tools : ClangName, LLVMArName;
 
 
 struct ArgsGenerator
@@ -20,13 +21,15 @@ public:
 	{
 		VoltaSrc      = 0x01,
 		VoltaLink     = 0x02,
-		ClangAssemble = 0x04,
-		ClangLink     = 0x08,
-		LinkLink      = 0x10,
+		VoltaBc       = 0x04,
+		VoltaAr       = 0x08,
+		ClangAssemble = 0x10,
+		ClangLink     = 0x20,
+		LinkLink      = 0x40,
 
 		AnyLdLink     = VoltaLink | ClangLink,
 		AnyLink       = VoltaLink | ClangLink | LinkLink,
-		AnyVolta      = VoltaSrc | VoltaLink,
+		AnyVolta      = VoltaSrc | VoltaLink | VoltaBc | VoltaAr,
 		AnyClang      = ClangAssemble | ClangLink,
 	}
 
@@ -61,8 +64,6 @@ public:
 			"--platform", platformStr,
 			"--arch", archStr,
 			config.isRelease ? "--release" : "--debug",
-			getLinkerFlag(config),
-			config.linkerCmd.cmd,
 		];
 
 		pass := getLinkerPassFlag(config);
@@ -93,6 +94,26 @@ public:
 			ret ~= voltaArgs;
 		}
 
+		if (kind & Kind.VoltaBc) {
+			ret ~= ["-c", "--emit-llvm"];
+		}
+
+		if (kind & Kind.VoltaAr) {
+			clang := config.getTool(ClangName);
+			ret ~= ["--clang", clang.cmd];
+			foreach (arg; clang.args) {
+				ret ~= ["--Xclang", arg];
+			}
+		}
+
+		if (kind & Kind.VoltaAr) {
+			ar := config.getTool(LLVMArName);
+			ret ~= ["--llvm-ar", ar.cmd];
+			foreach (arg; ar.args) {
+				ret ~= ["--Xllvm-ar", arg];
+			}
+		}
+
 		fn traverse(b: Base)
 		{
 			// Has this dep allready been added.
@@ -110,12 +131,11 @@ public:
 
 			// Only needed when compiling source.
 			if (kind & Kind.VoltaSrc) {
-				lib := cast(Lib)b;
 
-				if (lib !is null) {
-					ret ~= ["--lib-I", b.srcDir];
-				} else {
+				if (shouldSourceInclude(b)) {
 					ret ~= ["--src-I", b.srcDir];
+				} else {
+					ret ~= ["--lib-I", b.srcDir];
 				}
 
 				foreach (def; b.defs) {
@@ -210,6 +230,19 @@ public:
 		return ret;
 	}
 
+	fn shouldSourceInclude(b: Base) bool
+	{
+		lib := cast(Lib)b;
+
+		// If this is a exe the source is included in the resulting target.
+		if (lib is null) {
+			return true;
+		}
+
+		// For libraries just don't include the source in the target.
+		return false;
+	}
+
 	fn genVolted() string
 	{
 		cmd := cleanPath(buildDir ~ dirSeparator ~ "volted");
@@ -237,27 +270,22 @@ public:
 		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".o");
 	}
 
-	fn genVoltLibraryO(name: string) string
+	fn genVoltO(name: string) string
 	{
 		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".o");
 	}
 
-	fn genVoltLibraryBc(name: string) string
+	fn genVoltA(name: string) string
+	{
+		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".a");
+	}
+
+	fn genVoltBc(name: string) string
 	{
 		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".bc");
 	}
 
-	fn genVoltExeO(name: string) string
-	{
-		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".o");
-	}
-
-	fn genVoltExeBc(name: string) string
-	{
-		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".bc");
-	}
-
-	fn genVoltExeDep(name: string) string
+	fn genVoltDep(name: string) string
 	{
 		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".d");
 	}
