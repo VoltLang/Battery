@@ -93,16 +93,22 @@ public:
 			ret ~= ["-c", "--emit-llvm"];
 		}
 
+		// Should we give Volta the clang command?
 		if (kind & Kind.VoltaAr) {
 			clang := config.getTool(ClangName);
+			assert(clang !is null);
+
 			ret ~= ["--clang", clang.cmd];
 			foreach (arg; clang.args) {
 				ret ~= ["--Xclang", arg];
 			}
 		}
 
+		// Should we give Volta the llvm-ar command?
 		if (kind & Kind.VoltaAr) {
 			ar := config.getTool(LLVMArName);
+			assert(ar !is null);
+
 			ret ~= ["--llvm-ar", ar.cmd];
 			foreach (arg; ar.args) {
 				ret ~= ["--Xllvm-ar", arg];
