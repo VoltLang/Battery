@@ -65,30 +65,29 @@ fn infoCmd(drv: Driver, c: Configuration, cmd: Command, given: bool = false)
  */
 fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
 {
-	cmd := c.getTool(name);
+	cmd := drv.getCmd(c.isHost, name);
 
 	if (cmd is null) {
 		switch (name) {
-		case "nasm": cmd = getNasm(drv, c, name); break;
-		case "clang": cmd = getClang(drv, c, name); break;
-		case "rdmd": cmd = getRdmd(drv, c, name); break;
-		case "cl": cmd = getCL(drv, c, name); break;
-		case "link": cmd = getLink(drv, c, name); break;
+		case NasmName:  cmd = getNasm(drv, c, name); break;
+		case ClangName: cmd = getClang(drv, c, name); break;
+		case RdmdName:  cmd = getRdmd(drv, c, name); break;
+		case LinkName:  cmd = getLink(drv, c, name); break;
 		default: assert(false);
+		}
+
+		if (cmd is null) {
+			drv.abort("could not find the %scommand '%s'", c.getCmdPre(), name);
 		}
 	} else {
 		drv.infoCmd(c, cmd, true);
 	}
 
-	if (cmd is null) {
-		drv.abort("could not find the %scommand '%s'", c.getCmdPre(), name);
-	}
-
 	switch (name) {
-	case "nasm": addNasmArgs(drv, c, cmd); break;
-	case "clang": addClangArgs(drv, c, cmd); break;
-	case "rdmd": addRdmdArgs(drv, c, cmd); break;
-	case "cl", "link": break;
+	case NasmName:  addNasmArgs(drv, c, cmd); break;
+	case ClangName: addClangArgs(drv, c, cmd); break;
+	case RdmdName:  addRdmdArgs(drv, c, cmd); break;
+	case LinkName: break;
 	default: assert(false);
 	}
 

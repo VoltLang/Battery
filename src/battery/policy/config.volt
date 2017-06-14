@@ -122,13 +122,8 @@ public:
 	ld: Command;
 	link: Command;
 
-	allGiven: bool;
-	configGiven: bool;
-	arGiven: bool;
-	clangGiven: bool;
-	ldGiven: bool;
-	linkGiven: bool;
-
+	drvAll: bool;
+	drvConfig, drvAr, drvClang, drvLd, drvLink: bool;
 	needConfig, needAr, needClang, needLd, needLink: bool;
 
 
@@ -159,22 +154,22 @@ public:
 		}
 	}
 
-	fn fillInFromTools(config: Configuration)
+	fn fillInFromDriver(drv: Driver, config: Configuration)
 	{
 		fillInNeeded(config);
 
-		this.config = config.getTool(LLVMConfigName);
-		this.ar =     config.getTool(LLVMArName);
-		this.clang =  config.getTool(ClangName);
-		this.ld =     config.getTool(LDLLDName);
-		this.link =   config.getTool(LLDLinkName);
+		this.config = drv.getCmd(config.isHost, LLVMConfigName);
+		this.ar =     drv.getCmd(config.isHost, LLVMArName);
+		this.clang =  drv.getCmd(config.isHost, ClangName);
+		this.ld =     drv.getCmd(config.isHost, LDLLDName);
+		this.link =   drv.getCmd(config.isHost, LLDLinkName);
 
-		this.configGiven = this.config !is null;
-		this.arGiven = this.ar !is null;
-		this.clangGiven = this.clang !is null;
-		this.ldGiven = this.ld !is null;
-		this.linkGiven = this.link !is null;
-		this.allGiven = hasNeeded;
+		this.drvConfig = this.config !is null;
+		this.drvAr = this.ar !is null;
+		this.drvClang = this.clang !is null;
+		this.drvLd = this.ld !is null;
+		this.drvLink = this.link !is null;
+		this.drvAll = hasNeeded;
 	}
 
 	fn fillFromPath(config: Configuration, suffix: string)
@@ -234,9 +229,9 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 {
 	llvm: LLVMConfig;
 	llvm.drv = drv;
-	llvm.fillInFromTools(config);
+	llvm.fillInFromDriver(drv, config);
 
-	if (!llvm.allGiven &&
+	if (!llvm.drvAll &&
 	    !llvm.addSuffixedCmdIfOkay(config, null) &&
 	    !llvm.addSuffixedCmdIfOkay(config, "-5.0") &&
 	    !llvm.addSuffixedCmdIfOkay(config, "-4.0") &&
@@ -262,7 +257,15 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 	// If needed setup the linker command.
 	linker: Command;
 	if (useLinker) {
-		linker = config.addTool(LinkerName, llvm.clang.cmd, llvm.clang.args);
+		linker = drv.getCmd(config.isHost, LinkerName);
+
+		// If linker was not given use clang as the linker.
+		if (linker is null) {
+			linker = llvm.clang;
+		}
+
+		// Always add it to the config.
+		linker = config.addTool(LinkerName, linker.cmd, linker.args);
 	}
 
 	// Setup clang and cc tools.
@@ -272,6 +275,7 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 	// Add any extra arguments.
 	if (config.isRelease) {
 		clang.args ~= "-O3";
+		cc.args ~= "-O3";
 	} else { // Debug.
 		cc.args ~= "-g";
 	}
@@ -284,12 +288,12 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 		}
 	}
 
-	drv.info("llvm%s toolchain was %s.", llvm.suffix, llvm.allGiven ? "from arguments" : "from path");
-	if (llvm.config !is null && llvm.needConfig) drv.infoCmd(config, llvm.config);
-	if (llvm.ar     !is null && llvm.needAr)     drv.infoCmd(config, llvm.ar);
-	if (llvm.clang  !is null && llvm.needClang)  drv.infoCmd(config, llvm.clang);
-	if (llvm.ld     !is null && llvm.needLd)     drv.infoCmd(config, llvm.ld);
-	if (llvm.link   !is null && llvm.needLink)   drv.infoCmd(config, llvm.link);
+	drv.info("llvm%s toolchain was %s.", llvm.suffix, llvm.drvAll ? "from arguments" : "from path");
+	if (llvm.config !is null && llvm.needConfig) drv.infoCmd(config, llvm.config, llvm.drvConfig);
+	if (llvm.clang  !is null && llvm.needClang)  drv.infoCmd(config, llvm.clang,  llvm.drvClang);
+	if (llvm.ar     !is null && llvm.needAr)     drv.infoCmd(config, llvm.ar,     llvm.drvAr);
+	if (llvm.ld     !is null && llvm.needLd)     drv.infoCmd(config, llvm.ld,     llvm.drvLd);
+	if (llvm.link   !is null && llvm.needLink)   drv.infoCmd(config, llvm.link,   llvm.drvLink);
 }
 
 
@@ -341,11 +345,21 @@ public:
 
 fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environment)
 {
-	drvLink := drv.fillInCommand(config, LinkName);
-	assert(drvLink !is null);
+	// First see if the linker is specified.
+	linker := drv.getCmd(config.isHost, LinkerName);
 
-	linker := config.addTool(LinkerName, drvLink.cmd, drvLink.args);
+	// If it was not specified try getting 'link.exe' from the path.
+	if (linker is null) {
+		linker = drv.fillInCommand(config, LinkName);
+	}
+
+	// Always add it to the config.
+	assert(linker !is null);
+	linker = config.addTool(LinkerName, linker.cmd, linker.args);
+
+	// Get the CC setup by the llvm toolchain.
 	cc := config.getTool(CCName);
+	assert(cc !is null);
 
 	vars: VarsForMSVC;
 	getDirsFromEnv(drv, outside, ref vars);
@@ -367,13 +381,20 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 {
 	assert(!config.isHost);
 
-	lldlink := config.getTool(LLDLinkName);
-	assert(lldlink !is null);
+	// First see if the linker is specified.
+	linker := drv.getCmd(config.isHost, LinkerName);
 
-	linker := config.addTool(LinkerName, lldlink.cmd, lldlink.args);
-	cc := config.getTool(CCName);
+	// If it was not specified get 'lld-link' from the LLVM toolchain.
+	if (linker is null) {
+		linker = config.getTool(LLDLinkName);
+	}
 
+	// Always add it to the config.
 	assert(linker !is null);
+	linker = config.addTool(LinkerName, linker.cmd, linker.args);
+
+	// Get the CC setup by the llvm toolchain.
+	cc := config.getTool(CCName);
 	assert(cc !is null);
 
 	vars: VarsForMSVC;
