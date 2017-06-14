@@ -284,7 +284,7 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 		clang.args ~= "-flto=thin";
 		cc.args ~= "-flto=thin";
 		if (linker !is null) {
-			linker.args ~= "-flto=thin";
+			linker.args ~= ["-flto=thin", "-fuse-ld=lld"];
 		}
 	}
 
