@@ -99,7 +99,7 @@ public:
 	}
 */
 
-	@property fn isNative() bool { return kind == ConfigKind.Native; }
-	@property fn isHost() bool { return kind == ConfigKind.Host; }
-	@property fn isCross() bool { return kind == ConfigKind.Cross; }
+	@property final fn isNative() bool { return kind == ConfigKind.Native; }
+	@property final fn isHost() bool { return kind == ConfigKind.Host; }
+	@property final fn isCross() bool { return kind == ConfigKind.Cross; }
 }
