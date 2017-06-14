@@ -37,7 +37,7 @@ fn doConfig(drv: Driver, config: Configuration)
 		doToolChainLLVM(drv, config, UseAsLinker.NO);
 
 		// Overwrite the LLVM toolchain a tiny bit.
-		if (config.isCross) {
+		if (config.isCross || config.isLTO) {
 			doToolChainCrossMSVC(drv, config, outside);
 		} else {
 			doToolChainNativeMSVC(drv, config, outside);
