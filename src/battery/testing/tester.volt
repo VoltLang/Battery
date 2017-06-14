@@ -131,7 +131,7 @@ public:
 		tool := gen.config.getTool(VoltaName);
 		if (tool !is null) {
 			volta.cmd = tool.cmd;
-			volta.args = volta.args;
+			volta.args = tool.args;
 		}
 
 		// Add deps and return files to be added to arguments.
