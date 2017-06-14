@@ -244,13 +244,13 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 	if (llvm.config !is null && llvm.needConfig) {
 		config.addTool(LLVMConfigName, llvm.config.cmd, llvm.config.args);
 	}
-	if (llvm.ar !is null && llvm.needConfig) {
+	if (llvm.ar !is null && llvm.needAr) {
 		config.addTool(LLVMArName, llvm.ar.cmd, llvm.ar.args);
 	}
-	if (llvm.ld !is null && llvm.needConfig) {
+	if (llvm.ld !is null && llvm.needLd) {
 		config.addTool(LDLLDName, llvm.ld.cmd, llvm.ld.args);
 	}
-	if (llvm.link !is null && llvm.needConfig) {
+	if (llvm.link !is null && llvm.needLink) {
 		config.addTool(LLDLinkName, llvm.link.cmd, llvm.link.args);
 	}
 
