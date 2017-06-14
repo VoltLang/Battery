@@ -66,11 +66,6 @@ public:
 			config.isRelease ? "--release" : "--debug",
 		];
 
-		pass := getLinkerPassFlag(config);
-		foreach (arg; config.linkerCmd.args) {
-			voltaArgs ~= [pass, arg];
-		}
-
 		foreach (lib; libs) {
 			store[lib.name] = lib;
 		}
@@ -111,6 +106,19 @@ public:
 			ret ~= ["--llvm-ar", ar.cmd];
 			foreach (arg; ar.args) {
 				ret ~= ["--Xllvm-ar", arg];
+			}
+		}
+
+		// Are we linking with Volta, give it the linker.
+		if (kind & Kind.VoltaLink) {
+			ret ~= [
+				getLinkerFlag(config),
+				config.linkerCmd.cmd
+			];
+
+			pass := getLinkerPassFlag(config);
+			foreach (arg; config.linkerCmd.args) {
+				ret ~= [pass, arg];
 			}
 		}
 
