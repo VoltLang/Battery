@@ -73,14 +73,7 @@ fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
 		case "clang": cmd = getClang(drv, c, name); break;
 		case "rdmd": cmd = getRdmd(drv, c, name); break;
 		case "cl": cmd = getCL(drv, c, name); break;
-		case "link": {
-			if (c.isCross) {
-				cmd = getLLDLink(drv, c, name);
-			} else {
-				cmd = getLink(drv, c, name);
-			}
-			break;
-		}
+		case "link": cmd = getLink(drv, c, name); break;
 		default: assert(false);
 		}
 	} else {

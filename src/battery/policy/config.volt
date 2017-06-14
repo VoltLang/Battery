@@ -146,7 +146,7 @@ public:
 		// Platform specific.
 		final switch (config.platform) with (Platform) {
 		case MSVC:
-			this.needLink = config.isLTO;
+			this.needLink = config.isLTO || config.isCross;
 			this.needAr = config.isLTO;
 			break;
 		case Metal, Linux:
@@ -337,7 +337,6 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 	drvLink := drv.fillInCommand(config, LinkName);
 
 	linker := config.addTool(LinkerName, drvLink.cmd, drvLink.args);
-	clang := config.getTool(ClangName);
 	cc := config.getTool(CCName);
 
 	vars: VarsForMSVC;
@@ -358,13 +357,14 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 
 fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment)
 {
-	assert(!config.isHost);
-
-	drvLink := drv.fillInCommand(config, LinkName);
-
-	linker := config.addTool(LinkerName, drvLink.cmd, drvLink.args);
-	clang := config.getTool(ClangName);
+	lldlink := config.getTool(LLDLinkName);
 	cc := config.getTool(CCName);
+
+	assert(!config.isHost);
+	assert(lldlink !is null);
+	assert(cc !is null);
+
+	linker := config.addTool(LinkerName, lldlink.cmd, lldlink.args);
 
 	vars: VarsForMSVC;
 	getDirsFromEnv(drv, outside, ref vars);
