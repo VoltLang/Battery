@@ -317,14 +317,21 @@ public:
 
 
 public:
-	fn addIncIfIsDir(dir: string) {
+	fn tPath(dir: string) {
+		dir = normalizePath(dir);
+		if (isDir(dir)) {
+			path ~= dir;
+		}
+	}
+
+	fn tInc(dir: string) {
 		dir = normalizePath(dir);
 		if (isDir(dir)) {
 			inc ~= dir;
 		}
 	}
 
-	fn addLibIfIsDir(dir: string) {
+	fn tLib(dir: string) {
 		dir = normalizePath(dir);
 		if (isDir(dir)) {
 			lib ~= dir;
@@ -335,6 +342,7 @@ public:
 fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environment)
 {
 	drvLink := drv.fillInCommand(config, LinkName);
+	assert(drvLink !is null);
 
 	linker := config.addTool(LinkerName, drvLink.cmd, drvLink.args);
 	cc := config.getTool(CCName);
@@ -357,14 +365,16 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 
 fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment)
 {
-	lldlink := config.getTool(LLDLinkName);
-	cc := config.getTool(CCName);
-
 	assert(!config.isHost);
+
+	lldlink := config.getTool(LLDLinkName);
 	assert(lldlink !is null);
-	assert(cc !is null);
 
 	linker := config.addTool(LinkerName, lldlink.cmd, lldlink.args);
+	cc := config.getTool(CCName);
+
+	assert(linker !is null);
+	assert(cc !is null);
 
 	vars: VarsForMSVC;
 	getDirsFromEnv(drv, outside, ref vars);
@@ -411,41 +421,20 @@ fn getDirsFromEnv(drv: Driver, env: Environment, ref vars: VarsForMSVC)
 
 fn fillInListsForMSVC(ref vars: VarsForMSVC)
 {
-	fn tPath(dir: string) {
-		dir = normalizePath(dir);
-		if (isDir(dir)) {
-			vars.path ~= dir;
-		}
-	}
+	vars.tPath(format("%s/bin/x64", vars.dirWinSDK));
+	vars.tPath(format("%s/bin/x86", vars.dirWinSDK));
+	vars.tPath(format("%s/VCPackages", vars.dirVC));
+	vars.tPath(format("%s/BIN/amd64", vars.dirVC));
 
-	fn tInc(dir: string) {
-		dir = normalizePath(dir);
-		if (isDir(dir)) {
-			vars.inc ~= dir;
-		}
-	}
+	vars.tInc(format("%s/include", vars.dirVC));
+	vars.tInc(format("%s/include/%s/ucrt", vars.dirUCRT, vars.numUCRT));
+	vars.tInc(format("%s/include/%s/shared", vars.dirWinSDK, vars.numWinSDK));
+	vars.tInc(format("%s/include/%s/um", vars.dirWinSDK, vars.numWinSDK));
+	vars.tInc(format("%s/include/%s/winrt", vars.dirWinSDK, vars.numWinSDK));
 
-	fn tLib(dir: string) {
-		dir = normalizePath(dir);
-		if (isDir(dir)) {
-			vars.lib ~= dir;
-		}
-	}
-
-	tPath(format("%s/bin/x64", vars.dirWinSDK));
-	tPath(format("%s/bin/x86", vars.dirWinSDK));
-	tPath(format("%s/VCPackages", vars.dirVC));
-	tPath(format("%s/BIN/amd64", vars.dirVC));
-
-	tInc(format("%s/include", vars.dirVC));
-	tInc(format("%s/include/%s/ucrt", vars.dirUCRT, vars.numUCRT));
-	tInc(format("%s/include/%s/shared", vars.dirWinSDK, vars.numWinSDK));
-	tInc(format("%s/include/%s/um", vars.dirWinSDK, vars.numWinSDK));
-	tInc(format("%s/include/%s/winrt", vars.dirWinSDK, vars.numWinSDK));
-
-	tLib(format("%s/lib/amd64", vars.dirVC));
-	tLib(format("%s/lib/%s/ucrt/x64", vars.dirUCRT, vars.numUCRT));
-	tLib(format("%s/lib/%s/um/x64", vars.dirWinSDK, vars.numWinSDK));
+	vars.tLib(format("%s/lib/amd64", vars.dirVC));
+	vars.tLib(format("%s/lib/%s/ucrt/x64", vars.dirUCRT, vars.numUCRT));
+	vars.tLib(format("%s/lib/%s/um/x64", vars.dirWinSDK, vars.numWinSDK));
 }
 
 
