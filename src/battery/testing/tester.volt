@@ -142,12 +142,22 @@ public:
 				return null;
 			}
 
-			files: string[];
+			// Start with the object files.
+			files := base.srcObj;
+
 			foreach (asmpath; base.srcAsm) {
 				files ~= gen.genFileO(asmpath);
 			}
 
-			files ~= gen.genVoltO(base.name);
+			foreach (cpath; base.srcC) {
+				files ~= gen.genFileO(cpath);
+			}
+
+			if (gen.config.isLTO) {
+				files ~= gen.genVoltA(base.name);
+			} else {
+				files ~= gen.genVoltO(base.name);
+			}
 
 			return files;
 		}
