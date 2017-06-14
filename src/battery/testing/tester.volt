@@ -153,7 +153,8 @@ public:
 		}
 
 		// Generate arguments and collect files.
-		volta.args ~= gen.genVoltArgs(testProj, ArgsGenerator.Kind.AnyVolta, cb);
+		flags := ArgsGenerator.Kind.VoltaSrc | ArgsGenerator.Kind.VoltaLink;
+		volta.args ~= gen.genVoltArgs(testProj, flags, cb);
 
 		return volta;
 	}
