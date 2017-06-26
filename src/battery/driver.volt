@@ -378,7 +378,7 @@ Normal usecase when standing in a project directory.
 		}
 
 		if (mExe.length == 0) {
-			info("warning: Didn't specify any executables, will not do anything.");
+			info("warning: Didn't specify any executables.");
 		}
 	}
 
