@@ -259,7 +259,7 @@ public:
 
 	fn printVersion()
 	{
-		info("battery version 0.1.10");
+		info("battery version 0.1.11");
 	}
 
 	fn printUsage()
