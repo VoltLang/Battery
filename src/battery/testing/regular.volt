@@ -72,7 +72,7 @@ public:
 		this.srcDir = srcDir;
 		this.srcFile = srcDir ~ dirSeparator ~ testFileName;
 		this.testFileName = testFileName;
-		this.name = test;
+		this.name = project.name ~ dirSeparator ~ test;
 		this.project = project;
 		this.mCommandStore = cs;
 		this.btj = btj;

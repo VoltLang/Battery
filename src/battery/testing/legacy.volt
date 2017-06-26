@@ -60,7 +60,7 @@ public:
 	{
 		this.srcDir = srcDir;
 		this.srcDirAppendable = srcDir ~ dirSeparator;
-		this.name = test;
+		this.name = project.name ~ dirSeparator ~ test;
 		this.test = test;
 		this.mCommandStore = cs;
 		this.project = project;
