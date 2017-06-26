@@ -72,7 +72,8 @@ public:
 
 		// Make sure each library is built.
 		foreach (lib; libs) {
-			processLibrary(ref mGen, lib);
+			store := processLibrary(ref mGen, lib);
+			mega.deps ~= store.objs;
 		}
 
 		// Generate rules for all the executables.
@@ -130,7 +131,7 @@ public:
 		return store;
 	}
 
-	fn processLibrary(ref gen: ArgsGenerator, lib: Lib)
+	fn processLibrary(ref gen: ArgsGenerator, lib: Lib) Store
 	{
 		// Object where all parts of the library are stored.
 		store: Store;
@@ -147,9 +148,10 @@ public:
 		}
 
 		addStore(lib.name, store);
+		return store;
 	}
 
-	fn processExe(ref gen: ArgsGenerator, exe: Exe)
+	fn processExe(ref gen: ArgsGenerator, exe: Exe) Store
 	{
 		// Object where all parts of the exe are stored.
 		store: Store;
@@ -164,6 +166,7 @@ public:
 		}
 
 		addStore(exe.name, store);
+		return store;
 	}
 
 
