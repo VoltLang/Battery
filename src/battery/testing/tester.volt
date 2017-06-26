@@ -3,7 +3,7 @@
 module battery.testing.tester;
 
 import watt.path : dirSeparator;
-import watt.text.string : endsWith;
+import watt.text.string : endsWith, indexOf;
 import watt.process;
 
 import battery.interfaces;
@@ -30,6 +30,7 @@ private:
 	mExe: Exe[];
 	mConfig: Configuration;
 	mHostConfig: Configuration;
+	mFilter: string;
 
 
 public:
@@ -39,12 +40,14 @@ public:
 	}
 
 	fn test(config: Configuration, hostConfig: Configuration,
-		libs: Lib[], exes: Exe[])
+		libs: Lib[], exes: Exe[],
+		filter: string)
 	{
 		mConfig = config;
 		mHostConfig = hostConfig;
 		mLib = libs;
 		mExe = exes;
+		mFilter = filter;
 
 		projects: Project[];
 
@@ -97,7 +100,11 @@ public:
 		}
 
 		foreach (test; tests) {
-			test.runTest(cmdGroup);
+			if (mFilter is null || test.name.indexOf(mFilter) >= 0) {
+				test.runTest(cmdGroup);
+			} else {
+				test.result = Result.SKIPPED;
+			}
 		}
 
 		cmdGroup.waitAll();

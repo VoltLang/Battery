@@ -17,6 +17,31 @@ import battery.frontend.scanner;
 import battery.frontend.github;
 
 
+fn parseTestArgs(drv: Driver, args: string[]) string
+{
+	filter: string;
+	r: Range;
+	r.setup(args);
+
+	for (r.setup(args); !r.empty(); r.popFront()) {
+		arg := r.front();
+		switch (arg) {
+		case "-f", "--filter":
+			r.popFront();
+			if (r.empty()) {
+				drv.abort("expected filter to '%s'", arg);
+			}
+			filter = r.front();
+			break;
+		default:
+			drv.abort("unknown argument '%s'", arg);
+		}
+	}
+
+	return filter;
+}
+
+
 fn getArgs(arch: Arch, platform: Platform, isRelease: bool, isLTO: bool) string[]
 {
 	ret: string[] = [

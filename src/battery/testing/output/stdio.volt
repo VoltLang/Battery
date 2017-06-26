@@ -47,7 +47,7 @@ fn writeToStdio(tests: Test[], out hasRegression: bool)
 			writefln("%s: %s, regressed!", test.name, test.msg);
 			break;
 		case SKIPPED:
-			writefln("%s: %s", test.name, test.msg);
+			//writefln("%s: %s", test.name, test.msg);
 			total--;
 			break;
 		}

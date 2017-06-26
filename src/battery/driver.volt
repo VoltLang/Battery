@@ -64,7 +64,7 @@ public:
 
 		switch (args[1]) {
 		case "help": help(args[2 .. $]); break;
-		case "build": build(args[2 .. $]); break;
+		case "build": build(); break;
 		case "config": config(args[2 .. $]); break;
 		case "test": test(args[2 .. $]); break;
 		case "version": printVersion(); break;
@@ -179,9 +179,9 @@ public:
 		}
 	}
 
-	fn build(args: string [])
+	fn build()
 	{
-		args = null;
+		args: string[];
 		if (!getLinesFromFile(BatteryConfigFile, ref args)) {
 			return abort("must first run the 'config' command");
 		}
@@ -236,9 +236,10 @@ public:
 
 	fn test(args: string[])
 	{
-		build(args);
+		build();
+		filter := parseTestArgs(this, args);
 		tester := new Tester(this);
-		tester.test(mConfig, mHostConfig, mLib, mExe);
+		tester.test(mConfig, mHostConfig, mLib, mExe, filter);
 	}
 
 	fn help(args: string[])
