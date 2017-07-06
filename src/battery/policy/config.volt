@@ -490,7 +490,9 @@ fn fillInListsForMSVC(ref vars: VarsForMSVC)
 		break;
 	case VS_2017:
 		vars.tPath(format("%s/bin/HostX64/x64", vars.dirVCTools));
+		vars.tInc(format("%s/ATLMFC/include", vars.dirVCTools));
 		vars.tInc(format("%s/include", vars.dirVCTools));
+		vars.tLib(format("%s/ATLMFC/lib/x64", vars.dirVCTools));
 		vars.tLib(format("%s/lib/x64", vars.dirVCTools));
 		break;
 	}
