@@ -106,6 +106,11 @@ public:
 		arg := new ArgParser(this);
 		arg.parseConfig(args);
 
+		// If we get volta via the command line, no need for host config.
+		if (getCmd(false, "volta") !is null) {
+			mHostConfig = null;
+		}
+
 		// Handle cross compiling.
 		if (mHostConfig !is null) {
 			// Need fill in host commands seperatly.
@@ -199,31 +204,37 @@ public:
 		arg := new ArgParser(this);
 		arg.parseConfig(args);
 
+		// Are we native or not?
+		if (arch == mHostConfig.arch &&
+		    platform == mHostConfig.platform) {
+			mConfig.kind = ConfigKind.Native;
+			mHostConfig = null;
+		} else {
+			mConfig.kind = ConfigKind.Cross;
+		}
+
+		// If we have the volta tool ignore the host config.
+		if (getCmd(false, "volta") !is null) {
+			mHostConfig = null;
+		}
+
 		// Handle cross compiling.
-		if (arch != mHostConfig.arch ||
-		    platform != mHostConfig.platform) {
+		if (mHostConfig !is null) {
 			// Need fill in host commands.
 			foreach (k, v; mHostCommands) {
 				mHostConfig.tools[k] = v;
 			}
-			fillInConfigCommands(this, mHostConfig);
 			mHostConfig.kind = ConfigKind.Host;
 			mHostConfig.isRelease = true;
-			mConfig.kind = ConfigKind.Cross;
-			mConfig.isRelease = isRelease;
-			mConfig.isLTO = isLTO;
-		} else {
-			// Just reuse the host config.
-			mHostConfig = null;
-			mConfig.kind = ConfigKind.Native;
-			mConfig.isRelease = isRelease;
-			mConfig.isLTO = isLTO;
+			fillInConfigCommands(this, mHostConfig);
 		}
 
 		// Do this after the arguments has been parsed.
 		foreach (k, v; mTargetCommands) {
 			mConfig.tools[k] = v;
 		}
+		mConfig.isRelease = isRelease;
+		mConfig.isLTO = isLTO;
 		fillInConfigCommands(this, mConfig);
 
 		// Parse the rest of the arguments.

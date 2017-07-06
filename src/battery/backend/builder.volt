@@ -39,7 +39,6 @@ protected:
 	mStore: Store[string];
 
 	mGen: ArgsGenerator;
-	mHostGen: ArgsGenerator;
 
 
 public:
@@ -55,7 +54,6 @@ public:
 		this.mega = ins.fileNoRule("__all");
 
 		mGen.setup(config, libs, exes);
-		mHostGen.setup(host !is null ? host : config, libs, exes);
 
 		// Setup volta
 		voltaTool := config.getTool(VoltaName);
@@ -64,9 +62,16 @@ public:
 			voltaBin = ins.fileNoRule(voltaTool.cmd);
 			voltaPrint = voltaTool.print;
 		} else {
+			// Should we use the host config or the target config.
+			voltaConfig := host !is null ? host : config;
+
+			// Setup a generator just for Volta.
+			mVoltaGen: ArgsGenerator;
+			mVoltaGen.setup(voltaConfig, libs, exes);
+
 			// Need to build volta ourself.
 			exe := findVolta(exes);
-			voltaBin = makeTargetVolted(ref mHostGen, exe);
+			voltaBin = makeTargetVolted(ref mVoltaGen, exe);
 			voltaPrint = VoltaPrint;
 		}
 
