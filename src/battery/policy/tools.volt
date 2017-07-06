@@ -53,9 +53,9 @@ enum HostRdmdPrint =   "  HOSTRDMD ";
 fn infoCmd(drv: Driver, c: Configuration, cmd: Command, given: bool = false)
 {
 	if (given) {
-		drv.info("%scmd %s: '%s' from arguments.", c.getCmdPre(), cmd.name, cmd.cmd);
+		drv.info("\t%scmd %s: '%s' from arguments.", c.getCmdPre(), cmd.name, cmd.cmd);
 	} else {
-		drv.info("%scmd %s: '%s' from path.", c.getCmdPre(), cmd.name, cmd.cmd);
+		drv.info("\t%scmd %s: '%s' from path.", c.getCmdPre(), cmd.name, cmd.cmd);
 	}
 }
 

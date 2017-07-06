@@ -49,16 +49,22 @@ fn doConfig(drv: Driver, config: Configuration)
 		break;
 	}
 
+	// Do a bit of logging.
+	drv.info("Various tools needed by compile.");
+
+	// Make it possible for the user to supply the volta.exe
 	drvVolta := drv.getCmd(config.isHost, "volta");
 	if (drvVolta !is null) {
 		config.addTool("volta", drvVolta.cmd, drvVolta.args);
 		drv.infoCmd(config, drvVolta, true);
+	} else {
+		// Get RDMD if volta was not given.
+		drvRdmd := drv.fillInCommand(config, RdmdName);
+		config.addTool(RdmdName, drvRdmd.cmd, drvRdmd.args);
 	}
 
-	drvRdmd := drv.fillInCommand(config, RdmdName);
+	// NASM is needed for RT.
 	drvNasm := drv.fillInCommand(config, NasmName);
-
-	config.addTool(RdmdName, drvRdmd.cmd, drvRdmd.args);
 	config.addTool(NasmName, drvNasm.cmd, drvNasm.args);
 }
 
@@ -288,7 +294,7 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 		}
 	}
 
-	drv.info("llvm%s toolchain was %s.", llvm.suffix, llvm.drvAll ? "from arguments" : "from path");
+	drv.info("Using LLVM%s toolchain from %s.", llvm.suffix, llvm.drvAll ? "arguments" : "path");
 	if (llvm.config !is null && llvm.needConfig) drv.infoCmd(config, llvm.config, llvm.drvConfig);
 	if (llvm.clang  !is null && llvm.needClang)  drv.infoCmd(config, llvm.clang,  llvm.drvClang);
 	if (llvm.ar     !is null && llvm.needAr)     drv.infoCmd(config, llvm.ar,     llvm.drvAr);
@@ -303,11 +309,20 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
  *
  */
 
-enum VersionMSVC
+enum MSCV_Version
 {
-	None,
+	Unknown,
 	VS_2015,
 	VS_2017,
+}
+
+fn msvcVerToString(ver: MSCV_Version) string
+{
+	final switch (ver) with (MSCV_Version) {
+	case Unknown: return "unknown";
+	case VS_2015: return "2015";
+	case VS_2017: return "2017";
+	}
 }
 
 struct VarsForMSVC
@@ -319,7 +334,7 @@ public:
 	oldLib: string;
 
 	//! Best guess which MSVC thing we are using.
-	msvcVer: VersionMSVC;
+	msvcVer: MSCV_Version;
 
 	//! Install directory for compiler and linker, from @p VCINSTALLDIR env.
 	dirVC: string;
@@ -366,10 +381,12 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 {
 	// First see if the linker is specified.
 	linker := drv.getCmd(config.isHost, LinkerName);
+	linkerFromArg := true;
 
 	// If it was not specified try getting 'link.exe' from the path.
 	if (linker is null) {
-		linker = drv.fillInCommand(config, LinkName);
+		linker = config.makeCommandFromPath(LinkCommand, LinkName);
+		linkerFromArg = false;
 	}
 
 	// Always add it to the config.
@@ -395,6 +412,10 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 		"/defaultlib:oldnames",
 		"legacy_stdio_definitions.lib",
 	];
+
+	verStr := vars.msvcVer.msvcVerToString();
+	drv.info("Using Visual Studio Build Tools %s.", verStr);
+	drv.infoCmd(config, linker, linkerFromArg);
 }
 
 fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment)
@@ -403,10 +424,12 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 
 	// First see if the linker is specified.
 	linker := drv.getCmd(config.isHost, LinkerName);
+	linkerFromArg := true;
 
 	// If it was not specified get 'lld-link' from the LLVM toolchain.
 	if (linker is null) {
 		linker = config.getTool(LLDLinkName);
+		linkerFromArg = false;
 	}
 
 	// Always add it to the config.
@@ -435,6 +458,12 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 	foreach (l; vars.lib) {
 		linker.args ~= format("/LIBPATH:%s", l);
 	}
+
+	verStr := vars.msvcVer.msvcVerToString();
+	drv.info("Using MSVC %s from the enviroment.", verStr);
+	if (linkerFromArg) {
+		drv.infoCmd(config, linker, linkerFromArg);
+	}
 }
 
 fn getDirsFromEnv(ref vars: VarsForMSVC, drv: Driver, env: Environment)
@@ -454,9 +483,9 @@ fn getDirsFromEnv(ref vars: VarsForMSVC, drv: Driver, env: Environment)
 	vars.dirVCTools = env.getOrNull("VCTOOLSINSTALLDIR");
 
 	if (vars.dirVCTools !is null) {
-		vars.msvcVer = VersionMSVC.VS_2017;
+		vars.msvcVer = MSCV_Version.VS_2017;
 	} else if (vars.dirVC !is null) {
-		vars.msvcVer = VersionMSVC.VS_2015;
+		vars.msvcVer = MSCV_Version.VS_2015;
 	} else {
 		drv.info("error: Make sure you have VS Tools 2015 or 2017 installed.");
 		drv.info("error: need to set env var 'VCINSTALLDIR' or 'VCTOOLSINSTALLDIR'.");
@@ -479,8 +508,8 @@ fn fillInListsForMSVC(ref vars: VarsForMSVC)
 	vars.tPath(format("%s/bin/x86", vars.dirWinSDK));
 	vars.tPath(format("%s/bin/x64", vars.dirWinSDK));
 
-	final switch (vars.msvcVer) with (VersionMSVC) {
-	case None:
+	final switch (vars.msvcVer) with (MSCV_Version) {
+	case Unknown:
 		break;
 	case VS_2015:
 		vars.tPath(format("%s/BIN/amd64", vars.dirVC));
@@ -539,18 +568,15 @@ fn fillInConfigCommands(drv: Driver, config: Configuration)
 
 	config.linkerCmd = config.getTool(LinkerName);
 	config.clangCmd = config.getTool(ClangName);
-	config.rdmdCmd = config.getTool(RdmdName);
 	config.nasmCmd = config.getTool(NasmName);
 	config.ccCmd = config.getTool(CCName);
 
 	assert(config.linkerCmd !is null);
 	assert(config.clangCmd !is null);
-	assert(config.rdmdCmd !is null);
 	assert(config.nasmCmd !is null);
 	assert(config.ccCmd !is null);
 
 	config.clangCmd.print = ClangPrint;
-	config.rdmdCmd.print = RdmdPrint;
 	config.nasmCmd.print = NasmPrint;
 	config.ccCmd.print = ClangPrint;
 	config.ccKind = CCKind.Clang;
@@ -564,6 +590,12 @@ fn fillInConfigCommands(drv: Driver, config: Configuration)
 		config.linkerCmd.print = ClangPrint;
 		config.linkerKind = LinkerKind.Clang;
 		break;
+	}
+
+	// Get the optional RDMD command.
+	config.rdmdCmd = config.getTool(RdmdName);
+	if (config.rdmdCmd !is null) {
+		config.rdmdCmd.print = RdmdPrint;
 	}
 }
 
