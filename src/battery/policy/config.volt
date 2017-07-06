@@ -303,10 +303,29 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
  *
  */
 
+enum VersionMSVC
+{
+	None,
+	VS_2015,
+	VS_2017,
+}
+
 struct VarsForMSVC
 {
 public:
+	//! Old INCLUDE env variable, if found.
+	oldInc: string;
+	//! Old LIB env variable, if found.
+	oldLib: string;
+
+	//! Best guess which MSVC thing we are using.
+	msvcVer: VersionMSVC;
+
+	//! Install directory for compiler and linker, from @p VCINSTALLDIR env.
 	dirVC: string;
+	//! Install directory for compiler and linker, from @p VCTOOLSINSTALLDIR env.
+	dirVCTools: string;
+
 	dirUCRT: string;
 	dirWinSDK: string;
 	numUCRT: string;
@@ -361,13 +380,14 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 	cc := config.getTool(CCName);
 	assert(cc !is null);
 
+	lib, inc: string;
 	vars: VarsForMSVC;
-	getDirsFromEnv(drv, outside, ref vars);
-	fillInListsForMSVC(ref vars);
+	vars.getDirsFromEnv(drv, outside);
+	vars.fillInListsForMSVC();
+	vars.genAndCheckEnv(drv, out inc, out lib);
 
-	// Set the built env vars.
-	config.env.set("INCLUDE", join(vars.inc, ";"));
-	config.env.set("LIB", join(vars.lib, ";"));
+	config.env.set("INCLUDE", inc);
+	config.env.set("LIB", lib);
 
 	linker.args ~= [
 		"/nologo",
@@ -398,8 +418,8 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 	assert(cc !is null);
 
 	vars: VarsForMSVC;
-	getDirsFromEnv(drv, outside, ref vars);
-	fillInListsForMSVC(ref vars);
+	vars.getDirsFromEnv(drv, outside);
+	vars.fillInListsForMSVC();
 
 	foreach (i; vars.inc) {
 		cc.args ~= "-I" ~ i;
@@ -417,7 +437,7 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 	}
 }
 
-fn getDirsFromEnv(drv: Driver, env: Environment, ref vars: VarsForMSVC)
+fn getDirsFromEnv(ref vars: VarsForMSVC, drv: Driver, env: Environment)
 {
 	fn getOrWarn(name: string) string {
 		value := env.getOrNull(name);
@@ -427,7 +447,21 @@ fn getDirsFromEnv(drv: Driver, env: Environment, ref vars: VarsForMSVC)
 		return value;
 	}
 
-	vars.dirVC = getOrWarn("VCINSTALLDIR");
+	vars.oldInc = env.getOrNull("INCLUDE");
+	vars.oldLib = env.getOrNull("LIB");
+
+	vars.dirVC = env.getOrNull("VCINSTALLDIR");
+	vars.dirVCTools = env.getOrNull("VCTOOLSINSTALLDIR");
+
+	if (vars.dirVCTools !is null) {
+		vars.msvcVer = VersionMSVC.VS_2017;
+	} else if (vars.dirVC !is null) {
+		vars.msvcVer = VersionMSVC.VS_2015;
+	} else {
+		drv.info("error: Make sure you have VS Tools 2015 or 2017 installed.");
+		drv.info("error: need to set env var 'VCINSTALLDIR' or 'VCTOOLSINSTALLDIR'.");
+	}
+
 	vars.dirUCRT = getOrWarn("UniversalCRTSdkDir");
 	vars.dirWinSDK = getOrWarn("WindowsSdkDir");
 	vars.numUCRT = getOrWarn("UCRTVersion");
@@ -442,20 +476,49 @@ fn getDirsFromEnv(drv: Driver, env: Environment, ref vars: VarsForMSVC)
 
 fn fillInListsForMSVC(ref vars: VarsForMSVC)
 {
-	vars.tPath(format("%s/bin/x64", vars.dirWinSDK));
 	vars.tPath(format("%s/bin/x86", vars.dirWinSDK));
-	vars.tPath(format("%s/VCPackages", vars.dirVC));
-	vars.tPath(format("%s/BIN/amd64", vars.dirVC));
+	vars.tPath(format("%s/bin/x64", vars.dirWinSDK));
 
-	vars.tInc(format("%s/include", vars.dirVC));
+	final switch (vars.msvcVer) with (VersionMSVC) {
+	case None:
+		break;
+	case VS_2015:
+		vars.tPath(format("%s/BIN/amd64", vars.dirVC));
+		vars.tPath(format("%s/VCPackages", vars.dirVC));
+		vars.tInc(format("%s/INCLUDE", vars.dirVC));
+		vars.tLib(format("%s/LIB/amd64", vars.dirVC));
+		break;
+	case VS_2017:
+		vars.tPath(format("%s/bin/HostX64/x64", vars.dirVCTools));
+		vars.tInc(format("%s/include", vars.dirVCTools));
+		vars.tLib(format("%s/lib/x64", vars.dirVCTools));
+		break;
+	}
+
 	vars.tInc(format("%s/include/%s/ucrt", vars.dirUCRT, vars.numUCRT));
 	vars.tInc(format("%s/include/%s/shared", vars.dirWinSDK, vars.numWinSDK));
 	vars.tInc(format("%s/include/%s/um", vars.dirWinSDK, vars.numWinSDK));
 	vars.tInc(format("%s/include/%s/winrt", vars.dirWinSDK, vars.numWinSDK));
 
-	vars.tLib(format("%s/lib/amd64", vars.dirVC));
 	vars.tLib(format("%s/lib/%s/ucrt/x64", vars.dirUCRT, vars.numUCRT));
 	vars.tLib(format("%s/lib/%s/um/x64", vars.dirWinSDK, vars.numWinSDK));
+}
+
+fn genAndCheckEnv(ref vars: VarsForMSVC, drv: Driver, out inc: string, out lib: string)
+{
+	// Make and check the INCLUDE var.
+	inc = join(vars.inc, ";") ~ ";";
+	if (vars.oldInc !is null && vars.oldInc != inc) {
+		drv.info("env INCLUDE differers (using given)\ngiven %s\n ours: %s", vars.oldInc, inc);
+		inc = vars.oldInc;
+	}
+
+	// Make and check the LIB var.
+	lib = join(vars.lib, ";") ~ ";";
+	if (vars.oldLib !is null && vars.oldLib != lib) {
+		drv.info("env LIB differers (using given)\ngiven: %s\n ours: %s", vars.oldLib, lib);
+		lib = vars.oldLib;
+	}
 }
 
 
