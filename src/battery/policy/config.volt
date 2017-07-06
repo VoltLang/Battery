@@ -511,7 +511,7 @@ fn genAndCheckEnv(ref vars: VarsForMSVC, drv: Driver, out inc: string, out lib: 
 	// Make and check the INCLUDE var.
 	inc = join(vars.inc, ";") ~ ";";
 	if (vars.oldInc !is null && vars.oldInc != inc) {
-		drv.info("env INCLUDE differers (using given)\ngiven %s\n ours: %s", vars.oldInc, inc);
+		drv.info("env INCLUDE differers (using given)\ngiven: %s\n ours: %s", vars.oldInc, inc);
 		inc = vars.oldInc;
 	}
 
