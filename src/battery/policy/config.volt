@@ -163,6 +163,7 @@ public:
 
 	fn fillInFromDriver(drv: Driver, config: Configuration)
 	{
+		this.drv = drv;
 		fillInNeeded(config);
 
 		this.config = drv.getCmd(config.isHost, LLVMConfigName);
@@ -179,9 +180,9 @@ public:
 		this.drvAll = hasNeeded;
 	}
 
-	fn fillFromPath(config: Configuration, suffix: string)
+	fn fillInFromPath(config: Configuration, suffix: string) bool
 	{
-		cmd: string;
+		this.suffix = suffix;
 
 		if (this.config is null) {
 			this.config = config.makeCommandFromPath(LLVMConfigCommand ~ suffix, LLVMConfigName);
@@ -201,6 +202,8 @@ public:
 		if (this.link is null) {
 			this.link = config.makeCommandFromPath(LLDLinkCommand ~ suffix, LLDLinkName);
 		}
+
+		return hasNeeded;
 	}
 
 	@property fn hasNeeded() bool
@@ -213,16 +216,55 @@ public:
 		return true;
 	}
 
-	fn addSuffixedCmdIfOkay(config: Configuration, suffix: string) bool
+	fn printMissing()
 	{
-		test := this;
-		test.suffix = suffix;
-		test.fillFromPath(config, suffix);
-		if (!test.hasNeeded) {
-			return false;
+		shouldPrint := (suffix is null) ||
+			(needConfig && !drvConfig && config !is null) ||
+			(needClang && !drvClang && clang !is null) ||
+			(needAr && !drvAr && ar !is null) ||
+			(needLink && !drvLink && link !is null) ||
+			(needLd && !drvLd && ld !is null);
+		if (!shouldPrint) {
+			drv.info("llvm%s toolchain not detected at all!", suffix);
+			return;
 		}
-		this = test;
-		return true;
+
+		tmp := suffix is null ? "generic " : null;
+		drv.info("%sllvm%s toolchain partially detected!", tmp, suffix);
+		if (needConfig) {
+			printFoundOrMissingCmd(LLVMConfigCommand, config);
+		}
+		if (needClang) {
+			printFoundOrMissingCmd(ClangCommand, clang);
+		}
+		if (needAr) {
+			printFoundOrMissingCmd(LLVMArCommand, ar);
+		}
+		if (needLink) {
+			printFoundOrMissingCmd(LDLLDCommand, link);
+		}
+		if (needLd) {
+			printFoundOrMissingCmd(LLDLinkCommand, ld);
+		}
+	}
+
+	fn printFoundOrMissingCmd(name: string, cmd: Command)
+	{
+		if (cmd !is null) {
+			printFoundCmd(name, cmd.cmd);
+		} else {
+			printMissingCmd(name);
+		}
+	}
+
+	fn printMissingCmd(cmd: string)
+	{
+		drv.info("\t%s%s missing!", cmd, suffix, );
+	}
+
+	fn printFoundCmd(cmd: string, path: string)
+	{
+		drv.info("\t%s%s found '%s'", cmd, suffix, path);
 	}
 }
 
@@ -234,15 +276,26 @@ enum UseAsLinker
 
 fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 {
-	llvm: LLVMConfig;
-	llvm.drv = drv;
+	llvm50, llvm40, llvm39, llvm: LLVMConfig;
 	llvm.fillInFromDriver(drv, config);
 
-	if (!llvm.drvAll &&
-	    !llvm.addSuffixedCmdIfOkay(config, null) &&
-	    !llvm.addSuffixedCmdIfOkay(config, "-5.0") &&
-	    !llvm.addSuffixedCmdIfOkay(config, "-4.0") &&
-	    !llvm.addSuffixedCmdIfOkay(config, "-3.9")) {
+	llvm50 = llvm40 = llvm39 = llvm;
+
+	if (llvm.drvAll) {
+		// Nothing todo
+	} else if (llvm.fillInFromPath(config, null)) {
+		// Nothing todo
+	} else if (llvm50.fillInFromPath(config, "-5.0")) {
+		llvm = llvm50;
+	} else if (llvm40.fillInFromPath(config, "-4.0")) {
+		llvm = llvm40;
+	} else if (llvm39.fillInFromPath(config, "-3.9")) {
+		llvm = llvm39;
+	} else {
+		llvm.printMissing();
+		llvm50.printMissing();
+		llvm40.printMissing();
+		llvm39.printMissing();
 		drv.abort("could not find a valid llvm toolchain");
 	}
 
