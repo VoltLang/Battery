@@ -6,6 +6,7 @@
 module battery.policy.config;
 
 import watt.io.file : isDir;
+import watt.conv : toLower;
 import watt.text.string : join;
 import watt.text.format : format;
 import watt.text.path : normalizePath;
@@ -526,27 +527,45 @@ fn fillInListsForMSVC(ref vars: VarsForMSVC)
 		break;
 	}
 
-	vars.tInc(format("%s/include/%s/ucrt", vars.dirUCRT, vars.numUCRT));
-	vars.tInc(format("%s/include/%s/shared", vars.dirWinSDK, vars.numWinSDK));
-	vars.tInc(format("%s/include/%s/um", vars.dirWinSDK, vars.numWinSDK));
-	vars.tInc(format("%s/include/%s/winrt", vars.dirWinSDK, vars.numWinSDK));
+	vars.tInc(format("%s/Include/%s/ucrt", vars.dirUCRT, vars.numUCRT));
+	vars.tInc(format("%s/Include/%s/shared", vars.dirWinSDK, vars.numWinSDK));
+	vars.tInc(format("%s/Include/%s/um", vars.dirWinSDK, vars.numWinSDK));
+	vars.tInc(format("%s/Include/%s/winrt", vars.dirWinSDK, vars.numWinSDK));
 
-	vars.tLib(format("%s/lib/%s/ucrt/x64", vars.dirUCRT, vars.numUCRT));
-	vars.tLib(format("%s/lib/%s/um/x64", vars.dirWinSDK, vars.numWinSDK));
+	vars.tLib(format("%s/Lib/%s/ucrt/x64", vars.dirUCRT, vars.numUCRT));
+	vars.tLib(format("%s/Lib/%s/um/x64", vars.dirWinSDK, vars.numWinSDK));
+}
+
+/*!
+ * Used to compare INCLUDE and LIB env vars,
+ * badly deals with case sensitivity.
+ */
+fn compareOldAndNew(oldPath: string, newPath: string) bool
+{
+	if (oldPath is null) {
+		return true;
+	}
+
+	// Dealing with case sensitivity on windows.
+	version (Windows) {
+		return oldPath.toLower() != newPath.toLower();
+	} else {
+		return oldPath != newPath;
+	}
 }
 
 fn genAndCheckEnv(ref vars: VarsForMSVC, drv: Driver, out inc: string, out lib: string)
 {
 	// Make and check the INCLUDE var.
 	inc = join(vars.inc, ";") ~ ";";
-	if (vars.oldInc !is null && vars.oldInc != inc) {
+	if (compareOldAndNew(vars.oldInc, inc)) {
 		drv.info("env INCLUDE differers (using given)\ngiven: %s\n ours: %s", vars.oldInc, inc);
 		inc = vars.oldInc;
 	}
 
 	// Make and check the LIB var.
 	lib = join(vars.lib, ";") ~ ";";
-	if (vars.oldLib !is null && vars.oldLib != lib) {
+	if (compareOldAndNew(vars.oldLib, lib)) {
 		drv.info("env LIB differers (using given)\ngiven: %s\n ours: %s", vars.oldLib, lib);
 		lib = vars.oldLib;
 	}
