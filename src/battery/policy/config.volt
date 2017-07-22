@@ -496,9 +496,9 @@ fn getDirsFromEnv(ref vars: VarsForMSVC, drv: Driver, env: Environment)
 	vars.numUCRT = getOrWarn("UCRTVersion");
 	vars.numWinSDK = getOrWarn("WindowsSDKVersion");
 
-	if (vars.dirVC.length == 0 || vars.dirUCRT.length == 0 ||
-	    vars.dirWinSDK.length == 0 || vars.numUCRT.length == 0 ||
-	    vars.numWinSDK.length == 0) {
+	if ((vars.dirVC.length == 0 && vars.dirVCTools.length == 0) ||
+	    vars.dirUCRT.length == 0 || vars.dirWinSDK.length == 0 ||
+	    vars.numUCRT.length == 0 || vars.numWinSDK.length == 0) {
 		drv.abort("missing environmental variable");
 	}
 }
