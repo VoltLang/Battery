@@ -129,12 +129,18 @@ public:
 	 * Prints a action string.
 	 *
 	 * By default it is formated like this:
-	 * `  BATTERY  <fmt>`.
+	 *
+	 * ```
+	 *   BATTERY  <fmt>
+	 * ```
+	 * @param fmt The format string, same formatting as @ref watt.text.format.
 	 */
 	abstract fn action(fmt: Fmt, ...);
 
 	/*!
 	 * Prints a info string.
+	 *
+	 * @param fmt The format string, same formatting as @ref watt.text.format.
 	 */
 	abstract fn info(fmt: Fmt, ...);
 
@@ -142,6 +148,8 @@ public:
 	 * Error encoutered, print error then abort operation.
 	 *
 	 * May terminate program with exit, or throw an exception to resume.
+	 *
+	 * @param fmt The format string, same formatting as @ref watt.text.format.
 	 */
 	abstract fn abort(fmt: Fmt, ...);
 }
