@@ -1,6 +1,6 @@
 // Copyright © 2016, Jakob Bornecrantz.  All rights reserved.
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
-/**
+/*!
  * Main interfaces for code of battery.
  */
 module battery.interfaces;
@@ -9,6 +9,9 @@ static import watt.text.sink;
 public import battery.defines;
 
 
+/*!
+ * A single project can either be a @ref Lib or @ref Exe.
+ */
 class Base
 {
 	name: string;
@@ -35,10 +38,12 @@ class Base
 	testDirs: string[];
 }
 
+//! The project is built as a library used by executables.
 class Lib : Base
 {
 }
 
+//! The project is built as a executable.
 class Exe : Base
 {
 	bin: string;
@@ -51,13 +56,13 @@ class Exe : Base
 
 class Command
 {
-	/// Textual name.
+	//! Textual name.
 	name: string;
-	/// Name and path.
+	//! Name and path.
 	cmd: string;
-	/// Extra args to give when invoking.
+	//! Extra args to give when invoking.
 	args: string[];
-	/// Name to print.
+	//! Name to print.
 	print: string;
 
 	this()
@@ -79,10 +84,13 @@ class Command
 	}
 }
 
+/*!
+ * Interface to the main class that controles the entire process.
+ */
 abstract class Driver
 {
 public:
-	/// Helper alias
+	//! Helper alias
 	alias Fmt = watt.text.sink.SinkArg;
 
 
@@ -90,47 +98,47 @@ public:
 	arch: Arch;
 	platform: Platform;
 
-	/// Normalize a path, target must exsist.
+	//! Normalize a path, target must exsist.
 	abstract fn normalizePath(path: string) string;
 
-	/// As the function name imples.
+	//! As the function name imples.
 	abstract fn removeWorkingDirectoryPrefix(path: string) string;
 
-	/// Add a executable
+	//! Add a executable
 	abstract fn add(exe: Exe);
 
-	/// Add a library
+	//! Add a library
 	abstract fn add(lib: Lib);
 
-	/// Add a enviromental variable.
+	//! Add a enviromental variable.
 	abstract fn addEnv(host: bool, name: string, value: string);
 
-	/// Set a tool that has been found.
+	//! Set a tool that has been found.
 	abstract fn setCmd(host: bool, name: string, c: Command);
 
-	/// Get a tool.
+	//! Get a tool.
 	abstract fn getCmd(host: bool, name: string) Command;
 
-	/// Add a tool, will reset the tool if already given.
+	//! Add a tool, will reset the tool if already given.
 	abstract fn addCmd(host: bool, name: string, cmd: string);
 
-	/// Add a argument for tool.
+	//! Add a argument for tool.
 	abstract fn addCmdArg(host: bool, name: string, arg: string);
 
-	/**
+	/*!
 	 * Prints a action string.
 	 *
 	 * By default it is formated like this:
-	 * "  BATTERY  <fmt>".
+	 * `  BATTERY  <fmt>`.
 	 */
 	abstract fn action(fmt: Fmt, ...);
 
-	/**
+	/*!
 	 * Prints a info string.
 	 */
 	abstract fn info(fmt: Fmt, ...);
 
-	/**
+	/*!
 	 * Error encoutered, print error then abort operation.
 	 *
 	 * May terminate program with exit, or throw an exception to resume.

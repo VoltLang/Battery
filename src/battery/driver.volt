@@ -1,6 +1,6 @@
-// Copyright © 2016, Jakob Bornecrantz.  All rights reserved.
+// Copyright © 2016-2017, Jakob Bornecrantz.  All rights reserved.
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
-/**
+/*!
  * Holds the default implementation of the Driver class.
  */
 module battery.driver;

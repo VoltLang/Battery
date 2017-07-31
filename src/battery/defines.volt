@@ -1,11 +1,14 @@
-// Copyright © 2016, Jakob Bornecrantz.  All rights reserved.
+// Copyright © 2016-2017, Jakob Bornecrantz.  All rights reserved.
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
+/*!
+ * Common enums and defines.
+ */
 module battery.defines;
 
 import core.exception;
 
 
-/**
+/*!
  * Each of these listed platforms corresponds
  * to a Version identifier.
  *
@@ -23,7 +26,7 @@ enum Platform
 	Metal,
 }
 
-/**
+/*!
  * Each of these listed architectures corresponds
  * to a Version identifier.
  */
