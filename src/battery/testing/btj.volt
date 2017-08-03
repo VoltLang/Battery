@@ -5,7 +5,7 @@ module battery.testing.btj;
 import core.exception;
 import watt.text.format;
 import watt.io.file;
-import json = watt.text.json;
+import json = watt.json;
 
 /**
  * Parse the battery.tests.json.

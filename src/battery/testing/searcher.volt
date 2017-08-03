@@ -7,7 +7,7 @@ import watt.io;
 import watt.io.file;
 import watt.text.format;
 import watt.text.string;
-import json = watt.text.json;
+import json = watt.json;
 import core.exception;
 import core.c.stdio;
 
