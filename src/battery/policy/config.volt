@@ -336,7 +336,11 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 	if (config.isRelease) {
 		clang.args ~= "-O3";
 		cc.args ~= "-O3";
-	} else { // Debug.
+	} else if (config.platform == Platform.MSVC) { // Debug && MSVC.
+		clang.args ~= ["-g", "-gcodeview"];
+		cc.args ~= ["-g", "-gcodeview"];
+	} else {
+		clang.args ~= "-g";
 		cc.args ~= "-g";
 	}
 
