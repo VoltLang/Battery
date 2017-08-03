@@ -187,8 +187,9 @@ public:
 		files := deepScan(lib.srcDir, ".volt");
 
 		// Make the dependancy and target file.
-		d := ins.file(depName);
 		t := ins.fileNoRule(name);
+		d := ins.fileNoRule(depName);
+		outputs := [t, d];
 
 		// Depends on all of the source files.
 		t.deps = new uni.Target[](files.length);
@@ -204,12 +205,22 @@ public:
 		args := gen.genVoltArgs(lib, flags, null) ~
 			["-o", name, "--dep", depName] ~ files;
 
+		// Should we generate JSON output.
+		jsonName := gen.shouldJSON(lib);
+		if (jsonName !is null) {
+			j := ins.fileNoRule(jsonName);
+			args ~= ["-jo", jsonName];
+			outputs ~= j;
+		}
+
 		// Make the rule.
-		t.rule = new uni.Rule();
-		t.rule.cmd = voltaBin.name;
-		t.rule.print = voltaPrint ~ name;
-		t.rule.outputs = [t, d];
-		t.rule.args = args;
+		rule := new uni.Rule();
+		rule.cmd = voltaBin.name;
+		rule.print = voltaPrint ~ name;
+		rule.args = args;
+		rule.outputs = outputs;
+
+		t.rule = rule;
 
 		importDepFile(ins, depName);
 
@@ -248,8 +259,9 @@ public:
 		files := exe.srcVolt;
 
 		// Make the dependancy and target file.
-		d := ins.file(depName);
 		t := ins.fileNoRule(name);
+		d := ins.fileNoRule(depName);
+		outputs := [t, d];
 
 		// Do dependancy tracking on source.
 		t.deps = new uni.Target[](files.length);
@@ -274,12 +286,22 @@ public:
 			}
 		}
 
+		// Should we generate JSON output.
+		jsonName := gen.shouldJSON(exe);
+		if (jsonName !is null) {
+			j := ins.fileNoRule(jsonName);
+			args ~= ["-jo", jsonName];
+			outputs ~= j;
+		}
+
 		// Make the rule.
-		t.rule = new uni.Rule();
-		t.rule.cmd = voltaBin.name;
-		t.rule.print = voltaPrint ~ name;
-		t.rule.args = args;
-		t.rule.outputs = [t, d];
+		rule := new uni.Rule();
+		rule.cmd = voltaBin.name;
+		rule.print = voltaPrint ~ name;
+		rule.args = args;
+		rule.outputs = outputs;
+
+		t.rule = rule;
 
 		importDepFile(ins, depName);
 

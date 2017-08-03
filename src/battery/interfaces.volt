@@ -36,6 +36,9 @@ class Base
 	srcAsm: string[];
 
 	testDirs: string[];
+
+	//! Was this target given a -jo argument.
+	jsonOutput: string;
 }
 
 //! The project is built as a library used by executables.

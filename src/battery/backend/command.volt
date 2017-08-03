@@ -257,6 +257,18 @@ public:
 		return false;
 	}
 
+	//! Should when we are building generate json files.
+	fn shouldJSON(b: Base) string
+	{
+		if (b.jsonOutput !is null) {
+			return b.jsonOutput;
+		}
+		if (config.shouldJSON) {
+			return genVoltJSON(b.name);
+		}
+		return null;
+	}
+
 	fn genVolted() string
 	{
 		cmd := cleanPath(buildDir ~ dirSeparator ~ "volted");
@@ -302,6 +314,11 @@ public:
 	fn genVoltDep(name: string) string
 	{
 		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".d");
+	}
+
+	fn genVoltJSON(name: string) string
+	{
+		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".json");
 	}
 
 

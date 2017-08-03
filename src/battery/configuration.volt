@@ -58,6 +58,8 @@ public:
 	isRelease: bool;
 	//! Link-time-optimizations, implemented via LLVM's ThinLTO.
 	isLTO: bool;
+	//! Should we generate vdoc json files.
+	shouldJSON: bool;
 
 	//! Base clang command.
 	clangCmd: Command;

@@ -39,6 +39,7 @@ public:
 		InternalD,
 		Identifier,
 		Output,
+		JSONOutput,
 
 		FileC,
 		FileD,
