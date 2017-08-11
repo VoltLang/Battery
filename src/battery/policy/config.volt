@@ -451,6 +451,9 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 	assert(linker !is null);
 	linker = config.addTool(LinkerName, linker.cmd, linker.args);
 
+	// Always add the common arguments to the linker.
+	addCommonLinkerArgsMSVC(config, linker);
+
 	// Get the CC setup by the llvm toolchain.
 	cc := config.getTool(CCName);
 	assert(cc !is null);
@@ -463,13 +466,6 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 
 	config.env.set("INCLUDE", inc);
 	config.env.set("LIB", lib);
-
-	linker.args ~= [
-		"/nologo",
-		"/defaultlib:libcmt",
-		"/defaultlib:oldnames",
-		"legacy_stdio_definitions.lib",
-	];
 
 	verStr := vars.msvcVer.msvcVerToString();
 	drv.info("Using Visual Studio Build Tools %s.", verStr);
@@ -494,6 +490,9 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 	assert(linker !is null);
 	linker = config.addTool(LinkerName, linker.cmd, linker.args);
 
+	// Always add the common arguments to the linker.
+	addCommonLinkerArgsMSVC(config, linker);
+
 	// Get the CC setup by the llvm toolchain.
 	cc := config.getTool(CCName);
 	assert(cc !is null);
@@ -505,13 +504,6 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 	foreach (i; vars.inc) {
 		cc.args ~= "-I" ~ i;
 	}
-
-	linker.args ~= [
-		"/nologo",
-		"/defaultlib:libcmt",
-		"/defaultlib:oldnames",
-		"legacy_stdio_definitions.lib",
-	];
 
 	foreach (l; vars.lib) {
 		linker.args ~= format("/LIBPATH:%s", l);
@@ -628,6 +620,19 @@ fn genAndCheckEnv(ref vars: VarsForMSVC, drv: Driver, out inc: string, out lib: 
 	}
 }
 
+fn addCommonLinkerArgsMSVC(config: Configuration, linker: Command)
+{
+	if (!config.isRelease) {
+		linker.args ~= "/debug";
+	}
+
+	linker.args ~= [
+		"/nologo",
+		"/defaultlib:libcmt",
+		"/defaultlib:oldnames",
+		"legacy_stdio_definitions.lib",
+	];
+}
 
 /*
  *
