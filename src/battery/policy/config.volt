@@ -259,7 +259,7 @@ public:
 
 	fn printMissingCmd(cmd: string)
 	{
-		drv.info("\t%s%s missing!", cmd, suffix, );
+		drv.info("\t%s%s missing!", cmd, suffix);
 	}
 
 	fn printFoundCmd(cmd: string, path: string)
