@@ -96,8 +96,6 @@ public:
 			return parseMacroCommand(line);
 		} else if (line.startsWith(btj.checkPrefix)) {
 			return parseCheckCommand(line);
-		} else if (line.startsWith(btj.noDefaultPrefix)) {
-			// Handled specially.
 		} else {
 			testFailure(format("unknown regular test command line: '%s''", line));
 			return false;
@@ -124,7 +122,7 @@ public:
 			if (!line.startsWith(btj.prefix)) {
 				break;
 			}
-			noDefault = line.startsWith(btj.noDefaultPrefix) != 0 || line.startsWith(btj.macroPrefix) != 0;
+			noDefault = line.startsWith(btj.macroPrefix) != 0;
 		}
 		ifs.close();
 

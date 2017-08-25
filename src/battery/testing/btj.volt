@@ -22,7 +22,6 @@ class BatteryTestsJson
 	retvalPrefix: string;
 	requiresPrefix: string;
 	hasPassedPrefix: string;
-	noDefaultPrefix: string;
 	macroPrefix: string;
 	checkPrefix: string;
 
@@ -120,7 +119,6 @@ class BatteryTestsJson
 		retvalPrefix = prefix ~ "retval:";
 		requiresPrefix = prefix ~ "requires:";
 		hasPassedPrefix = prefix ~ "has-passed:no";
-		noDefaultPrefix = prefix ~ "default:no";
 		macroPrefix = prefix ~ "macro:";
 		checkPrefix = prefix ~ "check:";
 	}
