@@ -124,7 +124,7 @@ public:
 			if (!line.startsWith(btj.prefix)) {
 				break;
 			}
-			noDefault = line.startsWith(btj.noDefaultPrefix) != 0;
+			noDefault = line.startsWith(btj.noDefaultPrefix) != 0 || line.startsWith(btj.macroPrefix) != 0;
 		}
 		ifs.close();
 
