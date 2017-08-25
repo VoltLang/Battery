@@ -13,7 +13,6 @@ import core.c.stdio;
 
 import battery.configuration;
 import battery.testing.test;
-import battery.testing.legacy;
 import battery.testing.project;
 import battery.testing.regular;
 import battery.testing.btj;
@@ -77,10 +76,6 @@ private:
 		fn hit(file: string) {
 			switch (file) {
 			case "", ".", "..", "deps", "mixin":
-				return;
-			case "test.volt":
-				test := dir[base.length + 1 .. $];
-				mTests ~= new Legacy(dir, test, mCommandStore, project);
 				return;
 			default:
 				fullpath := format("%s%s%s", dir, dirSeparator, file);
