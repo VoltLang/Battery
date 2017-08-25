@@ -52,24 +52,24 @@ public:
 		projects: Project[];
 
 		foreach (exe; exes) {
-			if (exe.testDirs.length == 0) {
+			if (exe.testFiles.length == 0) {
 				continue;
 			}
 
 			exeTool := getCommandFromExe(exe);
 			voltaTool := getVoltaCommand(exe);
-			projects ~= new Project(exe.name, exe.testDirs);
+			projects ~= new Project(exe.name, exe.testFiles);
 			projects[$-1].addCommand("volta", voltaTool);
 			projects[$-1].addCommand(exe.name, exeTool);
 		}
 
 		foreach (lib; libs) {
-			if (lib.testDirs.length == 0) {
+			if (lib.testFiles.length == 0) {
 				continue;
 			}
 
 			voltaTool := getVoltaCommand(lib);
-			projects ~= new Project(lib.name, lib.testDirs);
+			projects ~= new Project(lib.name, lib.testFiles);
 			projects[$-1].addCommand("volta", voltaTool);
 		}
 

@@ -111,8 +111,8 @@ fn getArgsBase(b: Base, tag: string) string[]
 		b.name
 	];
 
-	foreach (dir; b.testDirs) {
-		ret ~= ["--test-dir", dir];
+	foreach (file; b.testFiles) {
+		ret ~= ["--test-file", file];
 	}
 
 	foreach (dep; b.deps) {
@@ -339,7 +339,7 @@ protected:
 			switch (arg.kind) with (Arg.Kind) {
 			case Name: lib.name = arg.extra; break;
 			case SrcDir: lib.srcDir = arg.extra; break;
-			case TestDir: lib.testDirs ~= arg.extra; break;
+			case TestFile: lib.testFiles ~= arg.extra; break;
 			case Dep: lib.deps ~= arg.extra; break;
 			case JSONOutput: lib.jsonOutput = arg.extra; break;
 			case Library: lib.libs ~= arg.extra; break;
@@ -366,7 +366,7 @@ protected:
 			switch (arg.kind) with (Arg.Kind) {
 			case Name: exe.name = arg.extra; break;
 			case SrcDir: exe.srcDir = arg.extra; break;
-			case TestDir: exe.testDirs ~= arg.extra; break;
+			case TestFile: exe.testFiles ~= arg.extra; break;
 			case Dep: exe.deps ~= arg.extra; break;
 			case JSONOutput: exe.jsonOutput = arg.extra; break;
 			case Library: exe.libs ~= arg.extra; break;
@@ -660,7 +660,7 @@ struct ToArgs
 			case "--name": argNext(Name, "expected name"); continue;
 			case "--dep": argNext(Dep, "expected dependency"); continue;
 			case "-jo": argNext(JSONOutput, "expected json output file"); continue;
-			case "--test-dir": argNextPath(TestDir, "expected test directory"); continue;
+			case "--test-file": argNextPath(TestFile, "expected test file"); continue;
 			case "--src-I": argNextPath(SrcDir, "expected source directory"); continue;
 			case "--cmd": argNext(Command, "expected command"); continue;
 			case "-l": argNext(Library, "expected library name"); continue;

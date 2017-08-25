@@ -62,12 +62,8 @@ fn scanDir(drv: Driver, c: Configuration, path: string) Base
 		drv.info("library %s: '%s'", ret.name, s.inputPath);
 	}
 
-	foreach (p; s.pathSimpleTests) {
-		ret.testDirs ~= dirName(p);
-	}
-
 	foreach (p; s.pathJsonTests) {
-		ret.testDirs ~= dirName(p);
+		ret.testFiles ~= p;
 	}
 
 	if (s.hasRes) {

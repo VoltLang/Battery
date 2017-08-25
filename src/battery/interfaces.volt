@@ -35,7 +35,7 @@ class Base
 	srcObj: string[];
 	srcAsm: string[];
 
-	testDirs: string[];
+	testFiles: string[];
 
 	//! Was this target given a -jo argument.
 	jsonOutput: string;

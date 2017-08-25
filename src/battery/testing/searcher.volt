@@ -36,38 +36,16 @@ public:
 
 	fn search(project: Project, dir: string) Test[]
 	{
-		searchBase(project, dir, dir);
+		btj := new BatteryTestsJson();
+		btj.parse(dir);
+		dirnam := dirName(dir);
+		searchJson(project, dirnam, dirnam, btj);
 
 		return mTests;
 	}
 
 
 private:
-	fn searchBase(project: Project, base: string, dir: string)
-	{
-		fn hit(file: string)
-		{
-			switch (file) {
-			case "", ".", "..":
-				return;
-			case "battery.tests.json":
-				btj := new BatteryTestsJson();
-				btj.parse(format("%s%s%s", dir, dirSeparator, file));
-				searchJson(project, dir, dir, btj);
-				return;
-			default:
-				fullpath := format("%s%s%s", dir, dirSeparator, file);
-				if (!isDir(fullpath)) {
-					return;
-				}
-				searchBase(project, base, fullpath);
-				return;
-			}
-		}
-
-		searchDir(dir, "*", hit);
-	}
-
 	fn searchJson(project: Project, base: string, dir: string, btj: BatteryTestsJson)
 	{
 		fn hit(file: string) {
