@@ -55,9 +55,6 @@ private:
 				btj.parse(format("%s%s%s", dir, dirSeparator, file));
 				searchJson(project, dir, dir, btj);
 				return;
-			case "battery.tests.simple":
-				searchSimple(project, dir, dir);
-				return;
 			default:
 				fullpath := format("%s%s%s", dir, dirSeparator, file);
 				if (!isDir(fullpath)) {
@@ -65,24 +62,6 @@ private:
 				}
 				searchBase(project, base, fullpath);
 				return;
-			}
-		}
-
-		searchDir(dir, "*", hit);
-	}
-
-	fn searchSimple(project: Project, base: string, dir: string)
-	{
-		fn hit(file: string) {
-			switch (file) {
-			case "", ".", "..", "deps", "mixin":
-				return;
-			default:
-				fullpath := format("%s%s%s", dir, dirSeparator, file);
-				if (!isDir(fullpath)) {
-					return;
-				}
-				searchSimple(project, base, fullpath);
 			}
 		}
 
