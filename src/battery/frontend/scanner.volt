@@ -8,7 +8,7 @@ module battery.frontend.scanner;
 
 import io = watt.io;
 import watt.io.file : exists, searchDir, isDir;
-import watt.path : baseName, dirName, dirSeparator;
+import watt.path : baseName, dirName, dirSeparator, fullPath;
 import watt.text.format : format;
 import watt.text.string : endsWith, replace;
 import watt.conv : toLower;
@@ -82,6 +82,11 @@ fn scanDir(drv: Driver, c: Configuration, path: string) Project
 
 	if (s.hasRes) {
 		drv.info("\tres: '%s'", rootify(s.path, s.pathRes));
+	}
+
+	foreach (p; s.pathSubProjects) {
+		ret.children ~= scanDir(drv, c, dirName(p));
+		ret.children[$-1].name = format("%s.%s", s.name, ret.children[$-1].name);
 	}
 
 	return ret;
@@ -163,6 +168,7 @@ public:
 	pathDerivedBin: string;
 	pathSimpleTests: string[];
 	pathJsonTests: string[];
+	pathSubProjects: string[];
 
 	filesC: string[];
 	filesVolt: string[];
@@ -189,6 +195,7 @@ public:
 		pathDerivedBin  = getInPath(name);
 		pathSimpleTests = deepScan(path, PathTestSimple);
 		pathJsonTests   = deepScan(path, PathTestJson);
+		pathSubProjects = deepScan(path, PathBatteryTxt, pathBatteryTxt);
 
 		hasPath        = isDir(path);
 		hasRt          = isDir(pathRt);
@@ -234,7 +241,7 @@ public:
 	}
 }
 
-fn deepScan(path: string, ending: string) string[]
+fn deepScan(path: string, ending: string, omissions: string[]...) string[]
 {
 	ret: string[];
 
@@ -245,6 +252,12 @@ fn deepScan(path: string, ending: string) string[]
 		}
 
 		full := format("%s%s%s", path, dirSeparator, p);
+
+		foreach (omission; omissions) {
+			if (fullPath(omission) == fullPath(full)) {
+				return;
+			}
+		}
 
 		if (isDir(full)) {
 			ret ~= deepScan(full, ending);
@@ -257,3 +270,5 @@ fn deepScan(path: string, ending: string) string[]
 
 	return ret;
 }
+
+import watt.io.std;

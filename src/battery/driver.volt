@@ -9,7 +9,7 @@ import core.c.stdlib : exit;
 import core.varargs : va_list, va_start, va_end;
 import io = watt.io;
 import watt.text.path;
-import watt.text.string : endsWith, replace;
+import watt.text.string : endsWith, replace, split;
 import watt.text.getopt;
 import watt.io.streams : OutputFileStream;
 import watt.path : fullPath, dirSeparator;
@@ -555,6 +555,7 @@ Normal usecase when standing in a project directory.
 
 		mLib ~= lib;
 		mStore[lib.name] = lib;
+		addChildren(lib);
 	}
 
 	override fn add(exe: Exe)
@@ -565,6 +566,15 @@ Normal usecase when standing in a project directory.
 
 		mExe ~= exe;
 		mStore[exe.name] = exe;
+		addChildren(exe);
+	}
+
+	fn addChildren(b: Project)
+	{
+		foreach (child; b.children) {
+			mStore[child.name] = child;
+			addChildren(child);
+		}
 	}
 
 	override fn action(fmt: Fmt, ...)

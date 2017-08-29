@@ -92,12 +92,37 @@ fn getArgs(libs: Lib[], exes: Exe[]) string[]
 {
 	ret: string[];
 
+	fn processChildren(base: Project)
+	{
+		foreach (child; base.children) {
+			foundDep := false;
+			foreach (dep; base.deps) {
+				if (dep == child.name) {
+					foundDep = true;
+				}
+			}
+			if (!foundDep) {
+				continue;
+			}
+			clib := cast(Lib)child;
+			if (clib !is null) {
+				ret ~= getArgsLib(clib);
+				continue;
+			}
+			cexe := cast(Exe)child;
+			assert(cexe !is null);
+			ret ~= getArgsExe(cexe);
+		}
+	}
+
 	foreach (lib; libs) {
 		ret ~= getArgsLib(lib);
+		processChildren(lib);
 	}
 
 	foreach (exe; exes) {
 		ret ~= getArgsExe(exe);
+		processChildren(exe);
 	}
 
 	return ret;
@@ -411,11 +436,11 @@ protected:
 		}
 
 		if (exe.srcDir is null) {
-			mDrv.abort("executable not given a source directory '--src-I'");
+			mDrv.abort(new "executable \"${exe.name}\" not given a source directory '--src-I'");
 		}
 
 		if (exe.bin is null) {
-			mDrv.abort("executable not given a output file '-o'");
+			mDrv.abort(new "executable \"${exe.name}\" not given a output file '-o'");
 		}
 	}
 
