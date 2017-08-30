@@ -26,9 +26,9 @@ version (X86_64) {
 	static assert(false, "native arch not supported");
 }
 
-fn getBaseHostConfig(drv: Driver) Configuration
+fn getProjectHostConfig(drv: Driver) Configuration
 {
-	c := getBaseConfig(drv, HostArch, HostPlatform);
+	c := getProjectConfig(drv, HostArch, HostPlatform);
 	c.kind = ConfigKind.Host;
 	return c;
 }

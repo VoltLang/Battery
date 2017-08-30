@@ -12,7 +12,7 @@ public import battery.defines;
 /*!
  * A single project can either be a @ref Lib or @ref Exe.
  */
-class Base
+class Project
 {
 	name: string;
 
@@ -42,12 +42,12 @@ class Base
 }
 
 //! The project is built as a library used by executables.
-class Lib : Base
+class Lib : Project
 {
 }
 
 //! The project is built as a executable.
-class Exe : Base
+class Exe : Project
 {
 	bin: string;
 

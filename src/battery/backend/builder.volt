@@ -102,7 +102,7 @@ public:
 	 *
 	 */
 
-	fn processBase(ref gen: ArgsGenerator, b: Base) Store
+	fn processProject(ref gen: ArgsGenerator, b: Project) Store
 	{
 		// Get the number of objects.
 		num := b.srcAsm.length + b.srcObj.length + b.srcC.length;
@@ -143,12 +143,12 @@ public:
 
 		// Should we include the library source directly in the binary.
 		if (gen.shouldSourceInclude(lib)) {
-			store = processBase(ref gen, lib);
+			store = processProject(ref gen, lib);
 		} else if (gen.config.isLTO) {
-			store = processBase(ref gen, lib);
+			store = processProject(ref gen, lib);
 			store.objs ~= makeTargetVoltLibraryAr(ref gen, lib);
 		} else {
-			store = processBase(ref gen, lib);
+			store = processProject(ref gen, lib);
 			store.objs ~= makeTargetVoltLibraryO(ref gen, lib);
 		}
 
@@ -163,10 +163,10 @@ public:
 
 		// Should we generate a 'o' or 'ar' file.
 		if (gen.config.isLTO) {
-			store = processBase(ref gen, exe);
+			store = processProject(ref gen, exe);
 			store.objs ~= makeTargetExeAr(ref gen, exe);
 		} else {
-			store = processBase(ref gen, exe);
+			store = processProject(ref gen, exe);
 			store.objs ~= makeTargetExeO(ref gen, exe);
 		}
 
@@ -335,7 +335,7 @@ public:
 		t := ins.fileNoRule(name);
 
 		// Add deps and return files to be added to arguments.
-		fn cb(base: Base) string[] {
+		fn cb(base: Project) string[] {
 			return getStore(base.name, t);
 		}
 

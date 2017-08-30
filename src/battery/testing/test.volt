@@ -28,7 +28,7 @@ abstract class Test
 public:
 	name: string;
 	msg: string;
-	project: Project;
+	project: TestProject;
 
 	result: Result;
 

@@ -67,7 +67,7 @@ public:
 	 *   cs: A Configuration containing the tools and platform/arch information.
 	 */
 	this(srcDir: string, test: string, testFileName: string,
-		btj: BatteryTestsJson, project: Project, cs: Configuration)
+		btj: BatteryTestsJson, project: TestProject, cs: Configuration)
 	{
 		this.srcDir = srcDir;
 		this.srcFile = srcDir ~ dirSeparator ~ testFileName;
@@ -405,7 +405,7 @@ class RequireExpression
 	/// Is this entire chain true or false?
 	fn evaluate(arch: Arch, platform: Platform, requiresAliases: string[string]) bool
 	{
-		b := evaluateBase(arch, platform, requiresAliases);
+		b := evaluateProject(arch, platform, requiresAliases);
 		if (isNot) {
 			b = !b;
 		}
@@ -428,7 +428,7 @@ class RequireExpression
 	}
 
 	/// Is the underlying condition true or false, ignore next and isNot.
-	fn evaluateBase(arch: Arch, platform: Platform, requiresAliases: string[string]) bool
+	fn evaluateProject(arch: Arch, platform: Platform, requiresAliases: string[string]) bool
 	{
 		aliasedptr := val in requiresAliases;
 		if (aliasedptr !is null) {

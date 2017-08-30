@@ -49,7 +49,7 @@ public:
 		mExe = exes;
 		mFilter = filter;
 
-		projects: Project[];
+		projects: TestProject[];
 
 		foreach (exe; exes) {
 			if (exe.testFiles.length == 0) {
@@ -58,7 +58,7 @@ public:
 
 			exeTool := getCommandFromExe(exe);
 			voltaTool := getVoltaCommand(exe);
-			projects ~= new Project(exe.name, exe.testFiles);
+			projects ~= new TestProject(exe.name, exe.testFiles);
 			projects[$-1].addCommand("volta", voltaTool);
 			projects[$-1].addCommand(exe.name, exeTool);
 		}
@@ -69,7 +69,7 @@ public:
 			}
 
 			voltaTool := getVoltaCommand(lib);
-			projects ~= new Project(lib.name, lib.testFiles);
+			projects ~= new TestProject(lib.name, lib.testFiles);
 			projects[$-1].addCommand("volta", voltaTool);
 		}
 
@@ -80,7 +80,7 @@ public:
 		testMain(projects);
 	}
 
-	fn testMain(projects: Project[])
+	fn testMain(projects: TestProject[])
 	{
 		cmdGroup := new CmdGroup(retrieveEnvironment(), processorCount());
 		tests: Test[];
@@ -124,7 +124,7 @@ public:
 		return cmd;
 	}
 
-	fn getVoltaCommand(testProj: Base) Command
+	fn getVoltaCommand(testProj: Project) Command
 	{
 		gen: ArgsGenerator;
 		gen.setup(mHostConfig is null ? mConfig : mHostConfig, mLib, mExe);
@@ -142,7 +142,7 @@ public:
 		}
 
 		// Add deps and return files to be added to arguments.
-		fn cb(base: Base) string[] {
+		fn cb(base: Project) string[] {
 			// Completely skip Exes.
 			exe := cast(Exe)base;
 			if (exe !is null) {

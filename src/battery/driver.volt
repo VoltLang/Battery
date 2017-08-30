@@ -40,7 +40,7 @@ public:
 protected:
 	mConfig: Configuration;
 	mHostConfig: Configuration;
-	mStore: Base[string];
+	mStore: Project[string];
 	mExe: Exe[];
 	mLib: Lib[];
 	mPwd: string;
@@ -84,8 +84,8 @@ public:
 		isRelease, isLTO: bool;
 		findArchAndPlatform(this, ref args, ref arch, ref platform,
 		                    ref isRelease, ref isLTO);
-		mHostConfig = getBaseHostConfig(this);
-		mConfig = getBaseConfig(this, arch, platform);
+		mHostConfig = getProjectHostConfig(this);
+		mConfig = getProjectConfig(this, arch, platform);
 
 		// Are we not cross compiling.
 		if (arch == mHostConfig.arch &&
@@ -200,8 +200,8 @@ public:
 		                    ref isRelease, ref isLTO);
 
 		// Get the configs.
-		mHostConfig = getBaseHostConfig(this);
-		mConfig = getBaseConfig(this, arch, platform);
+		mHostConfig = getProjectHostConfig(this);
+		mConfig = getProjectConfig(this, arch, platform);
 
 		// Parse arguments only the config arguments.
 		arg := new ArgParser(this);

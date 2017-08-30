@@ -103,7 +103,7 @@ fn getArgs(libs: Lib[], exes: Exe[]) string[]
 	return ret;
 }
 
-fn getArgsBase(b: Base, tag: string) string[]
+fn getArgsProject(b: Project, tag: string) string[]
 {
 	ret := ["#",
 		new string("# ", tag, ": ", b.name),
@@ -172,12 +172,12 @@ fn getArgsBase(b: Base, tag: string) string[]
 
 fn getArgsLib(l: Lib) string[]
 {
-	return getArgsBase(l, "lib");
+	return getArgsProject(l, "lib");
 }
 
 fn getArgsExe(e: Exe) string[]
 {
-	ret := getArgsBase(e, "exe");
+	ret := getArgsProject(e, "exe");
 
 	if (e.isInternalD) {
 		ret ~= "--internal-d";
@@ -263,7 +263,7 @@ public:
 		}
 	}
 
-	fn parseProjects(c: Configuration, args: string[], path: string, base: Base)
+	fn parseProjects(c: Configuration, args: string[], path: string, base: Project)
 	{
 		toArgs: ToArgs;
 		mPos = 0;
@@ -317,7 +317,7 @@ protected:
 		}
 	}
 
-	fn process(c: Configuration, base: Base)
+	fn process(c: Configuration, base: Project)
 	{
 		lib := cast(Lib)base;
 		if (lib !is null) {

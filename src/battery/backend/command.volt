@@ -15,7 +15,7 @@ import battery.policy.tools : ClangName, LLVMArName;
 struct ArgsGenerator
 {
 public:
-	alias Callback = scope dg(b: Base) string[];
+	alias Callback = scope dg(b: Project) string[];
 
 	enum Kind
 	{
@@ -38,7 +38,7 @@ public:
 	config: Configuration;
 	libs: Lib[];
 	exes: Exe[];
-	store: Base[string];
+	store: Project[string];
 	voltaArgs: string[];
 	archStr: string;
 	platformStr: string;
@@ -78,9 +78,9 @@ public:
 	/**
 	 * Generates a Volta command line to build a binary.
 	 */
-	fn genVoltArgs(base: Base, kind: Kind, cb: Callback) string[]
+	fn genVoltArgs(base: Project, kind: Kind, cb: Callback) string[]
 	{
-		added: Base[string];
+		added: Project[string];
 		ret: string[];
 		exe := cast(Exe)base;
 
@@ -128,7 +128,7 @@ public:
 			}
 		}
 
-		fn traverse(b: Base)
+		fn traverse(b: Project)
 		{
 			// Has this dep allready been added.
 			p := b.name in added;
@@ -244,7 +244,7 @@ public:
 		return ret;
 	}
 
-	fn shouldSourceInclude(b: Base) bool
+	fn shouldSourceInclude(b: Project) bool
 	{
 		lib := cast(Lib)b;
 
@@ -258,7 +258,7 @@ public:
 	}
 
 	//! Should when we are building generate json files.
-	fn shouldJSON(b: Base) string
+	fn shouldJSON(b: Project) string
 	{
 		if (b.jsonOutput !is null) {
 			return b.jsonOutput;

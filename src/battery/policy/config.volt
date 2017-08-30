@@ -17,7 +17,7 @@ import battery.policy.tools;
 import battery.util.path : searchPath;
 
 
-fn getBaseConfig(drv: Driver, arch: Arch, platform: Platform) Configuration
+fn getProjectConfig(drv: Driver, arch: Arch, platform: Platform) Configuration
 {
 	c := new Configuration();
 	c.env = new Environment();

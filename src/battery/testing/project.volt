@@ -5,7 +5,7 @@ module battery.testing.project;
 import battery.interfaces;
 
 
-class Project
+class TestProject
 {
 public:
 	name: string;

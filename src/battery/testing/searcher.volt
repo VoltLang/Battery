@@ -34,7 +34,7 @@ public:
 		mCommandStore = cs;
 	}
 
-	fn search(project: Project, dir: string) Test[]
+	fn search(project: TestProject, dir: string) Test[]
 	{
 		btj := new BatteryTestsJson();
 		btj.parse(dir);
@@ -46,7 +46,7 @@ public:
 
 
 private:
-	fn searchJson(project: Project, base: string, dir: string, btj: BatteryTestsJson)
+	fn searchJson(project: TestProject, base: string, dir: string, btj: BatteryTestsJson)
 	{
 		fn hit(file: string) {
 			switch (file) {

@@ -31,7 +31,7 @@ enum PathTestSimple = "battery.tests.simple";
 /**
  * Scan a directory and see what it holds.
  */
-fn scanDir(drv: Driver, c: Configuration, path: string) Base
+fn scanDir(drv: Driver, c: Configuration, path: string) Project
 {
 	s: Scanner;
 	s.scan(drv, path);
@@ -53,7 +53,7 @@ fn scanDir(drv: Driver, c: Configuration, path: string) Base
 	}
 
 	// Create exectuable or library.
-	ret: Base; exe: Exe; lib: Lib;
+	ret: Project; exe: Exe; lib: Lib;
 	if (s.hasMainVolt) {
 		ret = exe = s.buildExe();
 		drv.info("executable %s: '%s'", ret.name, s.inputPath);
@@ -96,7 +96,7 @@ fn rootify(root: string, path: string) string
 	}
 }
 
-fn scanVolta(drv: Driver, c: Configuration, ref s: Scanner) Base
+fn scanVolta(drv: Driver, c: Configuration, ref s: Scanner) Project
 {
 	if (!s.hasRt) {
 		drv.abort("volta needs a 'rt' folder");
@@ -127,7 +127,7 @@ fn scanVolta(drv: Driver, c: Configuration, ref s: Scanner) Base
 	return exe;
 }
 
-fn processBatteryCmd(drv: Driver, c: Configuration, b: Base, ref s: Scanner)
+fn processBatteryCmd(drv: Driver, c: Configuration, b: Project, ref s: Scanner)
 {
 	if (s.hasBatteryCmd) {
 		args : string[];
