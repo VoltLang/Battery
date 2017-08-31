@@ -311,6 +311,7 @@ public:
 	{
 		io.write(question);
 		io.write(" ");
+		io.output.flush();
 		return io.readln();
 	}
 
@@ -326,6 +327,7 @@ public:
 				}
 			}
 			io.write("? ");
+			io.output.flush();
 			response := io.readln();
 			foreach (i, option; options) {
 				if (toLower(option) == toLower(response)) {
@@ -336,6 +338,7 @@ public:
 				}
 			}
 			io.writefln("Please enter a number between %s and %s, or the option desired.", 1, options.length);
+			io.output.flush();
 		}
 	}
 
