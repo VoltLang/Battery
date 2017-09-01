@@ -89,6 +89,7 @@ Battery is built around a few 'commands'. These are our verbs. They are as follo
 	build
 	test
 	help
+	init
 
 All are invoked using `battery <command name>`. We used the `config` and `build` commands in the previous section.
 
@@ -129,6 +130,10 @@ You probably recognise quite a few of these from Volta.
 ### Build
 
 Actually performs the build. If there's a `test` folder, the tests will be run after the build completes. If the build failed, the return value will be non-zero. This only works after config has been run.
+
+### Init
+
+Init will setup a very simple project skeleton for you. If invoked with no arguments, it will ask you for the project name, and whether it's a library or an executable. These answers can be given ahead of time with the `--init-name` and `--init-type` flags, respectively.
 
 ### Test
 
