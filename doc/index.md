@@ -55,6 +55,32 @@ Sometimes build steps are a little more complicated. Battery lives in the real w
 
 We'll go in depth on the commands in a later section. For now, notice we can do different things depending on the platform, and even run external tools to get library names and so on.
 
+## Projects And Subprojects
+
+Battery organises things in terms of projects. In the example above, `Volta` is a project, as is `Watt`. They're given using local paths above, but in future URLs, and perhaps just their names will be enough for Battery to locate them. The important thing to understand is that a project is collection of code, that can be 'depended' upon, that is, required for another project to build. That is what the
+
+    --dep
+	watt
+
+lines in the above `battery.txt` files are saying. "This project depends on `watt`, and requires it to build."
+
+Projects can have subprojects. That is, projects that are children of another project. This is useful if individual pieces of your project are useful outside of the context of the larger one. Say you were writing an emulator for the smash arcade hit, *Cosmos Attackers*. The Silog S81 processor used by *Cosmos Attackers* was used in other arcade hits of the time, such as *Pack Mun*, and *Dug Dog*, so you might want to use your S81 emulator in other projects.
+
+To make a project a child of another, simply place it in its parent's project folder. So your tree might look like
+
+	cosmo_em
+		src   // ui code, etc
+		battery.txt
+		s81
+			battery.txt
+			src
+
+Then, in `cosmo_em`'s `battery.txt` (and any other project that wants to use your S81 emulator), add a `--dep` of `cosmo_em.s81`. Parents do not automatically depend on their children, nor do children on their parents. Other than the lookup syntax with `.`, subprojects behave just as regular projects.
+
+## Project Name Restrictions
+
+Project names must start with an alphabetical character, or an underscore, and the rest of the name must be either an alphabetical character, an underscore, or a digit.
+
 ## Commands
 
 Battery is built around a few 'commands'. These are our verbs. They are as follows:
@@ -167,9 +193,8 @@ The `default` macro will be used for every test with no action. So our simplest 
 
 	int main() { return 0; }
 
-Then, we can check for failure in compilation with our `failure` macro. First, disable the default macro with `default:no`, then just use `macro:` and then the name of the macro to invoke. It will be as if the commands were written out explicitly.
+Then, we can check for failure in compilation with our `failure` macro. Use `macro:` and then the name of the macro to invoke. It will be as if the commands were written out explicitly.
 
-	/*T default:no */
 	/*T macro:failure */
 	int main() return 0 }
 
