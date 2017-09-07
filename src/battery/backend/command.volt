@@ -52,7 +52,7 @@ public:
 		this.config = config;
 		this.libs = libs;
 		this.exes = exes;
-		this.store = [];
+		this.store = [:];
 
 		this.archStr = .toString(config.arch);
 		this.platformStr = .toString(config.platform);
