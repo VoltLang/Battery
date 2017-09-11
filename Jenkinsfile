@@ -1,3 +1,3 @@
 library('volt-build')
 
-voltBuild('battery')
+voltBuildExe('battery')
