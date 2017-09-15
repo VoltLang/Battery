@@ -7,6 +7,8 @@ import core.exception;
 
 version(Windows) {
 	import core.c.windows.windows;
+} else {
+	import core.c.posix.sys.types;
 }
 
 import watt.conv;
