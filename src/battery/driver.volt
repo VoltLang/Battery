@@ -15,6 +15,7 @@ import watt.io.streams : OutputFileStream;
 import watt.path : fullPath, dirSeparator;
 import watt.process;
 import watt.conv;
+import watt.io.file : exists;
 
 import battery.configuration;
 import battery.interfaces;

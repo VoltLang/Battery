@@ -13,6 +13,7 @@ version(Windows) {
 
 import watt.conv;
 import watt.process;
+import watt.text.format;
 
 
 /**
