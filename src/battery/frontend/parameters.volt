@@ -157,7 +157,7 @@ fn getArgsProject(b: Project, tag: string) string[]
 	}
 
 	foreach (framework; b.frameworks) {
-		ret ~= ["--framework", framework];
+		ret ~= ["-framework", framework];
 	}
 
 	foreach (path; b.frameworkPaths) {
@@ -690,7 +690,7 @@ struct ToArgs
 			case "--cmd": argNext(Command, "expected command"); continue;
 			case "-l": argNext(Library, "expected library name"); continue;
 			case "-L": argNext(LibraryPath, "expected library path"); continue;
-			case "--framework": argNext(Framework, "expected framework name"); continue;
+			case "-framework": argNext(Framework, "expected framework name"); continue;
 			case "-F": argNext(FrameworkPath, "expected framework path"); continue;
 			case "-J": argNextPath(StringPath, "expected string path"); continue;
 			case "--internal-d": arg(InternalD); continue;

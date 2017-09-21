@@ -112,7 +112,7 @@ We've seen the `config` command already. And we've also seen some of the command
 	--cmd-(tool)     Specify an external tool location. e.g. Tesla, or nasm.
 	-l lib           Add a library to link with.
 	-L path          Add a path to search with libraries.
-	--framework name Add a framework to link with. (macOS only)
+	-framework name  Add a framework to link with. (macOS only)
 	-F path          Add a framework search path. (macOS only)
 	-J path          Define a path for string import to look for files.
 	-D ident         Define a new version flag.

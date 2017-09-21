@@ -169,7 +169,7 @@ public:
 				}
 
 				foreach (framework; b.frameworks) {
-					ret ~= ["--framework", framework];
+					ret ~= ["-framework", framework];
 				}
 
 				foreach (path; b.libPaths) {

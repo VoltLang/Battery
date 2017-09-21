@@ -430,7 +430,7 @@ Normal usecase when standing in a project directory.
 		info("\t-l lib           Add a library.");
 		info("\t-L path          Add a library path.");
 		version (OSX) {
-		info("\t--framework name Add a framework.");
+		info("\t-framework name  Add a framework.");
 		info("\t-F path          Add a framework search path.");
 		}
 		info("\t-J path          Define a path for string import to look for files.");
