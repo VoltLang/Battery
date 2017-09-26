@@ -79,7 +79,11 @@ Then, in `cosmo_em`'s `battery.txt` (and any other project that wants to use you
 
 ## Project Name Restrictions
 
+A project's name is based entirely on its folder name.
+
 Project names must start with an alphabetical character, or an underscore, and the rest of the name must be either an alphabetical character, an underscore, or a digit.
+
+If a project doesn't confirm to the above specification, the `config` step will fail with an error displaying the name that failed to validate.
 
 ## Commands
 
