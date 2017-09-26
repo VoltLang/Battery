@@ -10,6 +10,7 @@ import core.varargs : va_list, va_start, va_end;
 import io = watt.io;
 import watt.text.path;
 import watt.text.string : endsWith, replace, split;
+import watt.text.ascii : isAlpha, isAlphaNum;
 import watt.text.getopt;
 import watt.io.streams : OutputFileStream;
 import watt.path : fullPath, dirSeparator;
@@ -167,6 +168,12 @@ public:
 
 	fn configSanity()
 	{
+		foreach (exe; mExe) {
+			validateName(exe.name);
+		}
+		foreach (lib; mLib) {
+			validateName(lib.name);
+		}
 		foreach (k, b; mStore) {
 			foreach (dep; b.deps) {
 				dp := dep in mStore;
@@ -184,6 +191,19 @@ public:
 					abort("No dependency '%s' found.", dep);
 					break;
 				}
+			}
+		}
+	}
+
+	fn validateName(name: string)
+	{
+		fn err() { abort("'%s' is not a valid name for a project.", name); }
+		if (name.length == 0 || (!isAlpha(name[0]) && name[0] != '_')) {
+			err();
+		}
+		foreach (c: dchar; name[1 .. $]) {
+			if (!isAlphaNum(c) && c != '_') {
+				err();
 			}
 		}
 	}
