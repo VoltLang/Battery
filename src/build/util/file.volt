@@ -16,8 +16,16 @@ version (Linux || OSX) {
 		WIN32_FILE_ATTRIBUTE_DATA;
 }
 
+//! @Returns `true` if the file `a` has been modified more recently than `b`.
+fn modifiedMoreRecentlyThan(a: string, b: string) bool
+{
+	aAccess, aModified, bAccess, bModified: u64;
+	getTimes(a, out aAccess, out aModified);
+	getTimes(b, out bAccess, out bModified);
+	return aModified > bModified;
+}
 
-fn getTimes(name: string, out access: ulong, out modified: ulong)
+fn getTimes(name: string, out access: u64, out modified: u64)
 {
 	version (OSX || Linux) {
 		path: char[512];
@@ -30,8 +38,8 @@ fn getTimes(name: string, out access: ulong, out modified: ulong)
 			throw new Exception("stat failed");
 		}
 
-		access = cast(ulong) buf.st_atime;
-		modified = cast(ulong) buf.st_mtime;
+		access = cast(u64)buf.st_atime;
+		modified = cast(u64)buf.st_mtime;
 	} else {
 		buf: WIN32_FILE_ATTRIBUTE_DATA;
 		tmp: wchar[512];

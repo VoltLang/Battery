@@ -31,6 +31,7 @@ import battery.backend.builder;
 import battery.backend.command : ArgsGenerator;
 import battery.testing.project;
 import battery.testing.tester;
+import build.util.file : modifiedMoreRecentlyThan;
 
 
 class DefaultDriver : Driver
@@ -220,6 +221,11 @@ public:
 		args: string[];
 		if (!getLinesFromFile(BatteryConfigFile, ref args)) {
 			return abort("must first run the 'config' command");
+		}
+
+		if (PathBatteryTxt.modifiedMoreRecentlyThan(BatteryConfigFile)) {
+			info("WARNING: '%s' is newer than '%s'; consider rerunning 'config'.",
+				PathBatteryTxt, BatteryConfigFile);
 		}
 
 		// Filter out --release, --arch and --platform arguments.
