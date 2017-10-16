@@ -72,7 +72,7 @@ public:
 		case "config": config(args[2 .. $]); break;
 		case "test": test(args[2 .. $]); break;
 		case "version": printVersion(); break;
-		case "init": init(args[2 .. $]); break;
+		case "init": projectInit(args[2 .. $]); break;
 		default: printUsage(); break;
 		}
 
@@ -300,7 +300,7 @@ public:
 		}
 	}
 
-	fn init(args: string[])
+	fn projectInit(args: string[])
 	{
 		if (args.length == 0) {
 			printLogo();
