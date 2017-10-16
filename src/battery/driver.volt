@@ -527,8 +527,8 @@ Normal usecase when standing in a project directory.
 			abort("No rdmd found (needed right now for Volta).");
 		}
 
-		if (mExe.length == 0) {
-			info("warning: Didn't specify any executables.");
+		if (mExe.length == 1) {
+			info("WARNING: Didn't specify any executables beyond Volta. (ignore if building Volta)");
 		}
 	}
 
