@@ -16,7 +16,7 @@ import watt.io.streams : OutputFileStream;
 import watt.path : fullPath, dirSeparator;
 import watt.process;
 import watt.conv;
-import watt.io.file : exists;
+import watt.io.file : exists, isFile;
 
 import battery.configuration;
 import battery.interfaces;
@@ -223,7 +223,8 @@ public:
 			return abort("must first run the 'config' command");
 		}
 
-		if (PathBatteryTxt.modifiedMoreRecentlyThan(BatteryConfigFile)) {
+		if (exists(PathBatteryTxt) && isFile(PathBatteryTxt) &&
+		    PathBatteryTxt.modifiedMoreRecentlyThan(BatteryConfigFile)) {
 			info("WARNING: '%s' is newer than '%s'; consider rerunning 'config'.",
 				PathBatteryTxt, BatteryConfigFile);
 		}
