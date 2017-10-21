@@ -153,11 +153,11 @@ public:
 			files := base.srcObj;
 
 			foreach (asmpath; base.srcAsm) {
-				files ~= gen.genFileO(asmpath);
+				files ~= gen.genAsmO(asmpath);
 			}
 
 			foreach (cpath; base.srcC) {
-				files ~= gen.genFileO(cpath);
+				files ~= gen.genCO(cpath);
 			}
 
 			if (gen.config.isLTO) {

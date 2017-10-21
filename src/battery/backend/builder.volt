@@ -376,7 +376,7 @@ public:
 
 	fn makeTargetC(ref gen: ArgsGenerator, src: string) uni.Target
 	{
-		oName := gen.genFileO(src);
+		oName := gen.genCO(src);
 
 		t := ins.fileNoRule(oName);
 		t.deps = [ins.file(src)];
@@ -395,7 +395,7 @@ public:
 
 	fn makeTargetAsm(ref gen: ArgsGenerator, src: string) uni.Target
 	{
-		obj := gen.genFileO(src);
+		obj := gen.genAsmO(src);
 
 		tasm := ins.fileNoRule(obj);
 		tasm.deps = [ins.file(src)];

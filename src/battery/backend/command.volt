@@ -292,19 +292,27 @@ public:
 		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".bc");
 	}
 
-	fn genFileO(name: string) string
+	fn genAsmO(name: string) string
 	{
 		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".o");
+	}
+
+	fn genCO(name: string) string
+	{
+		ending := config.isLTO ? ".thin.o" : ".o";
+		return cleanPath(buildDir ~ dirSeparator ~ name ~ ending);
 	}
 
 	fn genVoltO(name: string) string
 	{
-		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".o");
+		ending := config.isLTO ? ".thin.o" : ".o";
+		return cleanPath(buildDir ~ dirSeparator ~ name ~ ending);
 	}
 
 	fn genVoltA(name: string) string
 	{
-		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".a");
+		ending := config.isLTO ? ".thin.a" : ".a";
+		return cleanPath(buildDir ~ dirSeparator ~ name ~ ending);
 	}
 
 	fn genVoltBc(name: string) string
