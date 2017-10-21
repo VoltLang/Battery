@@ -53,10 +53,13 @@ public:
 		ArgLinker,
 
 		Env,
+		BootEnv,
 		HostEnv,
 
 		ToolCmd,
 		ToolArg,
+		BootToolCmd,
+		BootToolArg,
 		HostToolCmd,
 		HostToolArg,
 	}

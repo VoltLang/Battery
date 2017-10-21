@@ -116,19 +116,19 @@ public:
 	abstract fn add(lib: Lib);
 
 	//! Add a enviromental variable.
-	abstract fn addEnv(host: bool, name: string, value: string);
+	abstract fn addEnv(boot: bool, name: string, value: string);
 
 	//! Set a tool that has been found.
-	abstract fn setCmd(host: bool, name: string, c: Command);
+	abstract fn setCmd(boot: bool, name: string, c: Command);
 
 	//! Get a tool.
-	abstract fn getCmd(host: bool, name: string) Command;
+	abstract fn getCmd(boot: bool, name: string) Command;
 
 	//! Add a tool, will reset the tool if already given.
-	abstract fn addCmd(host: bool, name: string, cmd: string);
+	abstract fn addCmd(boot: bool, name: string, cmd: string);
 
 	//! Add a argument for tool.
-	abstract fn addCmdArg(host: bool, name: string, arg: string);
+	abstract fn addCmdArg(boot: bool, name: string, arg: string);
 
 	/*!
 	 * Prints a action string.

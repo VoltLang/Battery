@@ -43,11 +43,13 @@ public:
 protected:
 	mConfig: Configuration;
 	mHostConfig: Configuration;
+	mBootstrapConfig: Configuration;
 	mStore: Project[string];
 	mExe: Exe[];
 	mLib: Lib[];
 	mPwd: string;
 
+	mBootstrapCommands: Command[string];
 	mTargetCommands: Command[string];
 	mHostCommands: Command[string];
 
@@ -87,42 +89,54 @@ public:
 		isRelease, isLTO: bool;
 		findArchAndPlatform(this, ref args, ref arch, ref platform,
 		                    ref isRelease, ref isLTO);
+		mBootstrapConfig = getProjectHostConfig(this);
 		mHostConfig = getProjectHostConfig(this);
 		mConfig = getProjectConfig(this, arch, platform);
+
+		mBootstrapConfig.kind = ConfigKind.Bootstrap;
+		mBootstrapConfig.isRelease = true;
+		mHostConfig.kind = ConfigKind.Host;
+		mHostConfig.isRelease = true;
+
+		mConfig.kind = ConfigKind.Native;
+		mConfig.isRelease = isRelease;
+		mConfig.isLTO = isLTO;
 
 		// Are we not cross compiling.
 		if (arch == mHostConfig.arch &&
 		    platform == mHostConfig.platform) {
 			mHostConfig = null;
-			mConfig.kind = ConfigKind.Native;
-			mConfig.isRelease = isRelease;
-			mConfig.isLTO = isLTO;
 			info("native compile");
 		} else {
 			info("cross compiling to %s-%s",
 			     .toString(arch), .toString(platform));
-			mHostConfig.kind = ConfigKind.Host;
-			mHostConfig.isRelease = true;
 			mConfig.kind = ConfigKind.Cross;
-			mConfig.isRelease = isRelease;
-			mConfig.isLTO = isLTO;
 		}
 
 		// Parse arguments only the config arguments.
 		arg := new ArgParser(this);
 		arg.parseConfig(args);
 
-		// If we get volta via the command line, no need for host config.
+		// If we get volta via the command line, no need for bootstrap config.
 		if (getCmd(false, "volta") !is null) {
-			mHostConfig = null;
+			mBootstrapConfig = null;
 		}
 
+		// Handle bootstrapping of volted.
+		if (mBootstrapConfig !is null) {
+			// Need fill in bootstrap commands seperatly.
+			doConfig(this, mBootstrapConfig);
+			fillInConfigCommands(this, mBootstrapConfig);
+		}
+
+/*
 		// Handle cross compiling.
 		if (mHostConfig !is null) {
 			// Need fill in host commands seperatly.
 			doConfig(this, mHostConfig);
 			fillInConfigCommands(this, mHostConfig);
 		}
+*/
 
 		// Do this after the arguments has been parsed.
 		doConfig(this, mConfig);
@@ -149,6 +163,17 @@ public:
 			ofs.write(r);
 			ofs.put('\n');
 		}
+		if (mBootstrapConfig !is null) {
+			foreach (r; getArgs(true, mBootstrapConfig.env)) {
+				ofs.write(r);
+				ofs.put('\n');
+			}
+			foreach (r; getArgs(true, mBootstrapConfig.tools.values)) {
+				ofs.write(r);
+				ofs.put('\n');
+			}
+		}
+/*
 		if (mHostConfig !is null) {
 			foreach (r; getArgs(true, mHostConfig.env)) {
 				ofs.write(r);
@@ -159,6 +184,7 @@ public:
 				ofs.put('\n');
 			}
 		}
+*/
 		foreach (r; getArgs(mLib, mExe)) {
 			ofs.write(r);
 			ofs.put('\n');
@@ -235,8 +261,14 @@ public:
 		                    ref isRelease, ref isLTO);
 
 		// Get the configs.
+		mBootstrapConfig = getProjectHostConfig(this);
 		mHostConfig = getProjectHostConfig(this);
 		mConfig = getProjectConfig(this, arch, platform);
+
+		mBootstrapConfig.kind = ConfigKind.Bootstrap;
+		mBootstrapConfig.isRelease = true;
+		mHostConfig.kind = ConfigKind.Host;
+		mHostConfig.isRelease = true;
 
 		// Parse arguments only the config arguments.
 		arg := new ArgParser(this);
@@ -251,21 +283,30 @@ public:
 			mConfig.kind = ConfigKind.Cross;
 		}
 
-		// If we have the volta tool ignore the host config.
+		// If we have the volta tool ignore the bootstrap config.
 		if (getCmd(false, "volta") !is null) {
-			mHostConfig = null;
+			mBootstrapConfig = null;
 		}
 
+		// Handle cross compiling.
+		if (mBootstrapConfig !is null) {
+			// Need fill in host commands.
+			foreach (k, v; mBootstrapCommands) {
+				mBootstrapConfig.tools[k] = v;
+			}
+			fillInConfigCommands(this, mBootstrapConfig);
+		}
+
+/*
 		// Handle cross compiling.
 		if (mHostConfig !is null) {
 			// Need fill in host commands.
 			foreach (k, v; mHostCommands) {
 				mHostConfig.tools[k] = v;
 			}
-			mHostConfig.kind = ConfigKind.Host;
-			mHostConfig.isRelease = true;
 			fillInConfigCommands(this, mHostConfig);
 		}
+*/
 
 		// Do this after the arguments has been parsed.
 		foreach (k, v; mTargetCommands) {
@@ -280,7 +321,7 @@ public:
 
 		// Do the actual build now.
 		builder := new Builder(this);
-		builder.build(mConfig, mHostConfig, mLib, mExe);
+		builder.build(mConfig, mBootstrapConfig, mLib, mExe);
 	}
 
 	fn test(args: string[])
@@ -504,12 +545,12 @@ Normal usecase when standing in a project directory.
 	{
 		isCross := mHostConfig !is null;
 		hasRtDir := mStore.get("rt", null) !is null;
-		hasRdmdTool := mConfig.getTool(RdmdName) !is null;
+		hasRdmdTool := mBootstrapConfig !is null && mBootstrapConfig.getTool(RdmdName) !is null;
 		hasVoltaDir := mStore.get("volta", null) !is null;
 		hasVoltaTool := mConfig.getTool(VoltaName) !is null;
 
-		if (isCross && !hasVoltaTool) {
-			abort("Must use --volta-cmd when cross compiling");
+		if (!hasRdmdTool && !hasVoltaTool) {
+			abort("No rdmd found (needed right now for Volta).");
 		}
 		if (!hasVoltaDir && !hasVoltaTool) {
 			abort("Must specify a Volta directory or --cmd-volta (for now).");
@@ -523,9 +564,6 @@ Normal usecase when standing in a project directory.
 		}
 		if (mConfig.ccCmd is null) {
 			abort("No system c compiler found.");
-		}
-		if (!hasRdmdTool && !hasVoltaTool) {
-			abort("No rdmd found (needed right now for Volta).");
 		}
 
 		if (mExe.length == 1) {
@@ -556,38 +594,38 @@ Normal usecase when standing in a project directory.
 		return path;
 	}
 
-	override fn addEnv(host: bool, name: string, value: string)
+	override fn addEnv(boot: bool, name: string, value: string)
 	{
-		if (host && mHostConfig is null) {
-			abort("can not use host envs when not cross compiling");
+		if (boot && mBootstrapConfig is null) {
+			abort("can not use bootstrap envs when not cross compiling");
 		}
-		(host ? mHostConfig : mConfig).env.set(name, value);
+		(boot ? mBootstrapConfig : mConfig).env.set(name, value);
 	}
 
-	override fn setCmd(host: bool, name: string, c: Command)
+	override fn setCmd(boot: bool, name: string, c: Command)
 	{
-		if (host && mHostConfig is null) {
-			abort("can not use host commands when not cross compiling");
+		if (boot && mBootstrapConfig is null) {
+			abort("can not use bootstrap commands when not cross compiling");
 		}
-		if (host) {
-			mHostCommands[name] = c;
+		if (boot) {
+			mBootstrapCommands[name] = c;
 		} else {
 			mTargetCommands[name] = c;
 		}
 	}
 
-	override fn addCmd(host: bool, name: string, cmd: string)
+	override fn addCmd(boot: bool, name: string, cmd: string)
 	{
 		c := new Command();
 		c.name = name;
 		c.cmd = cmd;
 
-		setCmd(host, name, c);
+		setCmd(boot, name, c);
 	}
 
-	override fn addCmdArg(host: bool, name: string, arg: string)
+	override fn addCmdArg(boot: bool, name: string, arg: string)
 	{
-		c := getCmd(host, name);
+		c := getCmd(boot, name);
 		if (c is null) {
 			abort("tool not defined '%s'", name);
 		}
@@ -654,15 +692,15 @@ Normal usecase when standing in a project directory.
 		exit(-1);
 	}
 
-	override fn getCmd(host: bool, name: string) Command
+	override fn getCmd(boot: bool, name: string) Command
 	{
-		if (host && mHostConfig is null) {
-			abort("can not use host commands when not cross compiling");
+		if (boot && mBootstrapConfig is null) {
+			abort("can not use boot commands when not cross compiling");
 		}
 
 		c: Command*;
-		if (host) {
-			c = name in mHostCommands;
+		if (boot) {
+			c = name in mBootstrapCommands;
 		} else {
 			c = name in mTargetCommands;
 		}

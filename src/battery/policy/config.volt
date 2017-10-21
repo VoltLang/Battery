@@ -32,6 +32,21 @@ fn doConfig(drv: Driver, config: Configuration)
 	outside := retrieveEnvironment();
 	doEnv(drv, config, outside);
 
+	switch (config.kind) with (ConfigKind) {
+	case Bootstrap:
+		// We need llvm-config to build volted.
+		doToolChainLLVM(drv, config, UseAsLinker.NO);
+
+		// Do a bit of logging.
+		drv.info("Various tools needed by compile.");
+
+		// Get RDMD if we are bootstrapping.
+		drvRdmd := drv.fillInCommand(config, RdmdName);
+		config.addTool(RdmdName, drvRdmd.cmd, drvRdmd.args);
+		return;
+	default:
+	}
+
 	final switch (config.platform) with (Platform) {
 	case MSVC:
 		// Always setup a basic LLVM toolchain.
@@ -54,14 +69,10 @@ fn doConfig(drv: Driver, config: Configuration)
 	drv.info("Various tools needed by compile.");
 
 	// Make it possible for the user to supply the volta.exe
-	drvVolta := drv.getCmd(config.isHost, "volta");
+	drvVolta := drv.getCmd(config.isBootstrap, "volta");
 	if (drvVolta !is null) {
 		config.addTool("volta", drvVolta.cmd, drvVolta.args);
 		drv.infoCmd(config, drvVolta, true);
-	} else {
-		// Get RDMD if volta was not given.
-		drvRdmd := drv.fillInCommand(config, RdmdName);
-		config.addTool(RdmdName, drvRdmd.cmd, drvRdmd.args);
 	}
 
 	// NASM is needed for RT.
@@ -137,13 +148,18 @@ public:
 public:
 	fn fillInNeeded(config: Configuration)
 	{
-		// Must always have clang.
-		this.needClang = true;
-
 		// For Windows llvm-config is not needed.
 		version (!Windows) {
 			this.needConfig = true;
 		}
+
+		// Bootstrap does not require anything more.
+		if (config.isBootstrap) {
+			return;
+		}
+
+		// Need clang for the rest.
+		this.needClang = true;
 
 		// Platform specific.
 		final switch (config.platform) with (Platform) {
@@ -166,11 +182,11 @@ public:
 		this.drv = drv;
 		fillInNeeded(config);
 
-		this.config = drv.getCmd(config.isHost, LLVMConfigName);
-		this.ar =     drv.getCmd(config.isHost, LLVMArName);
-		this.clang =  drv.getCmd(config.isHost, ClangName);
-		this.ld =     drv.getCmd(config.isHost, LDLLDName);
-		this.link =   drv.getCmd(config.isHost, LLDLinkName);
+		this.config = drv.getCmd(config.isBootstrap, LLVMConfigName);
+		this.ar =     drv.getCmd(config.isBootstrap, LLVMArName);
+		this.clang =  drv.getCmd(config.isBootstrap, ClangName);
+		this.ld =     drv.getCmd(config.isBootstrap, LDLLDName);
+		this.link =   drv.getCmd(config.isBootstrap, LLDLinkName);
 
 		this.drvConfig = this.config !is null;
 		this.drvAr = this.ar !is null;
@@ -317,7 +333,7 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 	// If needed setup the linker command.
 	linker: Command;
 	if (useLinker) {
-		linker = drv.getCmd(config.isHost, LinkerName);
+		linker = drv.getCmd(config.isBootstrap, LinkerName);
 
 		// If linker was not given use clang as the linker.
 		if (linker is null) {
@@ -328,27 +344,29 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 		linker = config.addTool(LinkerName, linker.cmd, linker.args);
 	}
 
-	// Setup clang and cc tools.
-	clang := config.addTool(ClangName, llvm.clang.cmd, llvm.clang.args);
-	cc := config.addTool(CCName, llvm.clang.cmd, llvm.clang.args);
+	if (!config.isBootstrap) {
+		// Setup clang and cc tools.
+		clang := config.addTool(ClangName, llvm.clang.cmd, llvm.clang.args);
+		cc := config.addTool(CCName, llvm.clang.cmd, llvm.clang.args);
 
-	// Add any extra arguments.
-	if (config.isRelease) {
-		clang.args ~= "-O3";
-		cc.args ~= "-O3";
-	} else if (config.platform == Platform.MSVC) { // Debug && MSVC.
-		clang.args ~= ["-g", "-gcodeview"];
-		cc.args ~= ["-g", "-gcodeview"];
-	} else {
-		clang.args ~= "-g";
-		cc.args ~= "-g";
-	}
+		// Add any extra arguments.
+		if (config.isRelease) {
+			clang.args ~= "-O3";
+			cc.args ~= "-O3";
+		} else if (config.platform == Platform.MSVC) { // Debug && MSVC.
+			clang.args ~= ["-g", "-gcodeview"];
+			cc.args ~= ["-g", "-gcodeview"];
+		} else {
+			clang.args ~= "-g";
+			cc.args ~= "-g";
+		}
 
-	if (config.isLTO) {
-		clang.args ~= "-flto=thin";
-		cc.args ~= "-flto=thin";
-		if (linker !is null) {
-			linker.args ~= ["-flto=thin", "-fuse-ld=lld"];
+		if (config.isLTO) {
+			clang.args ~= "-flto=thin";
+			cc.args ~= "-flto=thin";
+			if (linker !is null) {
+				linker.args ~= ["-flto=thin", "-fuse-ld=lld"];
+			}
 		}
 	}
 
@@ -438,7 +456,7 @@ public:
 fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environment)
 {
 	// First see if the linker is specified.
-	linker := drv.getCmd(config.isHost, LinkerName);
+	linker := drv.getCmd(config.isBootstrap, LinkerName);
 	linkerFromArg := true;
 
 	// If it was not specified try getting 'link.exe' from the path.
@@ -474,10 +492,10 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 
 fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment)
 {
-	assert(!config.isHost);
+	assert(!config.isBootstrap);
 
 	// First see if the linker is specified.
-	linker := drv.getCmd(config.isHost, LinkerName);
+	linker := drv.getCmd(config.isBootstrap, LinkerName);
 	linkerFromArg := true;
 
 	// If it was not specified get 'lld-link' from the LLVM toolchain.
@@ -642,9 +660,18 @@ fn addCommonLinkerArgsMSVC(config: Configuration, linker: Command)
 
 fn fillInConfigCommands(drv: Driver, config: Configuration)
 {
-	volta := drv.getCmd(config.isHost, VoltaName);
+	volta := drv.getCmd(config.isBootstrap, VoltaName);
 	if (volta !is null) {
 		volta.print = VoltaPrint;
+	}
+
+	if (config.isBootstrap) {
+		// Get the optional RDMD command.
+		config.rdmdCmd = config.getTool(RdmdName);
+		config.rdmdCmd.print = RdmdPrint;
+
+		// Done now.
+		return;
 	}
 
 	config.linkerCmd = config.getTool(LinkerName);
@@ -671,12 +698,6 @@ fn fillInConfigCommands(drv: Driver, config: Configuration)
 		config.linkerCmd.print = ClangPrint;
 		config.linkerKind = LinkerKind.Clang;
 		break;
-	}
-
-	// Get the optional RDMD command.
-	config.rdmdCmd = config.getTool(RdmdName);
-	if (config.rdmdCmd !is null) {
-		config.rdmdCmd.print = RdmdPrint;
 	}
 }
 

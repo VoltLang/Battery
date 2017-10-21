@@ -65,7 +65,7 @@ fn infoCmd(drv: Driver, c: Configuration, cmd: Command, given: bool = false)
  */
 fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
 {
-	cmd := drv.getCmd(c.isHost, name);
+	cmd := drv.getCmd(c.isBootstrap, name);
 
 	if (cmd is null) {
 		switch (name) {
@@ -267,5 +267,6 @@ fn getCmdPre(c: Configuration) string
 	case Native: return "";
 	case Host: return "host ";
 	case Cross: return "cross ";
+	case Bootstrap: return "boot ";
 	}
 }

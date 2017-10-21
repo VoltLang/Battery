@@ -47,7 +47,7 @@ public:
 		this.mDrv = drv;
 	}
 
-	fn build(config: Configuration, host: Configuration,
+	fn build(config: Configuration, boot: Configuration,
 	         libs: Lib[], exes: Exe[])
 	{
 		this.ins = new uni.Instance();
@@ -62,12 +62,12 @@ public:
 			voltaBin = ins.fileNoRule(voltaTool.cmd);
 			voltaPrint = voltaTool.print;
 		} else {
-			// Should we use the host config or the target config.
-			voltaConfig := host !is null ? host : config;
+			// Always use the bootstrap config to build volted.
+			assert(boot !is null);
 
 			// Setup a generator just for Volta.
 			mVoltaGen: ArgsGenerator;
-			mVoltaGen.setup(voltaConfig, libs, exes);
+			mVoltaGen.setup(boot, libs, exes);
 
 			// Need to build volta ourself.
 			exe := findVolta(exes);

@@ -30,10 +30,11 @@ enum CCKind
 //! Tracking if a configuration is native, host or cross-compile.
 enum ConfigKind
 {
-	Invalid, //!< Internal error state.
-	Native,  //!< Target is the same as the host system.
-	Host,    //!< For cross-compile, this config is the host system.
-	Cross,   //!< For cross-compile, this is the target config.
+	Invalid,   //!< Internal error state.
+	Bootstrap, //!< For boostraping the volted binary.
+	Native,    //!< Target is the same as the host system.
+	Host,      //!< For cross-compile, this config is the host system.
+	Cross,     //!< For cross-compile, this is the target config.
 }
 
 /*!
@@ -115,8 +116,9 @@ public:
 	}
 
 	//! Helper properties. @{
+	@property final fn isBootstrap() bool { return kind == ConfigKind.Bootstrap; }
 	@property final fn isNative() bool { return kind == ConfigKind.Native; }
-	@property final fn isHost() bool { return kind == ConfigKind.Host; }
+	//@property final fn isHost() bool { return kind == ConfigKind.Host; }
 	@property final fn isCross() bool { return kind == ConfigKind.Cross; }
 	//! @}
 }

@@ -57,24 +57,24 @@ fn getArgs(arch: Arch, platform: Platform, isRelease: bool, isLTO: bool) string[
 	return ret;
 }
 
-fn getArgs(host: bool, env: Environment) string[]
+fn getArgs(boot: bool, env: Environment) string[]
 {
 	ret: string[] = ["#", "# Environment"];
 	foreach (k, v; env.store) {
-		ret ~= (host ? "--host-env-" : "--env-") ~ k;
+		ret ~= (boot ? "--boot-env-" : "--env-") ~ k;
 		ret ~= v;
 	}
 	return ret;
 }
 
-fn getArgs(host: bool, cmds: Command[]) string[]
+fn getArgs(boot: bool, cmds: Command[]) string[]
 {
 	ret: string[];
 
 	foreach (cmd; cmds) {
 		name := cmd.name;
-		cmdFlag := (host ? "--host-cmd-" : "--cmd-") ~ name;
-		argFlag := (host ? "--host-arg-" : "--arg-") ~ name;
+		cmdFlag := (boot ? "--boot-cmd-" : "--cmd-") ~ name;
+		argFlag := (boot ? "--boot-arg-" : "--arg-") ~ name;
 
 		ret ~= ["#", "# tool: " ~ name, cmdFlag, cmd.cmd];
 		foreach (arg; cmd.args) {
@@ -255,9 +255,12 @@ public:
 				assert(arg.flag.length > 6);
 				mDrv.addEnv(false, arg.flag[6 .. $], arg.extra);
 				break;
-			case HostEnv:
+			case BootEnv:
 				assert(arg.flag.length > 11);
 				mDrv.addEnv(true, arg.flag[11 .. $], arg.extra);
+				break;
+			case HostEnv:
+				mDrv.abort("host env not supported right now");
 				break;
 			case ToolCmd:
 				assert(arg.flag.length > 6);
@@ -267,13 +270,19 @@ public:
 				assert(arg.flag.length > 6);
 				mDrv.addCmdArg(false, arg.flag[6 .. $], arg.extra);
 				break;
-			case HostToolCmd:
+			case BootToolCmd:
 				assert(arg.flag.length > 11);
 				mDrv.addCmd(true, arg.flag[11 .. $], arg.extra);
 				break;
-			case HostToolArg:
+			case BootToolArg:
 				assert(arg.flag.length > 11);
 				mDrv.addCmdArg(true, arg.flag[11 .. $], arg.extra);
+				break;
+			case HostToolCmd:
+				mDrv.abort("host tool not supported right now");
+				break;
+			case HostToolArg:
+				mDrv.abort("host tool arg not supported right now");
 				break;
 			default: mDrv.abort("unknown argument '%s'", arg.flag);
 			}
@@ -656,9 +665,27 @@ struct ToArgs
 				continue;
 			}
 
+			// Deal with --boot-env-PATH
+			if (tmp.length > 11 && tmp[0 .. 11] == "--boot-env-") {
+				argNext(Arg.Kind.BootEnv, "expected env var");
+				continue;
+			}
+
 			// Deal with --host-env-PATH
 			if (tmp.length > 11 && tmp[0 .. 11] == "--host-env-") {
 				argNext(Arg.Kind.HostEnv, "expected env var");
+				continue;
+			}
+
+			// Deal with --boot-cmd-volta and --boot-arg-volta.
+			if (tmp.length > 11 &&
+			    startsWith(tmp, "--boot-cmd-", "--boot-arg-")) {
+				isCmd := tmp[0 .. 11] == "--boot-cmd-";
+				if (isCmd) {
+					argNextPath(Arg.Kind.BootToolCmd, "expected command");
+				} else {
+					argNext(Arg.Kind.BootToolArg, "expected argument");
+				}
 				continue;
 			}
 
