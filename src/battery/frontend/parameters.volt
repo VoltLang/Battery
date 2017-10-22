@@ -92,41 +92,36 @@ fn getArgs(libs: Lib[], exes: Exe[]) string[]
 {
 	ret: string[];
 
-	fn processChildren(base: Project)
-	{
-		foreach (child; base.children) {
-			foundDep := false;
-			foreach (dep; base.deps) {
-				if (dep == child.name) {
-					foundDep = true;
-				}
-			}
-			if (!foundDep) {
-				continue;
-			}
-			clib := cast(Lib)child;
-			if (clib !is null) {
-				ret ~= getArgsLib(clib);
-				continue;
-			}
-			cexe := cast(Exe)child;
-			assert(cexe !is null);
-			ret ~= getArgsExe(cexe);
-		}
-	}
-
 	foreach (lib; libs) {
 		ret ~= getArgsLib(lib);
-		processChildren(lib);
+		ret ~= processChildren(lib.children);
 	}
 
 	foreach (exe; exes) {
 		ret ~= getArgsExe(exe);
-		processChildren(exe);
+		ret ~= processChildren(exe.children);
 	}
 
 	return ret;
 }
+
+fn processChildren(children: Project[]) string[]
+{
+	ret: string[];
+
+	foreach (child; children) {
+		if (clib := cast(Lib)child) {
+			ret ~= getArgsLib(clib);
+		} else if (cexe := cast(Exe)child) {
+			ret ~= getArgsExe(cexe);
+		} else {
+			assert(false);
+		}
+	}
+
+	return ret;
+}
+
 
 fn getArgsProject(b: Project, tag: string) string[]
 {
@@ -146,6 +141,10 @@ fn getArgsProject(b: Project, tag: string) string[]
 
 	if (b.jsonOutput !is null) {
 		ret ~= ["-jo", b.jsonOutput];
+	}
+
+	if (b.scanForD) {
+		ret ~= "--scan-for-d";
 	}
 
 	foreach (def; b.defs) {
@@ -197,19 +196,20 @@ fn getArgsProject(b: Project, tag: string) string[]
 
 fn getArgsLib(l: Lib) string[]
 {
-	return getArgsProject(l, "lib");
+	ret := getArgsProject(l, "lib");
+
+	if (l.isTheRT) {
+		ret ~= "--is-the-rt";
+	}
+
+	return ret;
 }
 
 fn getArgsExe(e: Exe) string[]
 {
 	ret := getArgsProject(e, "exe");
 
-	if (e.isInternalD) {
-		ret ~= "--internal-d";
-	}
-
 	ret ~= e.srcC;
-	ret ~= e.srcD;
 	ret ~= e.srcObj;
 	ret ~= e.srcVolt;
 
@@ -373,6 +373,8 @@ protected:
 			switch (arg.kind) with (Arg.Kind) {
 			case Name: lib.name = arg.extra; break;
 			case SrcDir: lib.srcDir = arg.extra; break;
+			case ScanForD: lib.scanForD = true; break;
+			case IsTheRT: lib.isTheRT = true; break;
 			case TestFile: lib.testFiles ~= arg.extra; break;
 			case Dep: lib.deps ~= arg.extra; break;
 			case JSONOutput: lib.jsonOutput = arg.extra; break;
@@ -400,6 +402,7 @@ protected:
 			switch (arg.kind) with (Arg.Kind) {
 			case Name: exe.name = arg.extra; break;
 			case SrcDir: exe.srcDir = arg.extra; break;
+			case ScanForD: exe.scanForD = true; break;
 			case TestFile: exe.testFiles ~= arg.extra; break;
 			case Dep: exe.deps ~= arg.extra; break;
 			case JSONOutput: exe.jsonOutput = arg.extra; break;
@@ -408,11 +411,10 @@ protected:
 			case Framework: exe.frameworks ~= arg.extra; break;
 			case FrameworkPath: exe.frameworkPaths ~= arg.extra; break;
 			case StringPath: exe.stringPaths ~= arg.extra; break;
-			case InternalD: exe.isInternalD = true; break;
 			case Output: exe.bin = arg.extra; break;
 			case Identifier: exe.defs ~= arg.extra; break;
 			case FileC: exe.srcC ~= arg.extra; break;
-			case FileD: exe.srcD ~= arg.extra; break;
+			case FileD: exe.srcVolt ~= arg.extra; break;
 			case FileAsm: exe.srcAsm ~= arg.extra; break;
 			case FileObj: exe.srcObj ~= arg.extra; break;
 			case FileVolt: exe.srcVolt ~= arg.extra; break;
@@ -720,6 +722,8 @@ struct ToArgs
 			case "-framework": argNext(Framework, "expected framework name"); continue;
 			case "-F": argNext(FrameworkPath, "expected framework path"); continue;
 			case "-J": argNextPath(StringPath, "expected string path"); continue;
+			case "--is-the-rt": arg(IsTheRT); continue;
+			case "--scan-for-d": arg(ScanForD); continue;
 			case "--internal-d": arg(InternalD); continue;
 			case "-D": argNext(Identifier, "expected version identifier"); continue;
 			case "-Xld", "--Xld": argNext(ArgLD, "expected ld arg"); continue;

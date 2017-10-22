@@ -184,7 +184,13 @@ public:
 	fn makeTargetVoltLibraryGeneric(ref gen: ArgsGenerator, lib: Lib, name: string, flags: ArgsKind) uni.Target
 	{
 		depName := gen.genVoltDep(lib.name);
-		files := deepScan(lib.srcDir, ".volt");
+		files: string[];
+		if (lib.scanForD) {
+			files = deepScan(lib.srcDir, ".d");
+		} else {
+			files = deepScan(lib.srcDir, ".volt");
+		}
+
 
 		// Make the dependancy and target file.
 		t := ins.fileNoRule(name);
@@ -278,12 +284,8 @@ public:
 			["-o", name, "--dep", depName] ~ exe.srcVolt;
 
 		// This is mostly for Volta.
-		if (exe.isInternalD) {
+		if (exe.scanForD) {
 			args ~= "--internal-d";
-			args ~= exe.srcD;
-			foreach (src; exe.srcD) {
-				t.deps ~= ins.file(src);
-			}
 		}
 
 		// Should we generate JSON output.
@@ -436,24 +438,28 @@ public:
 	{
 		srcDir := exe.srcDir;
 		mainFile := srcDir ~ dirSeparator ~ "main.d";
-		files := deepScan(srcDir, ".d");
 		name := gen.genVolted();
 
 		t := ins.fileNoRule(name);
-		t.deps = new uni.Target[](files.length);
-		foreach (i, file; files) {
-			t.deps[i] = ins.file(file);
-		}
-
 		t.rule = new uni.Rule();
 
-		c := gen.config.rdmdCmd;
+		fn doScan(p: Project) string[] {
+			files := deepScan(p.srcDir, ".d");
+			deps := new uni.Target[](files.length);
+			foreach (i, file; files) {
+				deps[i] = ins.file(file);
+			}
+			t.deps ~= deps;
+			return null;
+		}
 
+		c := gen.config.rdmdCmd;
 		args := c.args ~ [
 			"--build-only",
-			"-I" ~ srcDir,
 			"-of" ~ t.name
 		];
+
+		args ~= gen.genVoltArgs(exe, ArgsKind.Dmd, doScan);
 
 		foreach (arg; exe.srcObj) {
 			args ~= arg;

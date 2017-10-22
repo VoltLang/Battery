@@ -36,6 +36,8 @@ public:
 
 		StringPath,
 
+		IsTheRT,
+		ScanForD,
 		InternalD,
 		Identifier,
 		Output,

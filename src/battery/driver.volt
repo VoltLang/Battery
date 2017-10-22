@@ -544,10 +544,17 @@ Normal usecase when standing in a project directory.
 	fn verifyConfig()
 	{
 		isCross := mHostConfig !is null;
-		hasRtDir := mStore.get("rt", null) !is null;
+		hasRtDir: bool;
 		hasRdmdTool := mBootstrapConfig !is null && mBootstrapConfig.getTool(RdmdName) !is null;
 		hasVoltaDir := mStore.get("volta", null) !is null;
 		hasVoltaTool := mConfig.getTool(VoltaName) !is null;
+
+		foreach (k, v; mStore) {
+			lib := cast(Lib)v;
+			if (lib !is null && lib.isTheRT) {
+				hasRtDir = true;
+			}
+		}
 
 		if (!hasRdmdTool && !hasVoltaTool) {
 			abort("No rdmd found (needed right now for Volta).");

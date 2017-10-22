@@ -27,6 +27,7 @@ public:
 		ClangAssemble = 0x10,
 		ClangLink     = 0x20,
 		LinkLink      = 0x40,
+		Dmd           = 0x80,
 
 		AnyLdLink     = VoltaLink | ClangLink,
 		AnyLink       = VoltaLink | ClangLink | LinkLink,
@@ -44,6 +45,9 @@ public:
 	archStr: string;
 	platformStr: string;
 	buildDir: string;
+
+	//! The runtime.
+	rt: Lib;
 
 
 public:
@@ -69,11 +73,16 @@ public:
 
 		foreach (lib; libs) {
 			store[lib.name] = lib;
+			if (lib.isTheRT) {
+				rt = lib;
+			}
 		}
 
 		foreach (exe; exes) {
 			store[exe.name] = exe;
 		}
+
+		assert(rt !is null);
 	}
 
 	/**
@@ -160,6 +169,15 @@ public:
 				foreach (path; b.stringPaths) {
 					ret ~= ["-J", path];
 				}
+
+				// For now untill volta lears about multitag.
+				if (b.scanForD) {
+					ret ~= "--internal-d";
+				}
+			}
+
+			if (kind & Kind.Dmd) {
+				ret ~= ("-I" ~ b.srcDir);
 			}
 
 			// Shared with clang and volta.
@@ -178,6 +196,16 @@ public:
 
 				foreach (l; b.libs) {
 					ret ~= ["-l", l];
+				}
+			}
+
+			if (kind & Kind.Dmd) {
+				foreach (path; b.libPaths) {
+					ret ~= ("-L-L" ~ path);
+				}
+
+				foreach (l; b.libs) {
+					ret ~= ("-L-l" ~ l);
 				}
 			}
 
@@ -239,8 +267,10 @@ public:
 
 		traverse(base);
 
-		// Implictly add rt as a dependancy
-		traverse(store["rt"]);
+		if (!(kind & Kind.Dmd)) {
+			// Implictly add rt as a dependancy
+			traverse(rt);
+		}
 
 		return ret;
 	}

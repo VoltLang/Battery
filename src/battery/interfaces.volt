@@ -37,15 +37,23 @@ class Project
 
 	testFiles: string[];
 
+
 	//! Was this target given a -jo argument.
 	jsonOutput: string;
 
 	children: Project[];
+
+	//! Should we ignore this project unless explicitly asked for
+	isExternal: bool;
+
+	//! For D projects.
+	scanForD: bool;
 }
 
 //! The project is built as a library used by executables.
 class Lib : Project
 {
+	isTheRT: bool;
 }
 
 //! The project is built as a executable.
@@ -53,9 +61,6 @@ class Exe : Project
 {
 	bin: string;
 
-	isInternalD: bool;
-
-	srcD: string[];
 	srcVolt: string[];
 }
 

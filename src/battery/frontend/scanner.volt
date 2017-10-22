@@ -33,13 +33,15 @@ enum PathTestSimple = "battery.tests.simple";
  */
 fn scanDir(drv: Driver, c: Configuration, path: string) Project
 {
+	return scanDir(drv, c, path, null);
+}
+
+fn scanDir(drv: Driver, c: Configuration, path: string, parent: string) Project
+{
 	s: Scanner;
 	s.scan(drv, path);
 
-	if (s.name == "volta") {
-		return scanVolta(drv, c, ref s);
-	}
-
+	// First sanity check.
 	if (!s.hasPath) {
 		drv.abort("path '%s' not found", s.inputPath);
 	}
@@ -48,45 +50,47 @@ fn scanDir(drv: Driver, c: Configuration, path: string) Project
 		drv.abort("path '%s' does not have a '%s' folder", s.inputPath, PathSrc);
 	}
 
-	if (s.filesVolt is null) {
-		drv.abort("path '%s' has no volt files", s.pathSrc);
+	if (s.name == "volta") {
+		return scanVolta(drv, c, ref s);
 	}
 
 	// Create exectuable or library.
 	ret: Project; exe: Exe; lib: Lib;
-	if (s.hasMainVolt) {
+	if (s.hasMainVolt || s.hasMainD) {
 		ret = exe = s.buildExe();
-		drv.info("executable %s: '%s'", ret.name, s.inputPath);
 	} else {
 		ret = lib = s.buildLib();
-		drv.info("library %s: '%s'", ret.name, s.inputPath);
 	}
 
-	foreach (p; s.pathJsonTests) {
-		ret.testFiles ~= p;
+	// TODO temporary hack
+	if (lib !is null && lib.name == "rt") {
+		lib.isTheRT = true;
 	}
 
-	if (s.hasRes) {
-		ret.stringPaths ~= s.pathRes;
+	if (parent.length != 0) {
+		ret.name = format("%s.%s", parent, ret.name);
 	}
 
 	processBatteryCmd(drv, c, ret, ref s);
 
-	foreach (p; s.pathSimpleTests) {
-		drv.info("\ttest: '%s'", rootify(s.path, p));
+	if (!ret.scanForD && s.filesVolt.length == 0) {
+		drv.abort("path '%s' has no volt files", s.pathSrc);
 	}
 
-	foreach (p; s.pathJsonTests) {
-		drv.info("\ttest: '%s'", rootify(s.path, p));
+	if (ret.scanForD && s.filesD.length == 0) {
+		drv.abort("path '%s' has no D files", s.pathSrc);
 	}
 
-	if (s.hasRes) {
-		drv.info("\tres: '%s'", rootify(s.path, s.pathRes));
+	if (lib !is null) {
+		printInfo(drv, lib, ref s);
 	}
 
-	foreach (p; s.pathSubProjects) {
-		ret.children ~= scanDir(drv, c, dirName(p));
-		ret.children[$-1].name = format("%s.%s", s.name, ret.children[$-1].name);
+	if (exe !is null) {
+		printInfo(drv, exe, ref s);
+	}
+
+	foreach (sub; s.pathSubProjects) {
+		ret.children ~= scanDir(drv, c, dirName(sub), ret.name);
 	}
 
 	return ret;
@@ -103,33 +107,57 @@ fn rootify(root: string, path: string) string
 
 fn scanVolta(drv: Driver, c: Configuration, ref s: Scanner) Project
 {
-	if (!s.hasRt) {
-		drv.abort("volta needs a 'rt' folder");
-	}
-
 	if (!s.hasMainD) {
 		drv.abort("volta needs 'src/main.d'");
 	}
-
-	drv.info("compiler volta: '%s'", s.inputPath);
 
 	exe := new Exe();
 	exe.name = s.name;
 	exe.srcDir = s.pathSrc;
 	exe.bin = s.pathDerivedBin;
-	exe.isInternalD = true;
+	exe.scanForD = true;
 	exe.srcVolt ~= s.pathMainD;
 
 	processBatteryCmd(drv, c, exe, ref s);
 
-	// Scan the runtime.
-	rt := cast(Lib)scanDir(drv, c, s.inputPath ~ dirSeparator ~ PathRt);
-	if (rt is null) {
-		drv.abort("Volta '%s' runtime must be a library", s.inputPath);
+	drv.info("compiler volta: '%s'", s.inputPath);
+
+	printInfoCommon(drv, exe, ref s);
+
+	foreach (sub; s.pathSubProjects) {
+		exe.children ~= scanDir(drv, c, dirName(sub), exe.name);
 	}
-	drv.add(rt);
 
 	return exe;
+}
+
+fn printInfo(drv: Driver, lib: Lib, ref s: Scanner)
+{
+	drv.info("library %s: '%s'", lib.name, s.inputPath);
+
+	printInfoCommon(drv, lib, ref s);
+}
+
+fn printInfo(drv: Driver, exe: Exe, ref s: Scanner)
+{
+	drv.info("executable %s: '%s'", exe.name, s.inputPath);
+
+	printInfoCommon(drv, exe, ref s);
+}
+
+fn printInfoCommon(drv: Driver, p: Project, ref s: Scanner)
+{
+	foreach (path; s.pathSimpleTests) {
+		drv.info("\ttest: '%s'", rootify(s.path, path));
+	}
+
+	foreach (path; s.pathJsonTests) {
+		drv.info("\ttest: '%s'", rootify(s.path, path));
+	}
+
+	foreach (path; p.stringPaths) {
+		drv.info("\tres: '%s'", rootify(s.path, path));
+	}
 }
 
 fn processBatteryCmd(drv: Driver, c: Configuration, b: Project, ref s: Scanner)
@@ -150,7 +178,6 @@ public:
 
 	name: string;
 
-	hasRt: bool;
 	hasSrc: bool;
 	hasRes: bool;
 	hasPath: bool;
@@ -171,6 +198,7 @@ public:
 	pathSubProjects: string[];
 
 	filesC: string[];
+	filesD: string[];
 	filesVolt: string[];
 
 
@@ -198,7 +226,6 @@ public:
 		pathSubProjects = deepScan(path, PathBatteryTxt, pathBatteryTxt);
 
 		hasPath        = isDir(path);
-		hasRt          = isDir(pathRt);
 		hasSrc         = isDir(pathSrc);
 		hasRes         = isDir(pathRes);
 		hasMainD       = exists(pathMainD);
@@ -210,6 +237,7 @@ public:
 		}
 
 		filesC    = deepScan(pathSrc, ".c");
+		filesD    = deepScan(pathSrc, ".d");
 		filesVolt = deepScan(pathSrc, ".volt");
 	}
 
@@ -228,6 +256,8 @@ public:
 		exe.srcVolt = [pathMainVolt];
 		exe.bin = pathDerivedBin;
 
+		buildCommon(exe);
+
 		return exe;
 	}
 
@@ -237,7 +267,20 @@ public:
 		lib.name = name;
 		lib.srcDir = pathSrc;
 
+		buildCommon(lib);
+
 		return lib;
+	}
+
+	fn buildCommon(p: Project)
+	{
+		foreach (path; pathJsonTests) {
+			p.testFiles ~= path;
+		}
+
+		if (hasRes) {
+			p.stringPaths ~= pathRes;
+		}
 	}
 }
 
@@ -270,5 +313,3 @@ fn deepScan(path: string, ending: string, omissions: string[]...) string[]
 
 	return ret;
 }
-
-import watt.io.std;
