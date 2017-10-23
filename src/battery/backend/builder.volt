@@ -283,11 +283,6 @@ public:
 		args := gen.genVoltArgs(exe, flags, null) ~
 			["-o", name, "--dep", depName] ~ exe.srcVolt;
 
-		// This is mostly for Volta.
-		if (exe.scanForD) {
-			args ~= "--internal-d";
-		}
-
 		// Should we generate JSON output.
 		jsonName := gen.shouldJSON(exe);
 		if (jsonName !is null) {

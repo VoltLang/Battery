@@ -50,21 +50,20 @@ fn scanDir(drv: Driver, c: Configuration, path: string, parent: string) Project
 		drv.abort("path '%s' does not have a '%s' folder", s.inputPath, PathSrc);
 	}
 
-	if (s.name == "volta") {
-		return scanVolta(drv, c, ref s);
+	// Because of DMD
+	if (s.name == "volta" && !s.hasMainD) {
+		drv.abort("volta needs 'src/main.d'");
 	}
 
 	// Create exectuable or library.
 	ret: Project; exe: Exe; lib: Lib;
-	if (s.hasMainVolt || s.hasMainD) {
+	if (s.hasMainD && s.hasMainVolt) {
+		drv.abort("Project can not have both '%s' and '%s'",
+			s.pathMainD, s.pathMainVolt);
+	} else if (s.hasMainVolt || s.hasMainD) {
 		ret = exe = s.buildExe();
 	} else {
 		ret = lib = s.buildLib();
-	}
-
-	// TODO temporary hack
-	if (lib !is null && lib.name == "rt") {
-		lib.isTheRT = true;
 	}
 
 	if (parent.length != 0) {
@@ -103,32 +102,6 @@ fn rootify(root: string, path: string) string
 	} else {
 		return format("$%s%s", dirSeparator, path[root.length + 1 .. $]);
 	}
-}
-
-fn scanVolta(drv: Driver, c: Configuration, ref s: Scanner) Project
-{
-	if (!s.hasMainD) {
-		drv.abort("volta needs 'src/main.d'");
-	}
-
-	exe := new Exe();
-	exe.name = s.name;
-	exe.srcDir = s.pathSrc;
-	exe.bin = s.pathDerivedBin;
-	exe.scanForD = true;
-	exe.srcVolt ~= s.pathMainD;
-
-	processBatteryCmd(drv, c, exe, ref s);
-
-	drv.info("compiler volta: '%s'", s.inputPath);
-
-	printInfoCommon(drv, exe, ref s);
-
-	foreach (sub; s.pathSubProjects) {
-		exe.children ~= scanDir(drv, c, dirName(sub), exe.name);
-	}
-
-	return exe;
 }
 
 fn printInfo(drv: Driver, lib: Lib, ref s: Scanner)
@@ -250,11 +223,16 @@ public:
 	fn buildExe() Exe
 	{
 		exe := new Exe();
-		exe.name = name;
-		exe.srcDir = pathSrc;
 		exe.srcC = filesC;
-		exe.srcVolt = [pathMainVolt];
 		exe.bin = pathDerivedBin;
+
+		if (hasMainD) {
+			exe.srcVolt ~= pathMainD;
+		}
+
+		if (hasMainVolt) {
+			exe.srcVolt ~= pathMainVolt;
+		}
 
 		buildCommon(exe);
 
@@ -274,6 +252,9 @@ public:
 
 	fn buildCommon(p: Project)
 	{
+		p.name = name;
+		p.srcDir = pathSrc;
+
 		foreach (path; pathJsonTests) {
 			p.testFiles ~= path;
 		}

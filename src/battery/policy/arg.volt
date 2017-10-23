@@ -38,7 +38,6 @@ public:
 
 		IsTheRT,
 		ScanForD,
-		InternalD,
 		Identifier,
 		Output,
 		JSONOutput,

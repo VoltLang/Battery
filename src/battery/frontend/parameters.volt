@@ -724,7 +724,6 @@ struct ToArgs
 			case "-J": argNextPath(StringPath, "expected string path"); continue;
 			case "--is-the-rt": arg(IsTheRT); continue;
 			case "--scan-for-d": arg(ScanForD); continue;
-			case "--internal-d": arg(InternalD); continue;
 			case "-D": argNext(Identifier, "expected version identifier"); continue;
 			case "-Xld", "--Xld": argNext(ArgLD, "expected ld arg"); continue;
 			case "-Xcc", "--Xcc": argNext(ArgCC, "expected cc arg"); continue;

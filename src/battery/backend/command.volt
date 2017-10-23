@@ -169,11 +169,6 @@ public:
 				foreach (path; b.stringPaths) {
 					ret ~= ["-J", path];
 				}
-
-				// For now untill volta lears about multitag.
-				if (b.scanForD) {
-					ret ~= "--internal-d";
-				}
 			}
 
 			if (kind & Kind.Dmd) {
