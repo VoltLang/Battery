@@ -438,7 +438,8 @@ public:
 		info("");
 	}
 
-	enum VERSION_STRING = "battery version 0.1.13";
+	enum VERSION_STRING = "battery version 0.1.14";
+
 	fn printVersion()
 	{
 		info("${VERSION_STRING}");
