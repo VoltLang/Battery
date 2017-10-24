@@ -38,6 +38,7 @@ class DefaultDriver : Driver
 {
 public:
 	enum BatteryConfigFile = ".battery.config.txt";
+	enum VersionString = "battery version 0.1.14";
 
 
 protected:
@@ -432,17 +433,15 @@ public:
 		info("   _   ");
 		info("+-+-+-+");
 		info(`| |-\ |`);
-		info("| | < | ${VERSION_STRING}");
+		info("| | < | ${VersionString}");
 		info("| |-/ | \"Batteries Included\"");
 		info("+--=--+");
 		info("");
 	}
 
-	enum VERSION_STRING = "battery version 0.1.14";
-
 	fn printVersion()
 	{
-		info("${VERSION_STRING}");
+		info("${VersionString}");
 	}
 
 	fn printUsage()
