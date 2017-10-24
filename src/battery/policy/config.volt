@@ -315,8 +315,6 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 		drv.abort("could not find a valid llvm toolchain");
 	}
 
-	assert(llvm.clang !is null);
-
 	if (llvm.config !is null && llvm.needConfig) {
 		config.addTool(LLVMConfigName, llvm.config.cmd, llvm.config.args);
 	}
@@ -345,6 +343,9 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 	}
 
 	if (!config.isBootstrap) {
+		// A tiny bit of sanity checking.
+		assert(llvm.clang !is null);
+
 		// Setup clang and cc tools.
 		clang := config.addTool(ClangName, llvm.clang.cmd, llvm.clang.args);
 		cc := config.addTool(CCName, llvm.clang.cmd, llvm.clang.args);
