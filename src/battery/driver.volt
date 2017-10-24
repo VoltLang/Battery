@@ -38,7 +38,7 @@ class DefaultDriver : Driver
 {
 public:
 	enum BatteryConfigFile = ".battery.config.txt";
-	enum VersionString = "battery version 0.1.14";
+	enum VersionString = "battery version 0.1.15";
 
 
 protected:
