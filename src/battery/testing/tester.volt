@@ -60,7 +60,9 @@ public:
 			voltaTool := getVoltaCommand(exe);
 			projects ~= new TestProject(exe.name, exe.testFiles);
 			projects[$-1].addCommand("volta", voltaTool);
-			projects[$-1].addCommand(exe.name, exeTool);
+			if (exe.name != "volta") {
+				projects[$-1].addCommand(exe.name, exeTool);
+			}
 		}
 
 		foreach (lib; libs) {
