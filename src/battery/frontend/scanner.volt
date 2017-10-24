@@ -22,6 +22,7 @@ import battery.frontend.parameters : ArgParser;
 enum PathRt         = "rt";
 enum PathSrc        = "src";
 enum PathRes        = "res";
+enum PathTest       = "test";
 enum PathMainD      = "main.d";
 enum PathMainVolt   = "main.volt";
 enum PathBatteryTxt = "battery.txt";
@@ -154,6 +155,7 @@ public:
 	hasSrc: bool;
 	hasRes: bool;
 	hasPath: bool;
+	hasTest: bool;
 	hasMainD: bool;
 	hasMainVolt: bool;
 	hasBatteryCmd: bool;
@@ -162,6 +164,7 @@ public:
 	pathRt: string;
 	pathSrc: string;
 	pathRes: string;
+	pathTest: string;
 	pathMainD: string;
 	pathMainVolt: string;
 	pathBatteryTxt: string;
@@ -190,28 +193,31 @@ public:
 		pathRt          = getInPath(PathRt);
 		pathSrc         = getInPath(PathSrc);
 		pathRes         = getInPath(PathRes);
+		pathTest        = getInPath(PathTest);
 		pathMainD       = pathSrc ~ dirSeparator ~ PathMainD;
 		pathMainVolt    = pathSrc ~ dirSeparator ~ PathMainVolt;
 		pathBatteryTxt  = getInPath(PathBatteryTxt);
 		pathDerivedBin  = getInPath(name);
-		pathSimpleTests = deepScan(path, PathTestSimple);
-		pathJsonTests   = deepScan(path, PathTestJson);
 		pathSubProjects = deepScan(path, PathBatteryTxt, pathBatteryTxt);
 
 		hasPath        = isDir(path);
 		hasSrc         = isDir(pathSrc);
 		hasRes         = isDir(pathRes);
+		hasTest        = isDir(pathTest);
 		hasMainD       = exists(pathMainD);
 		hasMainVolt    = exists(pathMainVolt);
 		hasBatteryCmd  = exists(pathBatteryTxt);
 
-		if (!hasSrc) {
-			return;
+		if (hasTest) {
+			pathSimpleTests = deepScan(pathTest, PathTestSimple);
+			pathJsonTests   = deepScan(pathTest, PathTestJson);
 		}
 
-		filesC    = deepScan(pathSrc, ".c");
-		filesD    = deepScan(pathSrc, ".d");
-		filesVolt = deepScan(pathSrc, ".volt");
+		if (hasSrc) {
+			filesC    = deepScan(pathSrc, ".c");
+			filesD    = deepScan(pathSrc, ".d");
+			filesVolt = deepScan(pathSrc, ".volt");
+		}
 	}
 
 	fn getInPath(file: string) string
