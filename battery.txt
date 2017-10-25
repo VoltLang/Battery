@@ -1,2 +1,4 @@
 --dep
 watt
+--dep
+watt.json
