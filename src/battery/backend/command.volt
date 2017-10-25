@@ -2,7 +2,7 @@
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 module battery.backend.command;
 
-import watt.path : dirSeparator;
+import watt.path : dirSeparator, fullPath;
 import watt.text.string : endsWith;
 import watt.text.format;
 import io = watt.io;
@@ -157,9 +157,9 @@ public:
 			if (kind & Kind.VoltaSrc) {
 
 				if (shouldSourceInclude(b)) {
-					ret ~= ["--src-I", b.srcDir];
+					ret ~= ["--src-I", fullPath(b.srcDir)];
 				} else {
-					ret ~= ["--lib-I", b.srcDir];
+					ret ~= ["--lib-I", fullPath(b.srcDir)];
 				}
 
 				foreach (def; b.defs) {

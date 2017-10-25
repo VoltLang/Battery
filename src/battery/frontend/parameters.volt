@@ -7,6 +7,7 @@ module battery.frontend.parameters;
 
 import watt.process;
 import watt.conv : toLower;
+import watt.path : fullPath;
 import watt.text.path : normalizePath;
 import watt.text.string : startsWith, endsWith;
 
@@ -187,7 +188,7 @@ fn getArgsProject(b: Project, tag: string) string[]
 		ret ~= ["--Xlinker", arg];
 	}
 
-	ret ~= ["--src-I", b.srcDir];
+	ret ~= ["--src-I", fullPath(b.srcDir)];
 
 	ret ~= b.srcAsm;
 
