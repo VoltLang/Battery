@@ -200,7 +200,11 @@ public:
 				}
 
 				foreach (l; b.libs) {
-					ret ~= ("-L-l" ~ l);
+					version (Windows) {
+						ret ~= ("-L" ~ l);
+					} else {
+						ret ~= ("-L-l" ~ l);
+					}
 				}
 			}
 

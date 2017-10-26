@@ -472,7 +472,7 @@ public:
 			}
 			foreach (arg; exe.libs) {
 				args ~= ("-L" ~ arg);
-			}	
+			}
 		}
 		foreach (arg; exe.xlinker) {
 			args ~= ("-L" ~ arg);
