@@ -672,6 +672,7 @@ fn fillInConfigCommands(drv: Driver, config: Configuration)
 	if (config.isBootstrap) {
 		// Get the optional RDMD command.
 		config.rdmdCmd = config.getTool(RdmdName);
+		assert(config.rdmdCmd !is null);
 		config.rdmdCmd.print = RdmdPrint;
 
 		// Done now.

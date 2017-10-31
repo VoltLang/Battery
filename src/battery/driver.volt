@@ -8,6 +8,7 @@ module battery.driver;
 import core.c.stdlib : exit;
 import core.varargs : va_list, va_start, va_end;
 import io = watt.io;
+import toml = watt.toml;
 import watt.text.path;
 import watt.text.string : endsWith, replace, split;
 import watt.text.ascii : isAlpha, isAlphaNum;
@@ -20,7 +21,7 @@ import watt.io.file : exists, isFile;
 
 import battery.configuration;
 import battery.interfaces;
-import battery.util.file : getLinesFromFile;
+import battery.util.file : getLinesFromFile, getTomlConfig, getStringArray, outputConfig;
 import battery.util.path : cleanPath;
 import battery.policy.host;
 import battery.policy.config;
@@ -38,7 +39,8 @@ class DefaultDriver : Driver
 {
 public:
 	enum BatteryConfigFile = ".battery.config.txt";
-	enum VersionString = "battery version 0.1.15";
+	enum VersionNumber = "0.1.15";
+	enum VersionString = "battery version ${VersionNumber}";
 
 
 protected:
@@ -86,6 +88,7 @@ public:
 
 	fn config(args: string[])
 	{
+		originalArgs := args;
 		// Filter out --release, --arch and --platform arguments.
 		isRelease, isLTO: bool;
 		findArchAndPlatform(this, ref args, ref arch, ref platform,
@@ -130,15 +133,6 @@ public:
 			fillInConfigCommands(this, mBootstrapConfig);
 		}
 
-/*
-		// Handle cross compiling.
-		if (mHostConfig !is null) {
-			// Need fill in host commands seperatly.
-			doConfig(this, mHostConfig);
-			fillInConfigCommands(this, mHostConfig);
-		}
-*/
-
 		// Do this after the arguments has been parsed.
 		doConfig(this, mConfig);
 		fillInConfigCommands(this, mConfig);
@@ -146,52 +140,38 @@ public:
 		// Parse the rest of the arguments.
 		arg.parseProjects(mConfig);
 
+		batteryTomls: string[];
+		fn addProjectBatteryTxt(prj: Project)
+		{
+			batteryTomls ~= prj.batteryToml;
+			foreach (child; prj.children) {
+				/* Calculating the dependency graph
+				 * here to avoid some spurious (but harmless)
+				 * listings here isn't worth it.
+				 */
+				addProjectBatteryTxt(child);
+			}
+		}
+		foreach (_lib; mLib) {
+			addProjectBatteryTxt(_lib);
+		}
+		foreach (_exe; mExe) {
+			addProjectBatteryTxt(_exe);
+		}
+
 		configSanity();
-
 		verifyConfig();
-
-		ofs := new OutputFileStream(BatteryConfigFile);
-		foreach (r; getArgs(arch, platform, mConfig.isRelease, mConfig.isLTO)) {
-			ofs.write(r);
-			ofs.put('\n');
-		}
-		foreach (r; getArgs(false, mConfig.env)) {
-			ofs.write(r);
-			ofs.put('\n');
-		}
-
-		foreach (r; getArgs(false, mConfig.tools.values)) {
-			ofs.write(r);
-			ofs.put('\n');
-		}
+		bootstrapArgs: string[][2];
 		if (mBootstrapConfig !is null) {
-			foreach (r; getArgs(true, mBootstrapConfig.env)) {
-				ofs.write(r);
-				ofs.put('\n');
-			}
-			foreach (r; getArgs(true, mBootstrapConfig.tools.values)) {
-				ofs.write(r);
-				ofs.put('\n');
-			}
+			bootstrapArgs[0] = getArgs(true, mBootstrapConfig.env);
+			bootstrapArgs[1] = getArgs(true, mBootstrapConfig.tools.values);
 		}
-/*
-		if (mHostConfig !is null) {
-			foreach (r; getArgs(true, mHostConfig.env)) {
-				ofs.write(r);
-				ofs.put('\n');
-			}
-			foreach (r; getArgs(true, mHostConfig.tools.values)) {
-				ofs.write(r);
-				ofs.put('\n');
-			}
-		}
-*/
-		foreach (r; getArgs(mLib, mExe)) {
-			ofs.write(r);
-			ofs.put('\n');
-		}
-		ofs.flush();
-		ofs.close();
+		outputConfig(BatteryConfigFile, VersionNumber, originalArgs, batteryTomls,
+			getArgs(arch, platform, mConfig.isRelease, mConfig.isLTO),
+			getArgs(false, mConfig.env),
+			getArgs(false, mConfig.tools.values),
+			bootstrapArgs[0], bootstrapArgs[1],
+			getArgs(mLib, mExe));
 	}
 
 	fn configSanity()
@@ -245,16 +225,27 @@ public:
 
 	fn build()
 	{
-		args: string[];
-		if (!getLinesFromFile(BatteryConfigFile, ref args)) {
+		root: toml.Value;
+		if (!getTomlConfig(BatteryConfigFile, out root)) {
 			return abort("must first run the 'config' command");
 		}
 
-		if (exists(PathBatteryTxt) && isFile(PathBatteryTxt) &&
-		    PathBatteryTxt.modifiedMoreRecentlyThan(BatteryConfigFile)) {
-			info("WARNING: '%s' is newer than '%s'; consider rerunning 'config'.",
-				PathBatteryTxt, BatteryConfigFile);
+		auto inputs = getStringArray(root["battery"]["config"]["input"].array());
+		foreach (btxt; inputs) {
+			if (exists(btxt) && isFile(btxt) &&
+			btxt.modifiedMoreRecentlyThan(BatteryConfigFile)) {
+				info("battery.txt newer than config file, regenerating config file...");
+				cargs := getStringArray(root["battery"]["config"]["args"].array());
+				config(cargs);
+				if (!getTomlConfig(BatteryConfigFile, out root)) {
+					return abort("failed to regenerated config");
+				}
+				clearProjects();
+				break;
+			}
 		}
+
+		args := getStringArray(root["battery"]["config"]["cache"].array());
 
 		// Filter out --release, --arch and --platform arguments.
 		isRelease, isLTO: bool;
@@ -659,6 +650,15 @@ Normal usecase when standing in a project directory.
 		mExe ~= exe;
 		mStore[exe.name] = exe;
 		addChildren(exe);
+	}
+
+	fn clearProjects()
+	{
+		foreach (k; mStore.keys) {
+			mStore.remove(k);
+		}
+		mExe = null;
+		mLib = null;
 	}
 
 	fn addChildren(b: Project)

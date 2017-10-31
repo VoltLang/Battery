@@ -17,17 +17,19 @@ import battery.interfaces;
 import battery.configuration;
 import battery.util.file : getLinesFromFile;
 import battery.frontend.parameters : ArgParser;
+import battery.frontend.conf : parseTomlConfig;
 
 
-enum PathRt         = "rt";
-enum PathSrc        = "src";
-enum PathRes        = "res";
-enum PathTest       = "test";
-enum PathMainD      = "main.d";
-enum PathMainVolt   = "main.volt";
-enum PathBatteryTxt = "battery.txt";
-enum PathTestJson   = "battery.tests.json";
-enum PathTestSimple = "battery.tests.simple";
+enum PathRt          = "rt";
+enum PathSrc         = "src";
+enum PathRes         = "res";
+enum PathTest        = "test";
+enum PathMainD       = "main.d";
+enum PathMainVolt    = "main.volt";
+enum PathBatteryTxt  = "battery.txt";
+enum PathBatteryToml = "battery.toml";
+enum PathTestJson    = "battery.tests.json";
+enum PathTestSimple  = "battery.tests.simple";
 
 /**
  * Scan a directory and see what it holds.
@@ -136,12 +138,7 @@ fn printInfoCommon(drv: Driver, p: Project, ref s: Scanner)
 
 fn processBatteryCmd(drv: Driver, c: Configuration, b: Project, ref s: Scanner)
 {
-	if (s.hasBatteryCmd) {
-		args : string[];
-		getLinesFromFile(s.pathBatteryTxt, ref args);
-		ap := new ArgParser(drv);
-		ap.parseProjects(c, args, s.path ~ dirSeparator, b);
-	}
+	parseTomlConfig(s.pathBatteryToml, s.path ~ dirSeparator, drv, c, b);
 }
 
 struct Scanner
@@ -158,7 +155,7 @@ public:
 	hasTest: bool;
 	hasMainD: bool;
 	hasMainVolt: bool;
-	hasBatteryCmd: bool;
+	hasBatteryToml: bool;
 
 	path: string;
 	pathRt: string;
@@ -167,7 +164,7 @@ public:
 	pathTest: string;
 	pathMainD: string;
 	pathMainVolt: string;
-	pathBatteryTxt: string;
+	pathBatteryToml: string;
 	pathDerivedBin: string;
 	pathSimpleTests: string[];
 	pathJsonTests: string[];
@@ -196,9 +193,9 @@ public:
 		pathTest        = getInPath(PathTest);
 		pathMainD       = pathSrc ~ dirSeparator ~ PathMainD;
 		pathMainVolt    = pathSrc ~ dirSeparator ~ PathMainVolt;
-		pathBatteryTxt  = getInPath(PathBatteryTxt);
+		pathBatteryToml = getInPath(PathBatteryToml);
 		pathDerivedBin  = getInPath(name);
-		pathSubProjects = deepScan(path, PathBatteryTxt, pathBatteryTxt);
+		pathSubProjects = deepScan(path, PathBatteryToml, pathBatteryToml);
 
 		hasPath        = isDir(path);
 		hasSrc         = isDir(pathSrc);
@@ -206,7 +203,7 @@ public:
 		hasTest        = isDir(pathTest);
 		hasMainD       = exists(pathMainD);
 		hasMainVolt    = exists(pathMainVolt);
-		hasBatteryCmd  = exists(pathBatteryTxt);
+		hasBatteryToml = exists(pathBatteryToml);
 
 		if (hasTest) {
 			pathSimpleTests = deepScan(pathTest, PathTestSimple);
@@ -260,6 +257,7 @@ public:
 	{
 		p.name = name;
 		p.srcDir = pathSrc;
+		p.batteryToml = pathBatteryToml;
 
 		foreach (path; pathJsonTests) {
 			p.testFiles ~= path;

@@ -22,12 +22,12 @@ Battery makes some assumptions about project structure. Your source code will be
 		return 0;
 	}
 
-Hardly earth shattering stuff, but every great project starts somewhere. So to build that, we describe the project briefly in a `battery.txt` file in the root directory:
+Hardly earth shattering stuff, but every great project starts somewhere. So to build that, we describe the project briefly in a `battery.toml` file in the root directory:
 
-	--dep
-	watt
+	name = "hello"
+	dependencies = ["watt"]
 
-`--dep` tells battery of a project dependency (something it needs to work) and then next line names it: watt. And that's all. No matter how many modules you add to your project, how labyrinthine your project structure becomes, as long as all the modules are under the `src` directory, Battery will find them.
+`dependencies` tells battery of a project dependency (something it needs to work) and then next line names it: watt. And that's all. No matter how many modules you add to your project, how labyrinthine your project structure becomes, as long as all the modules are under the `src` directory, Battery will find them.
 
 In the future, we'll have jetpacks. Also, Battery will know where watt lives on the internet and will fetch it for you. But for now, we'll have to do a little legwork. Once you have the Volta and Watt source code somewhere on your system, we first invoke the `config` command, to get Battery to set up the build:
 
@@ -41,17 +41,12 @@ This will build everything (including Volta!) and you'll have a shiny new progra
 
 Sometimes build steps are a little more complicated. Battery lives in the real world. Here's a real example from a project with a couple more dependencies:
 
-	--dep
-	watt
-	--dep
-	amp
-	--if-msvc
-	-l
-	SDL2.lib
-	--if-osx
-	--if-linux
-	--cmd
-	sdl2-config --libs
+	name = "Oleum"
+	dependencies = ["watt", "amp"]
+	[platform.msvc]
+	libraries = ["SDL2.lib"]
+	[platform.'osx || linux']
+	commands = ["sdl2-config --libs"]
 
 We'll go in depth on the commands in a later section. For now, notice we can do different things depending on the platform, and even run external tools to get library names and so on.
 
@@ -59,10 +54,9 @@ We'll go in depth on the commands in a later section. For now, notice we can do 
 
 Battery organises things in terms of projects. In the example above, `Volta` is a project, as is `Watt`. They're given using local paths above, but in future URLs, and perhaps just their names will be enough for Battery to locate them. The important thing to understand is that a project is collection of code, that can be 'depended' upon, that is, required for another project to build. That is what the
 
-    --dep
-	watt
+	dependencies = ["watt"]
 
-lines in the above `battery.txt` files are saying. "This project depends on `watt`, and requires it to build."
+lines in the above `battery.toml` files are saying. "This project depends on `watt`, and requires it to build."
 
 Projects can have subprojects. That is, projects that are children of another project. This is useful if individual pieces of your project are useful outside of the context of the larger one. Say you were writing an emulator for the smash arcade hit, *Cosmos Attackers*. The Silog S81 processor used by *Cosmos Attackers* was used in other arcade hits of the time, such as *Pack Mun*, and *Dug Dog*, so you might want to use your S81 emulator in other projects.
 
@@ -70,12 +64,12 @@ To make a project a child of another, simply place it in its parent's project fo
 
 	cosmo_em
 		src   // ui code, etc
-		battery.txt
+		battery.toml
 		s81
-			battery.txt
+			battery.toml
 			src
 
-Then, in `cosmo_em`'s `battery.txt` (and any other project that wants to use your S81 emulator), add a `--dep` of `cosmo_em.s81`. Parents do not automatically depend on their children, nor do children on their parents. Other than the lookup syntax with `.`, subprojects behave just as regular projects.
+Then, in `cosmo_em`'s `battery.toml` (and any other project that wants to use your S81 emulator), add a `dependencies` of `["cosmo_em.s81"]`. Set `s81`'s `name` as `"cosmo_em.s81"`. Parents do not automatically depend on their children, nor do children on their parents. Other than the lookup syntax with `.`, subprojects behave just as regular projects.
 
 ## Project Name Restrictions
 
@@ -103,7 +97,7 @@ This command doesn't do anything but give information. This command can give you
 
 ### Config
 
-We've seen the `config` command already. And we've also seen some of the command line arguments it can take. `battery.txt` isn't particularly special -- it's just a list of parameters, like `--dep`, that tell it about your project. Battery command parameters come after the command; it's `battery config --dep watt`, not `battery --dep watt config`.
+We've seen the `config` command already. Here are some flags that can affect it.
 
 	--arch arch      Selects architecture (x86, x86_64).
 	--platform plat  Selects platform (osx, msvc, linux).
@@ -222,3 +216,39 @@ The `requires` command allows you to check simple platform and architecture cond
 This test will only be run on windows, and will be skipped on x86. These platforms and architectures are the same used elsewhere in battery, run `battery help config` for details.
 
 And finally, `has-passed:no` denotes that you are aware that a test is failing, and not to mark it as a regression.
+
+## battery.toml
+
+A brief description of the battery toml format.
+
+`battery.toml` is in the [toml](https://github.com/toml-lang/toml) format. It specifies project properties through various keys. Keys can be modified on a per platform basis through `platform` tables.
+
+### Keys
+
+```
+dependencies		An array of name strings that this project depends on.
+name				The name of the project. (string)
+output				The name of the executable. (string)
+scanForD			Internal use only.
+isTheRT				Internal use only.
+srcDir				Explicitly set the source directory. (string)
+testFiles			Specify the test json files. (array of strings)
+jsonOutput			Filename for JSON output. (string)
+libraries			Libraries to link with. (array of strings)
+libraryPaths		Paths that the linker should look in. (array of strings)
+frameworks			Frameworks to link with. (macOS only) (array of strings)
+frameworkPaths		Locations of frameworks. (macOS only) (array of strings)
+stringPaths			The location for Volta's string imports. (array of strings)
+ldArguments			Arguments to pass ld. (array of strings)
+ccArguments			Arguments to pass cc. (array of strings)
+linkArguments		Arguments to pass link. (array of strings)
+linkerArguments		Arguments to pass the linker. (array of strings)
+asmFiles			Files to assemble with nasm. (array of strings)
+cFiles				Files to compile with clang. (array of strings)
+objFiles			Files to link. (array of strings)
+voltFiles			Additional files to compile. (array of strings)
+versionIdentifiers	Version identifiers to set (array of strings)
+commands			Commands to run, and parse `-l` and `-L` out of their output. (array of strings)
+```
+
+Platform identifiers can be simple: `[platform.msvc]`. The second part can be a string: `[platform.'msvc']`. You can `&&` or `||` platforms, as well `!`ing them: `[platform.'!msvc && !macOS]`.
