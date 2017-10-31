@@ -20,7 +20,7 @@ import watt.io.file : exists, isFile;
 
 import battery.configuration;
 import battery.interfaces;
-import battery.util.file : getLinesFromFile;
+import battery.util.file : getLinesFromFile, getCacheFromTomlConfig, outputConfig;
 import battery.util.path : cleanPath;
 import battery.policy.host;
 import battery.policy.config;
@@ -38,7 +38,8 @@ class DefaultDriver : Driver
 {
 public:
 	enum BatteryConfigFile = ".battery.config.txt";
-	enum VersionString = "battery version 0.1.15";
+	enum VersionNumber = "0.1.15";
+	enum VersionString = "battery version ${VersionNumber}";
 
 
 protected:
@@ -86,6 +87,7 @@ public:
 
 	fn config(args: string[])
 	{
+		originalArgs := args;
 		// Filter out --release, --arch and --platform arguments.
 		isRelease, isLTO: bool;
 		findArchAndPlatform(this, ref args, ref arch, ref platform,
@@ -130,15 +132,6 @@ public:
 			fillInConfigCommands(this, mBootstrapConfig);
 		}
 
-/*
-		// Handle cross compiling.
-		if (mHostConfig !is null) {
-			// Need fill in host commands seperatly.
-			doConfig(this, mHostConfig);
-			fillInConfigCommands(this, mHostConfig);
-		}
-*/
-
 		// Do this after the arguments has been parsed.
 		doConfig(this, mConfig);
 		fillInConfigCommands(this, mConfig);
@@ -146,52 +139,43 @@ public:
 		// Parse the rest of the arguments.
 		arg.parseProjects(mConfig);
 
+		batteryTxts: string[];
+		fn addProjectBatteryTxt(prj: Project)
+		{
+			batteryTxts ~= prj.batteryTxt;
+			deps: bool[string];
+			foreach (dep; prj.deps) {
+				deps[dep] = true;
+			}
+
+			foreach (child; prj.children) {
+				p := child.name in deps;
+				if (p is null) {
+					continue;
+				}
+				addProjectBatteryTxt(child);
+			}
+		}
+		foreach (_lib; mLib) {
+			addProjectBatteryTxt(_lib);
+		}
+		foreach (_exe; mExe) {
+			addProjectBatteryTxt(_exe);
+		}
+
 		configSanity();
-
 		verifyConfig();
-
-		ofs := new OutputFileStream(BatteryConfigFile);
-		foreach (r; getArgs(arch, platform, mConfig.isRelease, mConfig.isLTO)) {
-			ofs.write(r);
-			ofs.put('\n');
-		}
-		foreach (r; getArgs(false, mConfig.env)) {
-			ofs.write(r);
-			ofs.put('\n');
-		}
-
-		foreach (r; getArgs(false, mConfig.tools.values)) {
-			ofs.write(r);
-			ofs.put('\n');
-		}
+		bootstrapArgs: string[][2];
 		if (mBootstrapConfig !is null) {
-			foreach (r; getArgs(true, mBootstrapConfig.env)) {
-				ofs.write(r);
-				ofs.put('\n');
-			}
-			foreach (r; getArgs(true, mBootstrapConfig.tools.values)) {
-				ofs.write(r);
-				ofs.put('\n');
-			}
+			bootstrapArgs[0] = getArgs(true, mBootstrapConfig.env);
+			bootstrapArgs[1] = getArgs(true, mBootstrapConfig.tools.values);
 		}
-/*
-		if (mHostConfig !is null) {
-			foreach (r; getArgs(true, mHostConfig.env)) {
-				ofs.write(r);
-				ofs.put('\n');
-			}
-			foreach (r; getArgs(true, mHostConfig.tools.values)) {
-				ofs.write(r);
-				ofs.put('\n');
-			}
-		}
-*/
-		foreach (r; getArgs(mLib, mExe)) {
-			ofs.write(r);
-			ofs.put('\n');
-		}
-		ofs.flush();
-		ofs.close();
+		outputConfig(BatteryConfigFile, VersionNumber, originalArgs, batteryTxts,
+			getArgs(arch, platform, mConfig.isRelease, mConfig.isLTO),
+			getArgs(false, mConfig.env),
+			getArgs(false, mConfig.tools.values),
+			bootstrapArgs[0], bootstrapArgs[1],
+			getArgs(mLib, mExe));
 	}
 
 	fn configSanity()
@@ -246,7 +230,7 @@ public:
 	fn build()
 	{
 		args: string[];
-		if (!getLinesFromFile(BatteryConfigFile, ref args)) {
+		if (!getCacheFromTomlConfig(BatteryConfigFile, ref args)) {
 			return abort("must first run the 'config' command");
 		}
 

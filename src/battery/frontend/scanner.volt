@@ -260,6 +260,7 @@ public:
 	{
 		p.name = name;
 		p.srcDir = pathSrc;
+		p.batteryTxt = pathBatteryTxt;
 
 		foreach (path; pathJsonTests) {
 			p.testFiles ~= path;
