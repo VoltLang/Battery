@@ -27,7 +27,7 @@ fn getLinesFromFile(file: string, ref lines: string[]) bool
 	return true;
 }
 
-fn getCacheFromTomlConfig(file: string, ref lines: string[]) bool
+fn getTomlConfig(file: string, out root: toml.Value) bool
 {
 	if (!exists(file)) {
 		return false;
@@ -36,16 +36,19 @@ fn getCacheFromTomlConfig(file: string, ref lines: string[]) bool
 	src := cast(string)read(file);
 	root = toml.parse(src);
 	return true;
+}
 
-	cacheArray := root["battery"]["config"]["cache"].array();
-	foreach (index, elementValue; cacheArray) {
+fn getStringArray(array: toml.Value[]) string[]
+{
+	lines: string[];
+	foreach (index, elementValue; array) {
 		str := elementValue.str();
 		if (str.length == 0 || str[0] == '#') {
 			continue;
 		}
 		lines ~= elementValue.str();
 	}
-	return true;
+	return lines;
 }
 
 fn outputConfig(filename: string, ver: string, genArgs: string[],
