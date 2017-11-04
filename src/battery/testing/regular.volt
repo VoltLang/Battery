@@ -53,7 +53,7 @@ private:
 	mErrorLog: FILE*;
 	mElogFile: string;
 	mExpectFailure: bool;  // has-passed:no
-	mCheck: string;
+	mChecks: string[];
 
 public:
 	/**
@@ -213,8 +213,9 @@ private:
 
 	fn parseCheckCommand(line: string) bool
 	{
-		mCheck = strip(line[btj.checkPrefix.length .. $]);
-		assert(mCheck.length > 0);
+		checkStr := strip(line[btj.checkPrefix.length .. $]);
+		assert(checkStr.length > 0);
+		mChecks ~= checkStr;
 		return true;
 	}
 
@@ -325,22 +326,29 @@ private:
 
 	fn testCheck()
 	{
-		if (result == Result.SKIPPED || mCheck.length == 0) {
+		if (result == Result.SKIPPED || mChecks.length == 0) {
 			return;
 		}
 		outstr := cast(string)read(mOlogFile);
-		if (outstr.indexOf(mCheck) >= 0) {
-			return;
-		}
 		errstr := cast(string)read(mElogFile);
-		if (errstr.indexOf(mCheck) >= 0) {
+		foreach (check; mChecks) {
+			outidx := outstr.indexOf(check);
+			if (outidx >= 0) {
+				outstr = outstr[outidx .. $];
+				continue;
+			}
+			erridx := errstr.indexOf(check);
+			if (erridx >= 0) {
+				errstr = errstr[erridx .. $];
+				continue;
+			}
+			msg = "check failed";
+			if (!mExpectFailure) {
+				result = Result.FAIL;
+			} else {
+				result = Result.XFAIL;
+			}
 			return;
-		}
-		msg = "check failed";
-		if (!mExpectFailure) {
-			result = Result.FAIL;
-		} else {
-			result = Result.XFAIL;
 		}
 	}
 

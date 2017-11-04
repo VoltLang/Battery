@@ -213,6 +213,8 @@ The `check` command checks the stdout and stderr of the runs, and passes if the 
 	#include <stdio.h>
 	int main() { printf("hello, world\n"); return 0; }
 
+Multiple checks can be specified, and they must occur in order. They don't have to be adjacent, just earlier checks must occur before later checks.
+
 The `requires` command allows you to check simple platform and architecture conditions, skipping platforms that fail. This allows you to check OS specific things in a clean fashion. The `requiresAliases` property of `battery.tests.json` allows you to define new keywords with the same expression syntax.
 
 	requires:windows && !x86
