@@ -15,6 +15,7 @@ public import battery.defines;
 class Project
 {
 	name: string;
+	batteryTxt: string;
 
 	libs: string[];
 	libPaths: string[];
