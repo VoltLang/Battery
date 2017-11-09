@@ -139,7 +139,7 @@ fn printInfoCommon(drv: Driver, p: Project, ref s: Scanner)
 fn processBatteryCmd(drv: Driver, c: Configuration, b: Project, ref s: Scanner)
 {
 	if (s.hasBatteryToml) {
-		parseTomlConfig(s.pathBatteryToml, s.path ~ dirSeparator, c, b);
+		parseTomlConfig(s.pathBatteryToml, s.path ~ dirSeparator, drv, c, b);
 	} else if (s.hasBatteryCmd) {
 		args : string[];
 		getLinesFromFile(s.pathBatteryTxt, ref args);
