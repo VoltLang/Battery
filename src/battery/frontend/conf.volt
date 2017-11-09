@@ -29,7 +29,7 @@ fn optionalStringArray(root: toml.Value, d: Driver, c: Configuration, key: strin
 		platformTable := root[PlatformTable];
 		foreach (platformKey; platformTable.tableKeys()) {
 			if (evaluatePlatformConditional(d, c, platformKey)) {
-				baseArr ~= optionalStringArray(root[platformKey], key);
+				baseArr ~= optionalStringArray(platformTable[platformKey], key);
 			}
 		}
 	}
@@ -73,11 +73,16 @@ class PlatformComponent
 	 * The only valid characters are ASCII letters, !, |, and whitespace,
 	 * so this code does no unicode processing, and assumes ASCII.
 	 */
-	this(d: Driver, originalKey: string, ref key: string)
+	this(d: Driver, originalKey: string, ptrkey: string*)
 	{
+		// This is a workaround for a Volta bug (functions 56). @todo
+		key := *ptrkey;
+		scope (exit) *ptrkey = key;
+
 		skipWhitespace(ref key);
 		failIfEmpty(d, originalKey, key);
 		not = get(ref key, '!');
+		assert(key[0] != '!');
 		skipWhitespace(ref key);
 		failIfEmpty(d, originalKey, key);
 		platformString := "";
@@ -91,6 +96,7 @@ class PlatformComponent
 		platform = stringToPlatform(platformString);
 		skipWhitespace(ref key);
 		if (key.length == 0) {
+			link = Link.None;
 			return;
 		}
 		switch (key[0]) {
@@ -146,24 +152,24 @@ class PlatformComponent
 	private fn failIfEmpty(d: Driver, originalKey: string, key: string)
 	{
 		if (key.length == 0) {
-			d.abort("malformed platform key \"${originalKey}\"");
+			d.abort(new "malformed platform key \"${originalKey}\"");
 		}
 	}
 }
 
 fn evaluatePlatformConditional(d: Driver, c: Configuration, key: string) bool
 {
-	platformChain := constructPlatformChain(key);
+	platformChain := constructPlatformChain(d, ref key);
 	return platformChain.evaluate(c);
 }
 
-fn constructPlatformChain(d: Driver, key: string) PlatformComponent
+fn constructPlatformChain(d: Driver, ref key: string) PlatformComponent
 {
 	originalKey := key;
-	base := new PlatformComponent(d, originalKey, ref key);
+	base := new PlatformComponent(d, originalKey, &key);
 	current := base;
 	while (current.link != PlatformComponent.Link.None && key.length > 0) {
-		current.next = new PlatformComponent(d, originalKey, ref key);
+		current.next = new PlatformComponent(d, originalKey, &key);
 		current = current.next;
 	}
 	if (current.link != PlatformComponent.Link.None || key.length != 0) {
