@@ -226,7 +226,6 @@ public:
 	fn buildExe() Exe
 	{
 		exe := new Exe();
-		exe.srcC = filesC;
 		exe.bin = pathDerivedBin;
 
 		if (hasMainD) {
@@ -245,8 +244,6 @@ public:
 	fn buildLib() Lib
 	{
 		lib := new Lib();
-		lib.name = name;
-		lib.srcDir = pathSrc;
 
 		buildCommon(lib);
 
@@ -256,6 +253,7 @@ public:
 	fn buildCommon(p: Project)
 	{
 		p.name = name;
+		p.srcC = filesC;
 		p.srcDir = pathSrc;
 		p.batteryToml = pathBatteryToml;
 

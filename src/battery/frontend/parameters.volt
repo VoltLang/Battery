@@ -190,6 +190,8 @@ fn getArgsProject(b: Project, tag: string) string[]
 
 	ret ~= ["--src-I", fullPath(b.srcDir)];
 
+	ret ~= b.srcC;
+	ret ~= b.srcObj;
 	ret ~= b.srcAsm;
 
 	return ret;
@@ -209,9 +211,6 @@ fn getArgsLib(l: Lib) string[]
 fn getArgsExe(e: Exe) string[]
 {
 	ret := getArgsProject(e, "exe");
-
-	ret ~= e.srcC;
-	ret ~= e.srcObj;
 	ret ~= e.srcVolt;
 
 	if (e.bin !is null) {
@@ -388,6 +387,8 @@ protected:
 			case ArgCC: lib.xcc ~= arg.extra; break;
 			case ArgLink: lib.xlink ~= arg.extra; break;
 			case ArgLinker: lib.xlinker ~= arg.extra; break;
+			case FileC: lib.srcC ~= arg.extra; break;
+			case FileObj: lib.srcObj ~= arg.extra; break;
 			case FileAsm: lib.srcAsm ~= arg.extra; break;
 			case Command: handleCommand(c, arg.extra); break;
 			default:
