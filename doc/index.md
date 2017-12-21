@@ -249,6 +249,7 @@ objFiles			Files to link. (array of strings)
 voltFiles			Additional files to compile. (array of strings)
 versionIdentifiers	Version identifiers to set (array of strings)
 commands			Commands to run, and parse `-l` and `-L` out of their output. (array of strings)
+warningsEnabled		Tells the Volta compiler to generate warnings. (boolean)
 ```
 
 Platform identifiers can be simple: `[platform.msvc]`. The second part can be a string: `[platform.'msvc']`. You can `&&` or `||` platforms, as well `!`ing them: `[platform.'!msvc && !macOS]`.
