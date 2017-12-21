@@ -188,6 +188,10 @@ fn getArgsProject(b: Project, tag: string) string[]
 		ret ~= ["--Xlinker", arg];
 	}
 
+	if (b.warningsEnabled) {
+		ret ~= "-w";
+	}
+
 	ret ~= ["--src-I", fullPath(b.srcDir)];
 
 	ret ~= b.srcC;
@@ -391,6 +395,7 @@ protected:
 			case FileObj: lib.srcObj ~= arg.extra; break;
 			case FileAsm: lib.srcAsm ~= arg.extra; break;
 			case Command: handleCommand(c, arg.extra); break;
+			case WarningsEnabled: lib.warningsEnabled = true; break;
 			default:
 				return parseDefault(c);
 			}
@@ -425,6 +430,7 @@ protected:
 			case ArgLink: exe.xlink ~= arg.extra; break;
 			case ArgLinker: exe.xlinker ~= arg.extra; break;
 			case Command: handleCommand(c, arg.extra); break;
+			case WarningsEnabled: exe.warningsEnabled = true; break;
 			default:
 				return parseDefault(c);
 			}
@@ -726,6 +732,7 @@ struct ToArgs
 			case "-J": argNextPath(StringPath, "expected string path"); continue;
 			case "--is-the-rt": arg(IsTheRT); continue;
 			case "--scan-for-d": arg(ScanForD); continue;
+			case "-w": arg(WarningsEnabled); continue;
 			case "-D": argNext(Identifier, "expected version identifier"); continue;
 			case "-Xld", "--Xld": argNext(ArgLD, "expected ld arg"); continue;
 			case "-Xcc", "--Xcc": argNext(ArgCC, "expected cc arg"); continue;

@@ -33,6 +33,7 @@ fn parseTomlConfig(tomlFilename: string, path: string, d: Driver, c: Configurati
 	}
 	b.deps           ~= optionalStringArray(root, d, c, DependenciesKey);
 	b.scanForD       = optionalBoolValue  (root, d, c, ScanForDKey);
+	b.warningsEnabled= optionalBoolValue(root, d, c, WarningKey);
 	setIfNonEmpty(ref b.srcDir,  makePath(path, optionalStringValue(root, d, c, SrcDirKey)));
 	setIfNonEmpty(ref b.jsonOutput, makePath(path, optionalStringValue(root, d, c, JsonOutputKey)));
 	b.testFiles      ~= optionalPathArray(root, path, d, c, TestFilesKey);
@@ -85,7 +86,7 @@ fn verifyKeys(root: toml.Value, tomlPath: string, d: Driver)
 		case DependenciesKey, PlatformTable, NameKey, OutputKey, ScanForDKey, IsTheRTKey,
 			SrcDirKey, TestFilesKey, JsonOutputKey, LibsKey, LPathsKey, FrameworksKey, FPathsKey,
 			StringPathKey, LDArgsKey, CCArgsKey, LinkArgsKey, LinkerArgsKey,
-			AsmFilesKey, CFilesKey, ObjFilesKey, VoltFilesKey, IdentKey, CommandKey:
+			AsmFilesKey, CFilesKey, ObjFilesKey, VoltFilesKey, IdentKey, CommandKey, WarningKey:
 			continue;
 		default:
 			d.info(new "Warning: unknown key '${key}' in config file '${tomlPath}'");
@@ -118,6 +119,7 @@ enum ObjFilesKey     = "objFiles";
 enum VoltFilesKey    = "voltFiles";
 enum IdentKey        = "versionIdentifiers";
 enum CommandKey      = "commands";
+enum WarningKey      = "warningsEnabled";
 
 fn parseCommand(cmd: string, c: Configuration, b: Project)
 {

@@ -169,6 +169,10 @@ public:
 				foreach (path; b.stringPaths) {
 					ret ~= ["-J", path];
 				}
+
+				if (b.warningsEnabled) {
+					ret ~= "-w";
+				}
 			}
 
 			if (kind & Kind.Dmd) {

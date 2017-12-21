@@ -28,6 +28,8 @@ public:
 
 		Command,
 
+		WarningsEnabled,
+
 		Library,
 		LibraryPath,
 

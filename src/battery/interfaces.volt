@@ -49,6 +49,8 @@ class Project
 
 	//! For D projects.
 	scanForD: bool;
+
+	warningsEnabled: bool;
 }
 
 //! The project is built as a library used by executables.
