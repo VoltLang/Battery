@@ -34,6 +34,8 @@ fn parseTestArgs(drv: Driver, args: string[]) string
 			}
 			filter = r.front();
 			break;
+		case "--verbose":
+			break;
 		default:
 			drv.abort("unknown argument '%s'", arg);
 		}
