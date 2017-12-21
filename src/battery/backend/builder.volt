@@ -48,7 +48,7 @@ public:
 	}
 
 	fn build(config: Configuration, boot: Configuration,
-	         libs: Lib[], exes: Exe[])
+	         libs: Lib[], exes: Exe[], verbose: bool)
 	{
 		this.ins = new uni.Instance();
 		this.mega = ins.fileNoRule("__all");
@@ -89,7 +89,7 @@ public:
 
 		// Do the build.
 		try {
-			uni.doBuild(mega, 8, config.env);
+			uni.doBuild(mega, 8, config.env, verbose);
 		} catch (Exception e) {
 			mDrv.abort(e.msg);
 		}

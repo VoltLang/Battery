@@ -74,7 +74,7 @@ public:
 
 		switch (args[1]) {
 		case "help": help(args[2 .. $]); break;
-		case "build": build(); break;
+		case "build": build(args[2 .. $]); break;
 		case "config": config(args[2 .. $]); break;
 		case "test": test(args[2 .. $]); break;
 		case "version": printVersion(); break;
@@ -223,8 +223,11 @@ public:
 		return true;
 	}
 
-	fn build()
+	fn build(bargs: string[])
 	{
+		bool verbose;
+		getopt(ref bargs, "verbose", ref verbose);
+
 		root: toml.Value;
 		if (!getTomlConfig(BatteryConfigFile, out root)) {
 			return abort("must first run the 'config' command");
@@ -313,12 +316,12 @@ public:
 
 		// Do the actual build now.
 		builder := new Builder(this);
-		builder.build(mConfig, mBootstrapConfig, mLib, mExe);
+		builder.build(mConfig, mBootstrapConfig, mLib, mExe, verbose);
 	}
 
 	fn test(args: string[])
 	{
-		build();
+		build(args);
 		filter := parseTestArgs(this, args);
 		tester := new Tester(this);
 		tester.test(mConfig, mHostConfig, mLib, mExe, filter);

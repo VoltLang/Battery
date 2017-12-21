@@ -19,21 +19,21 @@ import build.util.cmdgroup : CmdGroup;
 /**
  * Builds a target, will throw exceptions on build failure.
  */
-fn doBuild(t: Target, numJobs: uint, env: Environment)
+fn doBuild(t: Target, numJobs: uint, env: Environment, verbose: bool)
 {
 	g := new CmdGroup(env, numJobs);
-	build(t, g);
+	build(t, g, verbose);
 }
 
 /**
  * Internal looping build function.
  */
-private fn build(root: Target, g: CmdGroup)
+private fn build(root: Target, g: CmdGroup, verbose: bool)
 {
 	shouldRestart := true;
 	while (shouldRestart) {
 		shouldRestart = false;
-		build(root, g, ref shouldRestart);
+		build(root, g, verbose, ref shouldRestart);
 
 		// Wait untill at least on dependancy has been solved.
 		g.waitOne();
@@ -43,7 +43,7 @@ private fn build(root: Target, g: CmdGroup)
 /**
  * Internal recursive build function.
  */
-private fn build(t: Target, g: CmdGroup, ref shouldRestart: bool)
+private fn build(t: Target, g: CmdGroup, verbose: bool, ref shouldRestart: bool)
 {
 	// If the target is fresh check it,
 	// checking this helps for performance on Windows.
@@ -59,7 +59,7 @@ private fn build(t: Target, g: CmdGroup, ref shouldRestart: bool)
 
 	// Make sure all dependancies are built.
 	foreach (child; t.deps) {
-		build(child, g, ref shouldRestart);
+		build(child, g, verbose, ref shouldRestart);
 	}
 
 	// Then check if we should build this target.
@@ -107,6 +107,9 @@ private fn build(t: Target, g: CmdGroup, ref shouldRestart: bool)
 
 	// Print to console what we do.
 	output.writefln(t.rule.print);
+	if (verbose) {
+		output.writeln(new "${[t.rule.cmd] ~ t.rule.args}\n");
+	}
 	output.flush();
 
 	// The business end of the solver.
