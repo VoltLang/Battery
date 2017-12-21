@@ -129,6 +129,8 @@ You probably recognise quite a few of these from Volta.
 
 Actually performs the build. If there's a `test` folder, the tests will be run after the build completes. If the build failed, the return value will be non-zero. This only works after config has been run.
 
+If you pass `--verbose` to this command, the exact commands that Battery runs will be printed.
+
 ### Init
 
 Init will setup a very simple project skeleton for you. If invoked with no arguments, it will ask you for the project name, and whether it's a library or an executable. These answers can be given ahead of time with the `--init-name` and `--init-type` flags, respectively.
