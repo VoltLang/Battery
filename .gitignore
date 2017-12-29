@@ -3,3 +3,9 @@
 /self
 /self.*
 /perf.cvs
+/.bin/**
+*.obj
+*.out
+*.swp
+.battery.config.txt
+.DS_Store
