@@ -26,6 +26,7 @@ import battery.util.path : cleanPath;
 import battery.policy.host;
 import battery.policy.config;
 import battery.policy.tools;
+import battery.policy.validate;
 import battery.frontend.parameters;
 import battery.frontend.scanner;
 import battery.backend.builder;
@@ -177,10 +178,10 @@ public:
 	fn configSanity()
 	{
 		foreach (exe; mExe) {
-			validateName(exe.name);
+			validateProjectNameOrAbort(this, exe.name);
 		}
 		foreach (lib; mLib) {
-			validateName(lib.name);
+			validateProjectNameOrAbort(this, lib.name);
 		}
 		foreach (k, b; mStore) {
 			foreach (dep; b.deps) {
@@ -201,26 +202,6 @@ public:
 				}
 			}
 		}
-	}
-
-	fn validateName(name: string)
-	{
-		if (!validName(name)) {
-			abort("'%s' is not a valid name for a project.", name);
-		}
-	}
-
-	fn validName(name: string) bool
-	{
-		if (name.length == 0 || (!isAlpha(name[0]) && name[0] != '_')) {
-			return false;
-		}
-		foreach (c: dchar; name[1 .. $]) {
-			if (!isAlphaNum(c) && c != '_') {
-				return false;
-			}
-		}
-		return true;
 	}
 
 	fn build(bargs: string[])
@@ -349,18 +330,14 @@ public:
 			printLogo();
 		}
 
-		name, type: string;
+		name, type, reason: string;
 		getopt(ref args, "init-name", ref name);
 		getopt(ref args, "init-type", ref type);
 
-		while (!validName(name)) {
-			if (name != "") {
-				info("'%s' is not a valid name for a project.", name);
-				info("Valid names start with a letter or '_', and only contain");
-				info("letters, digits, and underscores.");
-			}
+		do {
 			name = prompt("What is the name of the project? ");
-		}
+		} while (!validateProjectNameOrInform(this, name));
+
 		if (type == "") {
 			type = choice("Is your project an", "executable", "library");
 		}
