@@ -210,6 +210,8 @@ public:
 						ret ~= ("-L-l" ~ l);
 					}
 				}
+
+				ret ~= "-g";
 			}
 
 			if (kind & Kind.LinkLink) {
