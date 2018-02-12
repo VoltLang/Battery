@@ -206,6 +206,9 @@ private:
 				 * didn't find anything, try using the full name (e.g. 'volta.vls')
 				 */
 				c = mCommandStore.getTool(project.name);
+				if (c !is null) {
+					writeln(new "Warning: '${srcDir}' uses command '${cmd}', using full name '${project.name}'.");
+				}
 			}
 		}
 		if (c !is null) {
