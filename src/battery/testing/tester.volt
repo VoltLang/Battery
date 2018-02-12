@@ -2,6 +2,7 @@
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 module battery.testing.tester;
 
+import watt.io;
 import watt.path : dirSeparator;
 import watt.text.string : endsWith, indexOf;
 import watt.process;

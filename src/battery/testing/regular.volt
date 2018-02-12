@@ -199,6 +199,15 @@ private:
 		cmd := runs[0][0];
 		args := runs[0][1 .. $];
 		c := mCommandStore.getTool(cmd);
+		if (c is null) {
+			components := split(project.name, '.');
+			if (components.length > 0 && components[$-1] == cmd) {
+				/* If they used a subproject's name (e.g. 'vls'), and we
+				 * didn't find anything, try using the full name (e.g. 'volta.vls')
+				 */
+				c = mCommandStore.getTool(project.name);
+			}
+		}
 		if (c !is null) {
 			cmd = c.cmd;
 			args = c.args ~ args;
