@@ -1,0 +1,2 @@
+name = "battery.lib"
+dependencies = ["watt", "watt.json", "watt.toml"]
