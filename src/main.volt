@@ -2,19 +2,18 @@
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 module main;
 
-version (Windows) import core.c.windows.windows;
-
 import io = watt.io;
 
 import battery.driver;
 import battery.license;
+import battery.util.priority;
 
 
 fn main(args: string[]) int
 {
-	version (Windows) {
-		SetPriorityClass(GetCurrentProcess(), BELOW_NORMAL_PRIORITY_CLASS);
-	}
+	// Move this somewhere else.
+	setLowPriority();
+
 	drv := new DefaultDriver();
 	drv.process(args);
 
