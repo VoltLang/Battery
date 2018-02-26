@@ -1,6 +1,0 @@
---dep
-watt
---dep
-watt.json
---dep
-watt.toml
