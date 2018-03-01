@@ -7,7 +7,7 @@ module battery.policy.config;
 
 import watt.io.file : isDir;
 import watt.conv : toLower;
-import watt.text.string : join;
+import watt.text.string : join, split;
 import watt.text.format : format;
 import watt.text.path : normalizePath;
 import watt.process : retrieveEnvironment, Environment;
@@ -397,6 +397,8 @@ public:
 	oldInc: string;
 	//! Old LIB env variable, if found.
 	oldLib: string;
+	//! Old PATH env variable, if found.
+	oldPath: string;
 
 	//! Best guess which MSVC thing we are using.
 	msvcVer: VisualStudioVersion;
@@ -444,14 +446,49 @@ public:
 
 fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environment)
 {
+	fn overideIfNotSet(name: string, value: string) {
+		if (config.env.isSet(name)) {
+			return;
+		}
+
+		config.env.set(name, value);
+	}
+
+	lib, inc, path: string;
+	vars: VarsForMSVC;
+	vars.getDirsFromRegistry(drv, outside);
+	vars.fillInListsForMSVC();
+	vars.genAndCheckEnv(drv, out inc, out lib, out path);
+
+	config.env.set("INCLUDE", inc);
+	config.env.set("LIB", lib);
+	config.env.set("PATH", path);
+
+	overideIfNotSet("UniversalCRTSdkDir", vars.dirUCRT);
+	overideIfNotSet("WindowsSdkDir", vars.dirWinSDK);
+	overideIfNotSet("UCRTVersion", vars.numUCRT);
+	overideIfNotSet("WindowsSDKVersion", vars.numWinSDK);
+
 	// First see if the linker is specified.
 	linker := drv.getCmd(config.isBootstrap, LinkerName);
 	linkerFromArg := true;
+	linkerFromLLVM := false;
 
 	// If it was not specified try getting 'link.exe' from the path.
 	if (linker is null) {
 		linker = config.makeCommandFromPath(LinkCommand, LinkName);
 		linkerFromArg = false;
+	}
+
+	// If it was not specified or found get 'lld-link' from the LLVM toolchain.
+	if (linker is null) {
+		linker = config.getTool(LLDLinkName);
+		linkerFromLLVM = true;
+	}
+
+	// Abort if we don't have a linker.
+	if (linker is null) {
+		drv.abort("Could not find a valid system linker!\n\tNeed either lld-link.exe or link.exe command.");
 	}
 
 	// Always add it to the config.
@@ -461,22 +498,13 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 	// Always add the common arguments to the linker.
 	addCommonLinkerArgsMSVC(config, linker);
 
-	// Get the CC setup by the llvm toolchain.
-	cc := config.getTool(CCName);
-	assert(cc !is null);
-
-	lib, inc: string;
-	vars: VarsForMSVC;
-	vars.getDirsFromEnv(drv, outside);
-	vars.fillInListsForMSVC();
-	vars.genAndCheckEnv(drv, out inc, out lib);
-
-	config.env.set("INCLUDE", inc);
-	config.env.set("LIB", lib);
-
 	verStr := vars.msvcVer.visualStudioVersionToString();
 	drv.info("Using Visual Studio Build Tools %s.", verStr);
-	drv.infoCmd(config, linker, linkerFromArg);
+	if (linkerFromLLVM) {
+		drv.info("\tcmd linker: Linking with lld-link.exe from LLVM toolchain.");
+	} else {
+		drv.infoCmd(config, linker, linkerFromArg);
+	}
 }
 
 fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment)
@@ -523,6 +551,29 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 	}
 }
 
+fn getDirsFromRegistry(ref vars: VarsForMSVC, drv: Driver, env: Environment)
+{
+	vsInstalls := getVisualStudioInstallations();
+	if (vsInstalls.length == 0) {
+		drv.abort("couldn't find visual studio installation");
+	}
+
+	// Advanced Visual Studio Selection Algorithm Copyright Bernard Helyer, Donut Steel (@todo)
+	vsInstall := vsInstalls[0];
+
+	vars.msvcVer   = vsInstall.ver;
+	vars.dirVC     = vsInstall.vcInstallDir;
+	vars.dirUCRT   = vsInstall.universalCrtDir;
+	vars.dirWinSDK = vsInstall.windowsSdkDir;
+	vars.numUCRT   = vsInstall.universalCrtVersion;
+	vars.numWinSDK = vsInstall.windowsSdkVersion;
+	vars.oldLib    = vsInstall.lib;
+	vars.oldPath   = env.getOrNull("PATH");
+	if (vsInstall.linkerPath !is null) {
+		vars.path ~= vsInstall.linkerPath;
+	}
+}
+
 fn getDirsFromEnv(ref vars: VarsForMSVC, drv: Driver, env: Environment)
 {
 	fn getOrWarn(name: string) string {
@@ -566,7 +617,7 @@ fn fillInListsForMSVC(ref vars: VarsForMSVC)
 	vars.tPath(format("%s/bin/x64", vars.dirWinSDK));
 
 	final switch (vars.msvcVer) with (VisualStudioVersion) {
-	case Unknown:
+	case Unknown, MaxVersion:
 		break;
 	case V2015:
 		vars.tPath(format("%s/BIN/amd64", vars.dirVC));
@@ -674,7 +725,7 @@ fn compareOldAndNew(oldPath: string, newPath: string) bool
 	}
 }
 
-fn genAndCheckEnv(ref vars: VarsForMSVC, drv: Driver, out inc: string, out lib: string)
+fn genAndCheckEnv(ref vars: VarsForMSVC, drv: Driver, out inc: string, out lib: string, out path: string)
 {
 	// Make and check the INCLUDE var.
 	inc = join(vars.inc, ";") ~ ";";
@@ -688,6 +739,30 @@ fn genAndCheckEnv(ref vars: VarsForMSVC, drv: Driver, out inc: string, out lib: 
 	if (compareOldAndNew(vars.oldLib, lib)) {
 		drv.info("env LIB differers (using given)\ngiven: %s\n ours: %s", vars.oldLib, lib);
 		lib = vars.oldLib;
+	}
+
+	// Add any paths in vars.path to the system PATH, if it's not in there to begin with.
+	systemPaths := split(vars.oldPath, ";");
+	pathsToAdd := new string[](vars.path.length);
+	addedPaths: size_t;
+	foreach (vsPath; vars.path) {
+		addThisPath := true;
+		foreach (systemPath; systemPaths) {
+			if (vsPath.toLower() == systemPath.toLower()) {
+				addThisPath = false;
+				break;
+			}
+		}
+		if (!addThisPath) {
+			continue;
+		}
+		pathsToAdd[addedPaths++] = vsPath;
+	}
+	pathsToAdd = pathsToAdd[0 .. addedPaths];
+
+	path = vars.oldPath;
+	foreach (addPath; pathsToAdd) {
+		path = new "${addPath};${path}";
 	}
 }
 
