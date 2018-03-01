@@ -15,6 +15,7 @@ import battery.interfaces;
 import battery.configuration;
 import battery.policy.tools;
 import battery.util.path : searchPath;
+import detect.visualStudio;
 
 
 fn getProjectConfig(drv: Driver, arch: Arch, platform: Platform) Configuration
@@ -389,22 +390,6 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
  *
  */
 
-enum MSVC_Version
-{
-	Unknown,
-	VS_2015,
-	VS_2017,
-}
-
-fn msvcVerToString(ver: MSVC_Version) string
-{
-	final switch (ver) with (MSVC_Version) {
-	case Unknown: return "unknown";
-	case VS_2015: return "2015";
-	case VS_2017: return "2017";
-	}
-}
-
 struct VarsForMSVC
 {
 public:
@@ -414,7 +399,7 @@ public:
 	oldLib: string;
 
 	//! Best guess which MSVC thing we are using.
-	msvcVer: MSVC_Version;
+	msvcVer: VisualStudioVersion;
 
 	//! Install directory for compiler and linker, from @p VCINSTALLDIR env.
 	dirVC: string;
@@ -489,7 +474,7 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 	config.env.set("INCLUDE", inc);
 	config.env.set("LIB", lib);
 
-	verStr := vars.msvcVer.msvcVerToString();
+	verStr := vars.msvcVer.visualStudioVersionToString();
 	drv.info("Using Visual Studio Build Tools %s.", verStr);
 	drv.infoCmd(config, linker, linkerFromArg);
 }
@@ -531,7 +516,7 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 		linker.args ~= format("/LIBPATH:%s", l);
 	}
 
-	verStr := vars.msvcVer.msvcVerToString();
+	verStr := vars.msvcVer.visualStudioVersionToString();
 	drv.info("Using MSVC %s from the enviroment.", verStr);
 	if (linkerFromArg) {
 		drv.infoCmd(config, linker, linkerFromArg);
@@ -555,9 +540,9 @@ fn getDirsFromEnv(ref vars: VarsForMSVC, drv: Driver, env: Environment)
 	vars.dirVCTools = env.getOrNull("VCTOOLSINSTALLDIR");
 
 	if (vars.dirVCTools !is null) {
-		vars.msvcVer = MSVC_Version.VS_2017;
+		vars.msvcVer = VisualStudioVersion.V2017;
 	} else if (vars.dirVC !is null) {
-		vars.msvcVer = MSVC_Version.VS_2015;
+		vars.msvcVer = VisualStudioVersion.V2015;
 	} else {
 		drv.info("error: Make sure you have VS Tools 2015 or 2017 installed.");
 		drv.info("error: need to set env var 'VCINSTALLDIR' or 'VCTOOLSINSTALLDIR'.");
@@ -580,16 +565,16 @@ fn fillInListsForMSVC(ref vars: VarsForMSVC)
 	vars.tPath(format("%s/bin/x86", vars.dirWinSDK));
 	vars.tPath(format("%s/bin/x64", vars.dirWinSDK));
 
-	final switch (vars.msvcVer) with (MSVC_Version) {
+	final switch (vars.msvcVer) with (VisualStudioVersion) {
 	case Unknown:
 		break;
-	case VS_2015:
+	case V2015:
 		vars.tPath(format("%s/BIN/amd64", vars.dirVC));
 		vars.tPath(format("%s/VCPackages", vars.dirVC));
 		vars.tInc(format("%s/INCLUDE", vars.dirVC));
 		vars.tLib(format("%s/LIB/amd64", vars.dirVC));
 		break;
-	case VS_2017:
+	case V2017:
 		vars.tPath(format("%s/bin/HostX64/x64", vars.dirVCTools));
 		vars.tInc(format("%s/ATLMFC/include", vars.dirVCTools));
 		vars.tInc(format("%s/include", vars.dirVCTools));
