@@ -607,6 +607,70 @@ fn fillInListsForMSVC(ref vars: VarsForMSVC)
 	vars.tLib(format("%s/Lib/%s/um/x64", vars.dirWinSDK, vars.numWinSDK));
 }
 
+fn diffVars(drv: Driver, l: VarsForMSVC, r: VarsForMSVC)
+{
+	if (r.dirVC != l.dirVC &&
+	    (r.dirVC != null || l.dirVC != null)) {
+		drv.info("dirVC");
+		drv.info("\tl: %s", l.dirVC);
+		drv.info("\tr: %s", r.dirVC);
+	}
+	if (r.dirVCTools != l.dirVCTools &&
+	    (r.dirVCTools != null || l.dirVCTools != null)) {
+		drv.info("dirVCTools");
+		drv.info("\tl: %s", l.dirVCTools);
+		drv.info("\tr: %s", r.dirVCTools);
+	}
+	if (r.dirUCRT != l.dirUCRT &&
+	    (r.dirUCRT != null || l.dirUCRT != null)) {
+		drv.info("dirUCRT");
+		drv.info("\tl: %s", l.dirUCRT);
+		drv.info("\tr: %s", r.dirUCRT);
+	}
+	if (r.dirWinSDK != l.dirWinSDK &&
+	    (r.dirWinSDK != null || l.dirWinSDK != null)) {
+		drv.info("dirWinSDK");
+		drv.info("\tl: %s", l.dirWinSDK);
+		drv.info("\tr: %s", r.dirWinSDK);
+	}
+	if (r.numUCRT != l.numUCRT &&
+	    (r.numUCRT != null || l.numUCRT != null)) {
+		drv.info("numUCRT");
+		drv.info("\tl: %s", l.numUCRT);
+		drv.info("\tr: %s", r.numUCRT);
+	}
+	if (r.numWinSDK != l.numWinSDK &&
+	    (r.numWinSDK != null || l.numWinSDK != null)) {
+		drv.info("numWinSDK");
+		drv.info("\tl: %s", l.numWinSDK);
+		drv.info("\tr: %s", r.numWinSDK);
+	}
+
+	drv.info("inc");
+	foreach (inc; l.inc) {
+		drv.info("\tl: %s", inc);
+	}
+	foreach (inc; r.inc) {
+		drv.info("\tr: %s", inc);
+	}
+
+	drv.info("lib");
+	foreach (lib; l.lib) {
+		drv.info("\tl: %s", lib);
+	}
+	foreach (lib; r.lib) {
+		drv.info("\tr: %s", lib);
+	}
+
+	drv.info("path");
+	foreach (path; l.path) {
+		drv.info("\tl: %s", path);
+	}
+	foreach (path; r.path) {
+		drv.info("\tr: %s", path);
+	}
+}
+
 /*!
  * Used to compare INCLUDE and LIB env vars,
  * badly deals with case sensitivity.
