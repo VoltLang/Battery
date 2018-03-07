@@ -614,7 +614,7 @@ fn fillInListsForMSVC(ref vars: VarsForMSVC)
 fn compareOldAndNew(oldPath: string, newPath: string) bool
 {
 	if (oldPath is null) {
-		return true;
+		return false;
 	}
 
 	// Dealing with case sensitivity on windows.
