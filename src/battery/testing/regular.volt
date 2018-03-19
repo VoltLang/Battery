@@ -106,7 +106,7 @@ public:
 	override fn runTest(cmdGroup: CmdGroup)
 	{
 		this.cmdGroup = cmdGroup;
-		mOutDir = ".obj" ~ dirSeparator ~ name;
+		mOutDir = new ".battery${dirSeparator}testArtifacts${dirSeparator}${name}";
 		mkdirP(mOutDir);
 		mOutFile = mOutDir ~ dirSeparator ~ "output";
 		mOlogFile = mOutDir ~ dirSeparator ~ "outlog.txt";

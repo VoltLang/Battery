@@ -61,7 +61,7 @@ public:
 		this.archStr = .toString(config.arch);
 		this.platformStr = .toString(config.platform);
 
-		this.buildDir = ".bin" ~ dirSeparator ~
+		this.buildDir = ".battery" ~ dirSeparator ~ "bin" ~ dirSeparator ~
 			this.archStr ~ "-" ~ this.platformStr;
 
 		this.voltaArgs = [

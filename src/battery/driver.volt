@@ -14,7 +14,7 @@ import watt.text.string : endsWith, replace, split;
 import watt.text.ascii : isAlpha, isAlphaNum;
 import watt.text.getopt;
 import watt.io.streams : OutputFileStream;
-import watt.path : fullPath, dirSeparator;
+import watt.path : fullPath, dirSeparator, mkdir;
 import watt.process;
 import watt.conv;
 import watt.io.file : exists, isFile;
@@ -39,7 +39,8 @@ import build.util.file : modifiedMoreRecentlyThan;
 class DefaultDriver : Driver
 {
 public:
-	enum BatteryConfigFile = ".battery.config.txt";
+	enum BatteryDirectory = ".battery";
+	enum BatteryConfigFile = "${BatteryDirectory}${dirSeparator}config.txt";
 	enum VersionNumber = "0.1.16";
 	enum VersionString = "battery version ${VersionNumber}";
 
@@ -89,6 +90,7 @@ public:
 
 	fn config(args: string[])
 	{
+		mkdir(BatteryDirectory);
 		originalArgs := args;
 		// Filter out --release, --arch and --platform arguments.
 		isRelease, isLTO: bool;
