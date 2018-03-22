@@ -7,7 +7,7 @@
 module battery.frontend.scanner;
 
 import io = watt.io;
-import watt.io.file : exists, searchDir, isDir;
+import watt.io.file : exists, searchDir, isDir, SearchStatus;
 import watt.path : baseName, dirName, dirSeparator, fullPath;
 import watt.text.format : format;
 import watt.text.string : endsWith, replace;
@@ -271,9 +271,9 @@ fn deepScan(path: string, ending: string, omissions: string[]...) string[]
 {
 	ret: string[];
 
-	fn hit(p: string) {
+	fn hit(p: string) SearchStatus {
 		switch (p) {
-		case ".", "..", ".git": return;
+		case ".", "..", ".git": return SearchStatus.Continue;
 		default:
 		}
 
@@ -281,7 +281,7 @@ fn deepScan(path: string, ending: string, omissions: string[]...) string[]
 
 		foreach (omission; omissions) {
 			if (fullPath(omission) == fullPath(full)) {
-				return;
+				return SearchStatus.Continue;
 			}
 		}
 
@@ -290,6 +290,8 @@ fn deepScan(path: string, ending: string, omissions: string[]...) string[]
 		} else if (endsWith(p, ending)) {
 			ret ~= full;
 		}
+
+		return SearchStatus.Continue;
 	}
 
 	searchDir(path, "*", hit);
