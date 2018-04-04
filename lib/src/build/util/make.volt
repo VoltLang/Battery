@@ -55,8 +55,8 @@ fn parseDeps(ins: Instance, filename: SinkArg, text: SinkArg)
 		throw new Exception(err);
 	}
 
-	f := ins.file(normalizePath(ret[0][0 .. $-1]));
+	f := ins.file(normalisePath(ret[0][0 .. $-1]));
 	foreach (d; ret[1 .. $]) {
-		f.deps ~= ins.file(normalizePath(d));
+		f.deps ~= ins.file(normalisePath(d));
 	}
 }

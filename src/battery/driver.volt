@@ -558,9 +558,9 @@ Normal usecase when standing in a project directory.
 	 *
 	 */
 
-	override fn normalizePath(path: string) string
+	override fn normalisePath(path: string) string
 	{
-		version (Windows) path = normalizePathWindows(path);
+		version (Windows) path = normalisePathWindows(path);
 		return removeWorkingDirectoryPrefix(fullPath(path));
 	}
 

@@ -8,7 +8,7 @@ module battery.frontend.parameters;
 import watt.process;
 import watt.conv : toLower;
 import watt.path : fullPath;
-import watt.text.path : normalizePath;
+import watt.text.path : normalisePath;
 import watt.text.string : startsWith, endsWith;
 import watt.text.getopt;
 
@@ -595,7 +595,7 @@ struct ToArgs
 		fn argPath(kind: Arg.Kind) Arg {
 			a := arg(kind);
 			path := new string(mPath, a.flag);
-			a.extra = normalizePath(path);
+			a.extra = normalisePath(path);
 			return a;
 		}
 
@@ -608,7 +608,7 @@ struct ToArgs
 		fn argNextPath(kind: Arg.Kind, error: string) Arg {
 			a := argNext(kind, error);
 			path := new string(mPath, a.extra);
-			a.extra = normalizePath(path);
+			a.extra = normalisePath(path);
 			return a;
 		}
 

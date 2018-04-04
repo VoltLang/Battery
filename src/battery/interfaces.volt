@@ -111,8 +111,8 @@ public:
 	arch: Arch;
 	platform: Platform;
 
-	//! Normalize a path, target must exsist.
-	abstract fn normalizePath(path: string) string;
+	//! Normalise a path, target must exsist.
+	abstract fn normalisePath(path: string) string;
 
 	//! As the function name imples.
 	abstract fn removeWorkingDirectoryPrefix(path: string) string;

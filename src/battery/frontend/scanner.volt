@@ -180,7 +180,7 @@ public:
 	{
 		this.drv = drv;
 		this.inputPath = inputPath;
-		this.path = drv.normalizePath(inputPath);
+		this.path = drv.normalisePath(inputPath);
 
 		if (path is null) {
 			return;

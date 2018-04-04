@@ -7,14 +7,14 @@ module battery.util.path;
 
 import watt.path : pathSeparator, dirSeparator, exists;
 import watt.process : Environment;
-import watt.text.path : normalizePath, makePathAppendable;
+import watt.text.path : normalisePath, makePathAppendable;
 import watt.text.format : format;
 import watt.text.string : replace, split, endsWith;
 
 
 fn cleanPath(s: string) string
 {
-	return normalizePath(makePathAppendable(s));
+	return normalisePath(makePathAppendable(s));
 }
 
 fn searchPath(cmd: string, env: Environment) string

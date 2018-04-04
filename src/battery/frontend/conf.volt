@@ -178,7 +178,7 @@ fn makePath(path: string, flag: string) string
 		return "";
 	}
 	str := new string(path, flag);
-	return text.normalizePath(str);
+	return text.normalisePath(str);
 }
 
 fn optionalStringValue(root: toml.Value, d: Driver, c: Configuration, key: string) string

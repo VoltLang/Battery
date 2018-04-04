@@ -9,7 +9,7 @@ import watt.io.file : isDir;
 import watt.conv : toLower;
 import watt.text.string : join, split;
 import watt.text.format : format;
-import watt.text.path : normalizePath;
+import watt.text.path : normalisePath;
 import watt.process : retrieveEnvironment, Environment;
 import battery.interfaces;
 import battery.configuration;
@@ -423,21 +423,21 @@ public:
 
 public:
 	fn tPath(dir: string) {
-		dir = normalizePath(dir);
+		dir = normalisePath(dir);
 		if (isDir(dir)) {
 			path ~= dir;
 		}
 	}
 
 	fn tInc(dir: string) {
-		dir = normalizePath(dir);
+		dir = normalisePath(dir);
 		if (isDir(dir)) {
 			inc ~= dir;
 		}
 	}
 
 	fn tLib(dir: string) {
-		dir = normalizePath(dir);
+		dir = normalisePath(dir);
 		if (isDir(dir)) {
 			lib ~= dir;
 		}
