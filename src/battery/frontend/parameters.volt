@@ -10,6 +10,7 @@ import watt.conv : toLower;
 import watt.path : fullPath;
 import watt.text.path : normalizePath;
 import watt.text.string : startsWith, endsWith;
+import watt.text.getopt;
 
 import battery.configuration;
 import battery.interfaces;
@@ -530,59 +531,22 @@ fn findArchAndPlatform(driver: Driver, ref args: string[],
                        ref arch: Arch, ref platform: Platform,
                        ref isRelease: bool, ref isLTO: bool)
 {
-	isArch, isPlatform: bool;
-	pos: size_t;
+	debugFlag, releaseFlag: bool;
+	platformStr, archStr: string;
 
-	foreach (arg; args) {
-		if (isArch) {
-			pos++;
-			arch = parseArch(driver, arg);
-			isArch = false;
-			continue;
-		}
-		if (isPlatform) {
-			pos++;
-			platform = parsePlatform(driver, arg);
-			isPlatform = false;
-			continue;
-		}
-		switch (arg) {
-		case "--arch":
-			pos++;
-			isArch = true;
-			continue;
-		case "--platform":
-			pos++;
-			isPlatform = true;
-			continue;
-		case "--debug":
-			pos++;
-			isRelease = false;
-			continue;
-		case "--release":
-			pos++;
-			isRelease = true;
-			continue;
-		case "--lto":
-			pos++;
-			isLTO = true;
-			continue;
-		default:
-		}
-		break;
-	}
-	if (isArch) {
-		driver.abort("expected arch");
-	}
-	if (isPlatform) {
-		driver.abort("expected platform");
-	}
-	if (pos >= args.length) {
-		driver.abort("expected more arguments");
+	getopt(ref args, "debug", ref debugFlag);
+	getopt(ref args, "release", ref releaseFlag);
+	isRelease = releaseFlag && !debugFlag;
+
+	getopt(ref args, "lto", ref isLTO);
+
+	if (getopt(ref args, "platform", ref platformStr)) {
+		platform = parsePlatform(driver, platformStr);
 	}
 
-	// Update length
-	args = args[pos .. $];
+	if (getopt(ref args, "arch", ref archStr)) {
+		arch = parseArch(driver, archStr);
+	}
 }
 
 struct ToArgs

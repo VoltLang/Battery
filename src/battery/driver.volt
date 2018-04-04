@@ -462,24 +462,26 @@ Normal usecase when standing in a project directory.
 	fn printConfigUsage()
 	{
 		info("");
-		info("The following two arguments controlls which target battery compiles against.");
+		info("Set build architecture, platform, and release or debug build modes.");
 		info("Not all combinations are supported.");
+		info("These flags apply to all projects, command line position is disregarded.");
 		info("\t--arch arch      Selects arch (x86, x86_64).");
 		info("\t--platform plat  Selects platform (osx, msvc, linux).");
-		info("\t--release        Builds optimized release binaries.");
+		info("\t--release        Builds optimised release binaries.");
+		info("\t--debug          Set debug mode.");
 		info("");
-		info("The three following arguments create a new target.");
+		info("The three following arguments create a new project.");
 		info("");
-		info("\tpath             Scan directory for executable or library target.");
-		info("\t--exe            Create a new executable target.");
-		info("\t--lib            Create a new library target.");
+		info("\tpath             Scan path for executable or library project.");
+		info("\t--exe path       Create a new executable project from path.");
+		info("\t--lib path       Create a new library project from path.");
 		info("");
 		info("");
-		info("All of the following arguments apply to the last target given.");
+		info("All of the following arguments apply to the last project given.");
 		info("");
-		info("\t--name name      Name the current target.");
-		info("\t--dep depname    Add a target as dependency.");
-		info("\t--src-I dir      Set the current targets source dir.");
+		info("\t--name name      Name the current project.");
+		info("\t--dep depname    Add a project as dependency.");
+		info("\t--src-I dir      Set the current project's source dir.");
 		info("\t--cmd command    Run the command and processes output as arguments.");
 		info("\t-l lib           Add a library.");
 		info("\t-L path          Add a library path.");
@@ -490,7 +492,6 @@ Normal usecase when standing in a project directory.
 		info("\t-J path          Define a path for string import to look for files.");
 		info("\t-D ident         Define a new version flag.");
 		info("\t-o outputname    Set output to outputname.");
-		info("\t--debug          Set debug mode.");
 		info("\t--Xld            Add an argument when invoking the ld linker.");
 		info("\t--Xcc            Add an argument when invoking the cc linker.");
 		info("\t--Xlink          Add an argument when invoking the MSVC link linker.");
