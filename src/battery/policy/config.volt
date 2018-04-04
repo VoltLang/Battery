@@ -563,6 +563,12 @@ fn getDirsFromRegistry(ref vars: VarsForMSVC, drv: Driver, env: Environment)
 
 	vars.msvcVer   = vsInstall.ver;
 	vars.dirVC     = vsInstall.vcInstallDir;
+	/* The environment building code assumes 2017 will put results here,
+	 * and 2015 in dirVC. (They were from %VCINSTALLDIR% and %VCTOOLSINSTALLDIR%).
+	 * The detect code puts everything in dirVC, but the cross compilation code
+	 * still uses getDirsFromEnv, so mirroring it is the simplest solution. -BAH APR 18
+	 */
+	vars.dirVCTools= vars.dirVC;
 	vars.dirUCRT   = vsInstall.universalCrtDir;
 	vars.dirWinSDK = vsInstall.windowsSdkDir;
 	vars.numUCRT   = vsInstall.universalCrtVersion;
