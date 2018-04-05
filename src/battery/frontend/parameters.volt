@@ -16,6 +16,7 @@ import battery.configuration;
 import battery.interfaces;
 import battery.policy.arg;
 import battery.frontend.scanner;
+import detect = battery.util.detectVisualStudio;
 
 
 fn parseTestArgs(drv: Driver, args: string[]) string
@@ -243,7 +244,7 @@ public:
 		mDrv = drv;
 	}
 
-	fn parseConfig(args: string[])
+	fn parseConfig(args: string[], c: Configuration)
 	{
 		toArgs: ToArgs;
 		mPos = 0;
@@ -289,6 +290,15 @@ public:
 				break;
 			case HostToolArg:
 				mDrv.abort("host tool arg not supported right now");
+				break;
+			case NetBoot:
+				c.netBoot = true;
+				break;
+			case VisualStudioVersion:
+				c.visualStudioVersion = detect.stringToVisualStudioVersion(arg.extra);
+				if (c.visualStudioVersion == detect.VisualStudioVersion.Unknown) {
+					mDrv.abort("Unknown visual studio version '%s'.", arg.extra);
+				}
 				break;
 			default: mDrv.abort("unknown argument '%s'", arg.flag);
 			}
@@ -690,6 +700,8 @@ struct ToArgs
 			case "--test-file": argNextPath(TestFile, "expected test file"); continue;
 			case "--src-I": argNextPath(SrcDir, "expected source directory"); continue;
 			case "--cmd": argNext(Command, "expected command"); continue;
+			case "--netboot": arg(NetBoot); continue;
+			case "--vs-version": argNext(VisualStudioVersion, "expected visual studio version"); continue;
 			case "-l": argNext(Library, "expected library name"); continue;
 			case "-L": argNext(LibraryPath, "expected library path"); continue;
 			case "-framework": argNext(Framework, "expected framework name"); continue;

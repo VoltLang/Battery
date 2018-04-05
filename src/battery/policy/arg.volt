@@ -65,6 +65,10 @@ public:
 		BootToolArg,
 		HostToolCmd,
 		HostToolArg,
+
+		NetBoot,
+
+		VisualStudioVersion,
 	}
 
 	/// Always set, often the original param.

@@ -15,7 +15,7 @@ import battery.interfaces;
 import battery.configuration;
 import battery.policy.tools;
 import battery.util.path : searchPath;
-import detect.visualStudio;
+import battery.util.detectVisualStudio;
 
 
 fn getProjectConfig(drv: Driver, arch: Arch, platform: Platform) Configuration
@@ -481,7 +481,7 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 
 	lib, inc, path: string;
 	vars: VarsForMSVC;
-	vars.getDirsFromRegistry(drv, outside);
+	vars.getDirsFromRegistry(drv, outside, config.visualStudioVersion);
 	vars.fillInListsForMSVC();
 	vars.genAndCheckEnv(drv, out inc, out lib, out path);
 
@@ -524,7 +524,7 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 	addCommonLinkerArgsMSVC(config, linker);
 
 	verStr := vars.msvcVer.visualStudioVersionToString();
-	drv.info("Using Visual Studio Build Tools %s.", verStr);
+	drv.info("Using Visual Studio %s.", verStr);
 	if (linkerFromLLVM) {
 		drv.info("\tcmd linker: Linking with lld-link.exe from LLVM toolchain.");
 	} else {
@@ -585,15 +585,23 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 	}
 }
 
-fn getDirsFromRegistry(ref vars: VarsForMSVC, drv: Driver, env: Environment)
+fn getDirsFromRegistry(ref vars: VarsForMSVC, drv: Driver, env: Environment, vsv: VisualStudioVersion)
 {
 	vsInstalls := getVisualStudioInstallations();
 	if (vsInstalls.length == 0) {
 		drv.abort("couldn't find visual studio installation");
 	}
 
-	// Advanced Visual Studio Selection Algorithm Copyright Bernard Helyer, Donut Steel (@todo)
-	vsInstall := vsInstalls[0];
+	vsInstall: VisualStudioInstallation;
+	if (vsv != VisualStudioVersion.Unknown) {
+		gotVersion: VisualStudioVersion;
+		vsInstall = specificVersion(vsInstalls, vsv, ref gotVersion);
+		if (gotVersion != vsv) {
+			drv.abort("Could not load visual studio version '%s'.", visualStudioVersionToString(vsv));
+		}
+	} else {
+		vsInstall = bestVersion(vsInstalls);
+	}
 
 	vars.msvcVer   = vsInstall.ver;
 	vars.dirVC     = vsInstall.vcInstallDir;
@@ -665,7 +673,7 @@ fn fillInListsForMSVC(ref vars: VarsForMSVC)
 		vars.tInc(format("%s/INCLUDE", vars.dirVC));
 		vars.tLib(format("%s/LIB/amd64", vars.dirVC));
 		break;
-	case V2017:
+	case V2017, BuildTools2017:
 		vars.tPath(format("%s/bin/HostX64/x64", vars.dirVCTools));
 		vars.tInc(format("%s/ATLMFC/include", vars.dirVCTools));
 		vars.tInc(format("%s/include", vars.dirVCTools));

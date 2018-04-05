@@ -86,6 +86,8 @@ public:
 		case "test": test(args[2 .. $]); break;
 		case "version": printVersion(); break;
 		case "init": projectInit(args[2 .. $]); break;
+		case "detectvs": detectvs(args[2 .. $]); break;
+		case "kuwabara": kuwabara(args[2 .. $]); break;
 		default: printUsage(); break;
 		}
 
@@ -315,6 +317,23 @@ public:
 		tester.test(mConfig, mHostConfig, mLib, mExe, filter);
 	}
 
+	fn kuwabara(args: string[])
+	{
+	}
+
+	fn detectvs(args: string[])
+	{
+		version (Windows) {
+			info("Detected Visual Studio versions:");
+			info("---");
+			vsInstalls := getVisualStudioInstallations();
+			foreach (vsInstall; vsInstalls) {
+				name := visualStudioVersionToString(vsInstall.ver);
+				info("%s", name);
+			}
+		}
+	}
+
 	fn help(args: string[])
 	{
 		if (args.length <= 0) {
@@ -327,6 +346,7 @@ public:
 		case "config": printConfigUsage(); break;
 		case "test": printTestUsage(); break;
 		case "init": printInitUsage(); break;
+		case "detectvs": printDetectvsUsage(); break;
 		default: info("unknown command '%s'", args[0]);
 		}
 	}
@@ -432,6 +452,7 @@ These are the available commands:
 	test             Build current config, then run Tesla.
 	version          Display battery version then exit.
 	init             Generate a battery.txt file in the current directory.
+	detectvs         List Visual Studio versions detected on the system.
 
 Normal usecase when standing in a project directory.
 	$ battery config path/to/volta path/to/watt .
@@ -466,6 +487,14 @@ before doing anything else.
 		info("");
 		info("--init-name name   The name of the project.");
 		info("--init-type type   Is the project an 'executable' or 'library'?");
+	}
+
+	fn printDetectvsUsage()
+	{
+		info("Takes no arguments.");
+		info("Displays a list of Visual Studio versions that battery can detect.");
+		info("Pass one of the listed versions to config's --vs-version parameter");
+		info("to force battery to use that Visual Studio version when building.");
 	}
 
 	fn printConfigUsage()
@@ -505,6 +534,8 @@ before doing anything else.
 		info("\t--Xcc            Add an argument when invoking the cc linker.");
 		info("\t--Xlink          Add an argument when invoking the MSVC link linker.");
 		info("\t--Xlinker        Add an argument when invoking all different linkers.");
+		info("\t--netboot        Get Volta source and tool from the internet.");
+		info("\t--vs-version     Force use a version of Visual Studio listed by 'detectvs'.");
 		info("");
 		info("");
 		info("These arguments are used to create optional arch & platform arguments.");

@@ -10,6 +10,7 @@ import core.exception;
 import watt.process : Environment;
 public import battery.defines;
 public import battery.interfaces;
+import battery.util.detectVisualStudio;
 
 
 //! What kind of linker is being used, selects arguments.
@@ -61,6 +62,10 @@ public:
 	isLTO: bool;
 	//! Should we generate vdoc json files.
 	shouldJSON: bool;
+	//! Should we retrieve volta from the internet rather than via bootstrap.
+	netBoot: bool;
+	//! Specified VS version to use (if any).
+	visualStudioVersion: VisualStudioVersion;
 
 	//! Base clang command.
 	clangCmd: Command;
