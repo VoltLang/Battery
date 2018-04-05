@@ -83,6 +83,9 @@ public:
 
 		// Generate rules for all the executables.
 		foreach (exe; exes) {
+			if (exe.name == "volta" && config.netBoot) {
+				continue;
+			}
 			processExe(ref mGen, exe);
 			mega.deps ~= makeTargetExe(ref mGen, exe);
 		}

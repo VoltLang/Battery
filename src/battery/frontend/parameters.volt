@@ -46,7 +46,7 @@ fn parseTestArgs(drv: Driver, args: string[]) string
 }
 
 
-fn getArgs(arch: Arch, platform: Platform, isRelease: bool, isLTO: bool) string[]
+fn getArgs(arch: Arch, platform: Platform, isRelease: bool, isLTO: bool, netBoot: bool) string[]
 {
 	ret: string[] = [
 		"--arch", toString(arch),
@@ -57,6 +57,9 @@ fn getArgs(arch: Arch, platform: Platform, isRelease: bool, isLTO: bool) string[
 	}
 	if (isLTO) {
 		ret ~= "--lto";
+	}
+	if (netBoot) {
+		ret ~= "--netboot";
 	}
 	return ret;
 }
@@ -323,6 +326,20 @@ public:
 		process(c, base);
 	}
 
+	fn process(c: Configuration, base: Project)
+	{
+		lib := cast(Lib)base;
+		if (lib !is null) {
+			parseLib(c, lib);
+			verify(lib);
+		}
+
+		exe := cast(Exe)base;
+		if (exe !is null) {
+			parseExe(c, exe);
+			verify(exe);
+		}
+	}
 
 protected:
 	fn parseDefault(c: Configuration)
@@ -364,21 +381,6 @@ protected:
 				break;
 			default: mDrv.abort("unknown argument '%s'", arg.flag);
 			}
-		}
-	}
-
-	fn process(c: Configuration, base: Project)
-	{
-		lib := cast(Lib)base;
-		if (lib !is null) {
-			parseLib(c, lib);
-			verify(lib);
-		}
-
-		exe := cast(Exe)base;
-		if (exe !is null) {
-			parseExe(c, exe);
-			verify(exe);
 		}
 	}
 
@@ -566,8 +568,7 @@ struct ToArgs
 		mArgs: Range;
 		mArgs.setup(args);
 
-
-		condArch, condPlatform : int;
+		condArch, condPlatform : i32;
 
 		fn setCondP(platform: Platform) {
 			condPlatform |= 1 << platform;
@@ -577,8 +578,7 @@ struct ToArgs
 			condArch |= 1 << arch;
 		}
 
-		fn getNext(error: string) string
-		{
+		fn getNext(error: string) string {
 			mArgs.popFront();
 			if (!mArgs.empty()) {
 				return mArgs.front();

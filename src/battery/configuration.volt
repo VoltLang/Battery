@@ -1,7 +1,7 @@
 // Copyright © 2016-2017, Jakob Bornecrantz.  All rights reserved.
 // See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
 /*!
- * Contians the per build configuration.
+ * Contains the per build configuration.
  */
 module battery.configuration;
 

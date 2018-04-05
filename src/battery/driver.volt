@@ -23,6 +23,7 @@ import battery.configuration;
 import battery.interfaces;
 import battery.util.file : getLinesFromFile, getTomlConfig, getStringArray, outputConfig;
 import battery.util.path : cleanPath;
+import battery.util.extract : extractArchive;
 import battery.policy.host;
 import battery.policy.config;
 import battery.policy.tools;
@@ -35,12 +36,19 @@ import battery.testing.project;
 import battery.testing.tester;
 import build.util.file : modifiedMoreRecentlyThan;
 
+import net = battery.util.net;
+import miniz = lib.miniz;
+import gzip = lib.gzip;
+import microtar = lib.microtar;
+import battery.util.detectVisualStudio;
+
 
 class DefaultDriver : Driver
 {
 public:
 	enum BatteryDirectory = ".battery";
 	enum BatteryConfigFile = "${BatteryDirectory}${dirSeparator}config.txt";
+	enum SrcDirectory = "${BatteryDirectory}${dirSeparator}src";
 	enum VersionNumber = "0.1.16";
 	enum VersionString = "battery version ${VersionNumber}";
 
@@ -129,10 +137,14 @@ public:
 
 		// Parse arguments only the config arguments.
 		arg := new ArgParser(this);
-		arg.parseConfig(args);
+		arg.parseConfig(args, mConfig);
+
+		if (mConfig.netBoot) {
+			net.boot(this, mConfig, arg);
+		}
 
 		// If we get volta via the command line, no need for bootstrap config.
-		if (getCmd(false, "volta") !is null) {
+		if (getCmd(false, "volta") !is null || mConfig.netBoot) {
 			mBootstrapConfig = null;
 		}
 
@@ -169,22 +181,22 @@ public:
 			addProjectBatteryTxt(_exe);
 		}
 
-		configSanity();
-		verifyConfig();
+		configSanity(arg);
+		verifyConfig(arg);
 		bootstrapArgs: string[][2];
 		if (mBootstrapConfig !is null) {
 			bootstrapArgs[0] = getArgs(true, mBootstrapConfig.env);
 			bootstrapArgs[1] = getArgs(true, mBootstrapConfig.tools.values);
 		}
 		outputConfig(BatteryConfigFile, VersionNumber, originalArgs, batteryTomls,
-			getArgs(arch, platform, mConfig.isRelease, mConfig.isLTO),
+			getArgs(arch, platform, mConfig.isRelease, mConfig.isLTO, mConfig.netBoot),
 			getArgs(false, mConfig.env),
 			getArgs(false, mConfig.tools.values),
 			bootstrapArgs[0], bootstrapArgs[1],
 			getArgs(mLib, mExe));
 	}
 
-	fn configSanity()
+	fn configSanity(arg: ArgParser)
 	{
 		foreach (exe; mExe) {
 			validateProjectNameOrAbort(this, exe.name);
@@ -195,6 +207,11 @@ public:
 		foreach (k, b; mStore) {
 			foreach (dep; b.deps) {
 				dp := dep in mStore;
+				if (dp !is null) {
+					continue;
+				}
+				net.downloadDependency(this, mConfig, arg, dep);
+				dp = dep in mStore;
 				if (dp !is null) {
 					continue;
 				}
@@ -257,7 +274,7 @@ public:
 
 		// Parse arguments only the config arguments.
 		arg := new ArgParser(this);
-		arg.parseConfig(args);
+		arg.parseConfig(args, mConfig);
 
 		// Are we native or not?
 		if (arch == mHostConfig.arch &&
@@ -554,7 +571,7 @@ before doing anything else.
 	 *
 	 */
 
-	fn verifyConfig()
+	fn verifyConfig(arg: ArgParser)
 	{
 		isCross := mHostConfig !is null;
 		hasRtDir: bool;
@@ -563,12 +580,16 @@ before doing anything else.
 		hasVoltaDir := mStore.get("volta", null) !is null;
 		hasVoltaTool := mConfig.getTool(VoltaName) !is null;
 
-		foreach (k, v; mStore) {
-			lib := cast(Lib)v;
-			if (lib !is null && lib.isTheRT) {
-				hasRtDir = true;
+		fn checkForRt()
+		{
+			foreach (k, v; mStore) {
+				lib := cast(Lib)v;
+				if (lib !is null && lib.isTheRT) {
+					hasRtDir = true;
+				}
 			}
 		}
+		checkForRt();
 
 		if (!hasGdcTool && !hasRdmdTool && !hasVoltaTool) {
 			abort("No rdmd or gdc found (needed right now for Volta).");
@@ -642,6 +663,15 @@ before doing anything else.
 		c.cmd = cmd;
 
 		setCmd(boot, name, c);
+
+		switch (name) {
+		case "clang":
+			// Tell clang to output the right architecture.
+			addClangArgs(this, mConfig, c);
+			break;
+		default:
+			break;
+		}
 	}
 
 	override fn addCmdArg(boot: bool, name: string, arg: string)
