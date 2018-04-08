@@ -20,6 +20,9 @@ enum ToolDir    = ".battery${path.dirSeparator}tools";
 
 enum NasmExe   = "nasm.exe";
 enum ClangExe  = "clang.exe";
+enum VoltaExe  = "volta.exe";
+
+enum VoltaFile = "volta-win-x86_64.zip";
 
 /*!
  * Download what was needed for --netboot parameter.
@@ -58,13 +61,14 @@ fn downloadTool(name: string) string
 	io.writeln(new "Downloading tool executable ${name}");
 	switch (name) {
 	case "volta":
-		archiveFilename = downloadSource(server:`www.github.com`, url:`VoltLang/Volta/releases/download/v0.1.0-alpha/volta-0.1.0-msvc64.zip`, useHttps: true);
-		exeName = "volta.exe";
+		archiveFilename = github.downloadLatestReleaseFile("VoltLang", "Volta", VoltaFile);
+		exeName = VoltaExe;
 		break;
 	default:
 		break;
 	}
 	if (archiveFilename is null) {
+		io.writeln(new "Couldn't download tool '${name}'"); io.output.flush();
 		return null;
 	}
 	extract.archive(archiveFilename, downloadDir);
