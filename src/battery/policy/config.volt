@@ -505,6 +505,15 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 	} else {
 		drv.infoCmd(config, linker, linkerFromArg);
 	}
+
+	cl := config.makeCommandFromPath(CLCommand, CLName);
+	if (cl !is null) {
+		/* We don't use this in the build, but it does get used to test
+		 * the ABI on Windows; so we don't error if it's missing, but
+		 * we do add it if we see it.
+		 */
+		config.addTool(CLName, cl.cmd, cl.args);
+	}
 }
 
 fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment)
