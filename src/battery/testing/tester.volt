@@ -85,7 +85,7 @@ public:
 
 	fn testMain(projects: TestProject[])
 	{
-		cmdGroup := new CmdGroup(retrieveEnvironment(), processorCount());
+		cmdGroup := new CmdGroup(mConfig.env, processorCount());
 		tests: Test[];
 		foreach (i, project; projects) {
 			foreach (path; project.paths) {
@@ -93,8 +93,11 @@ public:
 				cfg := new Configuration();
 				cfg.arch = mConfig.arch;
 				cfg.platform = mConfig.platform;
-				foreach (k, v; project.commands) {
-					cfg.addTool(k, v.cmd, v.args);
+				foreach (name, command; mConfig.tools) {
+					cfg.tools[name] = command;
+				}
+				foreach (name, command; project.commands) {
+					cfg.tools[name] = command;
 				}
 
 				s := new Searcher(cfg);
