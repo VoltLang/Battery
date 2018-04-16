@@ -17,7 +17,7 @@ import watt.io.streams : OutputFileStream;
 import watt.path : fullPath, dirSeparator, mkdir;
 import watt.process;
 import watt.conv;
-import watt.io.file : exists, isFile;
+import watt.io.file : exists, isFile, chdir;
 
 import battery.configuration;
 import battery.interfaces;
@@ -60,8 +60,13 @@ protected:
 
 
 public:
-	this()
+	this(ref args: string[])
 	{
+		chdirPath: string;
+		if (getopt(ref args, "chdir", ref chdirPath)) {
+			chdir(chdirPath);
+		}
+
 		arch = HostArch;
 		platform = HostPlatform;
 		mPwd = new string(fullPath("."), dirSeparator);
@@ -418,7 +423,7 @@ public:
 	{
 		printVersion();
 		info(`
-usage: battery <command>
+usage: battery [--chdir dir] <command>
 
 These are the available commands:
 	help <command>   Prints more help about a command.
@@ -430,7 +435,11 @@ These are the available commands:
 
 Normal usecase when standing in a project directory.
 	$ battery config path/to/volta path/to/watt .
-	$ battery build`);
+	$ battery build
+
+The --chdir flag changes the working directory of the battery process
+before doing anything else.
+`);
 	}
 
 	fn printHelpUsage()

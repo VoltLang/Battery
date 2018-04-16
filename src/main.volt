@@ -14,7 +14,7 @@ fn main(args: string[]) int
 	// Move this somewhere else.
 	setLowPriority();
 
-	drv := new DefaultDriver();
+	drv := new DefaultDriver(ref args);
 	drv.process(args);
 
 	return 0;
