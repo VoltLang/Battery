@@ -173,7 +173,7 @@ fn download(server: string, url: string, useHttps: bool, destinationDirectory: s
 		io.output.flush();
 	}
 
-	h.loop(progressBar);
+	h.loop(/*progressBar TODO: the progress bar causes an instances launched from VLS to hang*/);
 	io.output.writeln("");
 	if (req.errorGenerated()) {
 		io.error.writeln(new "Download failed: ${req.errorString()}");
