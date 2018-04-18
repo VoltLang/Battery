@@ -435,54 +435,61 @@ public:
 		mainFile := srcDir ~ dirSeparator ~ "main.d";
 		name := gen.genVolted();
 
+		c: Command;
+		kind: ArgsKind;
+		args: string[];
+
+		if (gen.config.gdcCmd !is null) {
+			c = gen.config.gdcCmd;
+			kind = ArgsKind.Gdc;
+
+			args = c.args ~ [
+				"-o",
+				name
+			];
+		} else if (gen.config.rdmdCmd !is null) {
+			c = gen.config.rdmdCmd;
+			kind = ArgsKind.Dmd;
+
+			args = c.args ~ [
+				"--build-only",
+				"-of" ~ name
+			];
+		}
+
+		// Collect all D files.
+		files: string[];
+		fn doScan(p: Project) string[] {
+			found := deepScan(p.srcDir, ".d");
+			files ~= found;
+			if (kind == ArgsKind.Gdc) {
+				return found;
+			} else {
+				return null;
+			}
+		}
+
+		// Traverse all deps and generate arguments.
+		args ~= gen.genVoltArgs(exe, kind, doScan);
+
+		// Generate the deps for volted.
+		deps := new uni.Target[](files.length);
+		foreach (i, file; files) {
+			deps[i] = ins.file(file);
+		}
+
+		// For rdmd the main file needs to be last.
+		if (kind == ArgsKind.Dmd) {
+			args ~= mainFile;
+		}
+
 		t := ins.fileNoRule(name);
 		t.rule = new uni.Rule();
-
-		fn doScan(p: Project) string[] {
-			files := deepScan(p.srcDir, ".d");
-			deps := new uni.Target[](files.length);
-			foreach (i, file; files) {
-				deps[i] = ins.file(file);
-			}
-			t.deps ~= deps;
-			return null;
-		}
-
-		c := gen.config.rdmdCmd;
-		args := c.args ~ [
-			"--build-only",
-			"-of" ~ t.name
-		];
-
-		args ~= gen.genVoltArgs(exe, ArgsKind.Dmd, doScan);
-
-		foreach (arg; exe.srcObj) {
-			args ~= arg;
-		}
-		version (!Windows) {
-			foreach (arg; exe.libPaths) {
-				args ~= ("-L-L" ~ arg);
-			}
-			foreach (arg; exe.libs) {
-				args ~= ("-L-l" ~ arg);
-			}
-		} else {
-			foreach (arg; exe.libPaths) {
-				args ~= ("-L/LIBPATH:" ~ arg);
-			}
-			foreach (arg; exe.libs) {
-				args ~= ("-L" ~ arg);
-			}
-		}
-		foreach (arg; exe.xlinker) {
-			args ~= ("-L" ~ arg);
-		}
-		args ~= mainFile;
-
 		t.rule.outputs = [t];
 		t.rule.cmd = c.cmd;
 		t.rule.args = args;
 		t.rule.print = c.print ~ t.name;
+		t.deps = deps;
 
 		return t;
 	}

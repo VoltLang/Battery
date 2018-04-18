@@ -20,16 +20,17 @@ public:
 
 	enum Kind
 	{
-		VoltaSrc      = 0x01,
-		VoltaLink     = 0x02,
-		VoltaBc       = 0x04,
-		VoltaAr       = 0x08,
-		ClangAssemble = 0x10,
-		ClangLink     = 0x20,
-		LinkLink      = 0x40,
-		Dmd           = 0x80,
+		VoltaSrc      = 0x001,
+		VoltaLink     = 0x002,
+		VoltaBc       = 0x004,
+		VoltaAr       = 0x008,
+		ClangAssemble = 0x010,
+		ClangLink     = 0x020,
+		LinkLink      = 0x040,
+		Dmd           = 0x080,
+		Gdc           = 0x100,
 
-		AnyLdLink     = VoltaLink | ClangLink,
+		AnyLdLink     = VoltaLink | ClangLink | Gdc,
 		AnyLink       = VoltaLink | ClangLink | LinkLink,
 		AnyVolta      = VoltaSrc | VoltaLink | VoltaBc | VoltaAr,
 		AnyClang      = ClangAssemble | ClangLink,
@@ -179,6 +180,10 @@ public:
 				ret ~= ("-I" ~ b.srcDir);
 			}
 
+			if (kind & Kind.Gdc) {
+				ret ~= ["-I", b.srcDir];
+			}
+
 			// Shared with clang and volta.
 			if (kind & Kind.AnyLdLink) {
 				foreach (path; b.frameworkPaths) {
@@ -272,7 +277,7 @@ public:
 
 		traverse(base);
 
-		if (!(kind & Kind.Dmd)) {
+		if (!(kind & Kind.Dmd || kind & Kind.Gdc)) {
 			// Implictly add rt as a dependancy
 			traverse(rt);
 		}

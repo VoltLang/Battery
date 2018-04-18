@@ -81,6 +81,9 @@ public:
 	//! Rdmd for bootstrapping.
 	rdmdCmd: Command;
 
+	//! Gdc for bootstrapping.
+	gdcCmd: Command;
+
 	//! All added tools.
 	tools: Command[string];
 

@@ -41,9 +41,34 @@ fn doConfig(drv: Driver, config: Configuration)
 		// Do a bit of logging.
 		drv.info("Various tools needed by compile.");
 
-		// Get RDMD if we are bootstrapping.
-		drvRdmd := drv.fillInCommand(config, RdmdName);
-		config.addTool(RdmdName, drvRdmd.cmd, drvRdmd.args);
+		// Get GDC or RDMD if we are bootstrapping.
+		gdc := drv.getCmd(config.isBootstrap, GdcName);
+		gdcPath := gdc is null;
+		if (gdc is null) {
+			gdc = config.makeCommandFromPath(GdcCommand ~ "-6", GdcName);
+		}
+		if (gdc is null) {
+			gdc = config.makeCommandFromPath(GdcCommand, GdcName);
+		}
+		if (gdc !is null) {
+			c := config.addTool(GdcName, gdc.cmd, gdc.args);
+			addGdcArgs(drv, config, c);
+			drv.infoCmd(config, c, !gdcPath);
+			return;
+		}
+
+		rdmd := drv.getCmd(config.isBootstrap, RdmdName);
+		rdmdPath := rdmd is null;
+		if (rdmd is null) {
+			rdmd = config.makeCommandFromPath(RdmdCommand, RdmdName);
+			rdmdPath = true;
+		}
+		if (rdmd !is null) {
+			c := config.addTool(RdmdName, rdmd.cmd, rdmd.args);
+			addRdmdArgs(drv, config, c);
+			drv.infoCmd(config, c, !rdmdPath);
+			return;
+		}
 		return;
 	default:
 	}
@@ -77,7 +102,7 @@ fn doConfig(drv: Driver, config: Configuration)
 	}
 
 	// NASM is needed for RT.
-	drvNasm := drv.fillInCommand(config, NasmName);
+	drvNasm := fillInCommand(drv, config, NasmName);
 	config.addTool(NasmName, drvNasm.cmd, drvNasm.args);
 }
 
@@ -795,6 +820,7 @@ fn addCommonLinkerArgsMSVC(config: Configuration, linker: Command)
 	];
 }
 
+
 /*
  *
  * Fill in configuration.
@@ -809,10 +835,17 @@ fn fillInConfigCommands(drv: Driver, config: Configuration)
 	}
 
 	if (config.isBootstrap) {
-		// Get the optional RDMD command.
+		// Get the optional GDC and or RDMD command.
+
 		config.rdmdCmd = config.getTool(RdmdName);
-		assert(config.rdmdCmd !is null);
-		config.rdmdCmd.print = RdmdPrint;
+		if (config.rdmdCmd !is null) {
+			config.rdmdCmd.print = RdmdPrint;
+		}
+
+		config.gdcCmd = config.getTool(GdcName);
+		if (config.gdcCmd !is null) {
+			config.gdcCmd.print = GdcPrint;
+		}
 
 		// Done now.
 		return;

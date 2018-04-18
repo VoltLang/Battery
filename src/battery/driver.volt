@@ -528,6 +528,7 @@ before doing anything else.
 		isCross := mHostConfig !is null;
 		hasRtDir: bool;
 		hasRdmdTool := mBootstrapConfig !is null && mBootstrapConfig.getTool(RdmdName) !is null;
+		hasGdcTool := mBootstrapConfig !is null && mBootstrapConfig.getTool(GdcName) !is null;
 		hasVoltaDir := mStore.get("volta", null) !is null;
 		hasVoltaTool := mConfig.getTool(VoltaName) !is null;
 
@@ -538,8 +539,8 @@ before doing anything else.
 			}
 		}
 
-		if (!hasRdmdTool && !hasVoltaTool) {
-			abort("No rdmd found (needed right now for Volta).");
+		if (!hasGdcTool && !hasRdmdTool && !hasVoltaTool) {
+			abort("No rdmd or gdc found (needed right now for Volta).");
 		}
 		if (!hasVoltaDir && !hasVoltaTool) {
 			abort("Must specify a Volta directory or --cmd-volta (for now).");
