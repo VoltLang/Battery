@@ -22,8 +22,6 @@ enum NasmExe   = "nasm.exe";
 enum ClangExe  = "clang.exe";
 enum VoltaExe  = "volta.exe";
 
-enum VoltaFile = "volta-win-x86_64.zip";
-
 /*!
  * Download what was needed for --netboot parameter.
  */
@@ -35,7 +33,7 @@ fn boot(drv: interfaces.Driver, cfg: config.Configuration, arg: params.ArgParser
 		drv.addCmd(false, "volta", toolPath);
 	}
 
-	toolchainArchive := github.downloadLatestReleaseFile("VoltLang", "Toolchain", "toolchain-win-x86_64.zip");
+	toolchainArchive := github.downloadLatestReleaseFile("VoltLang", "Toolchain", "win_x86-64.zip");
 	toolchainDir     := path.dirName(toolchainArchive);
 	extract.archive(toolchainArchive, toolchainDir);
 	file.remove(toolchainArchive);
@@ -61,7 +59,7 @@ fn downloadTool(name: string) string
 	io.writeln(new "Downloading tool executable ${name}");
 	switch (name) {
 	case "volta":
-		archiveFilename = github.downloadLatestReleaseFile("VoltLang", "Volta", VoltaFile);
+		archiveFilename = github.downloadLatestReleaseFile("VoltLang", "Volta", "win_x86-64.zip");
 		exeName = VoltaExe;
 		break;
 	default:

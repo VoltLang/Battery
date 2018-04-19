@@ -76,17 +76,17 @@ fn parseUrl(drv: Driver, url: string) Repo
  * Download a file from a GitHub project's latest release.
  *
  * If the latest release from `owner/repo` contains a release asset with a 
- * name of `filename`, download it and return the path to the downloaded
+ * name ending in `targetEnd`, download it and return the path to the downloaded
  * file. Otherwise, return `null`.
  */
-fn downloadLatestReleaseFile(owner: string, repo: string, filename: string) string
+fn downloadLatestReleaseFile(owner: string, repo: string, targetEnd: string) string
 {
 	latestReleaseJson   := apiGetLatestReleaseJson(owner, repo);
 	if (latestReleaseJson is null) {
 		return null;
 	}
 	jsonRoot      := json.parse(latestReleaseJson);
-	latestRelease := filterReleaseAssets(jsonRoot, filename);
+	latestRelease := filterReleaseAssets(jsonRoot, targetEnd);
 	if (latestRelease is null) {
 		return null;
 	}
@@ -123,11 +123,10 @@ public:
 	tag: string;
 }
 
-//! If the release JSON `root` has an asset `targetName`, return its URL, or `null` otherwise.
-fn filterReleaseAssets(root: json.Value, targetName: string) Release
+//! If the release JSON `root` has an asset ending in `targetEnd`, return its URL, or `null` otherwise.
+fn filterReleaseAssets(root: json.Value, targetEnd: string) Release
 {
 	// Get the version tag.
-	/+
 	if (!root.hasObjectKey("tag_name")) {
 		return null;
 	}
@@ -135,7 +134,7 @@ fn filterReleaseAssets(root: json.Value, targetName: string) Release
 	if (tagNameVal.type() != json.DomType.STRING) {
 		return null;
 	}
-	tagStr := tagNameVal.str();+/
+	tagStr := tagNameVal.str();
 
 	// Get the assets.
 	if (!root.hasObjectKey("assets")) {
@@ -153,7 +152,7 @@ fn filterReleaseAssets(root: json.Value, targetName: string) Release
 			continue;
 		}
 		name := assetRoot.lookupObjectKey("name");
-		if (name.type() != json.DomType.STRING || name.str() != targetName) {
+		if (name.type() != json.DomType.STRING || !text.endsWith(name.str(), targetEnd)) {
 			continue;
 		}
 		if (!assetRoot.hasObjectKey("browser_download_url")) {
@@ -163,7 +162,7 @@ fn filterReleaseAssets(root: json.Value, targetName: string) Release
 		if (url.type() != json.DomType.STRING) {
 			return null;
 		}
-		return new Release(url.str(), "");
+		return new Release(url.str(), tagStr);
 	}
 	return null;
 }
