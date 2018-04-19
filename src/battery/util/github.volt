@@ -85,9 +85,12 @@ fn downloadLatestReleaseFile(owner: string, repo: string, filename: string) stri
 	if (latestReleaseJson is null) {
 		return null;
 	}
-	jsonRoot    := json.parse(latestReleaseJson);
-	downloadUrl := filterReleaseAssets(jsonRoot, filename);
-	return downloadRelease(downloadUrl, owner, repo);
+	jsonRoot      := json.parse(latestReleaseJson);
+	latestRelease := filterReleaseAssets(jsonRoot, filename);
+	if (latestRelease is null) {
+		return null;
+	}
+	return downloadRelease(latestRelease.url, owner, repo);
 }
 
 //! Get the latest release JSON for a given project, or `null` on failure.
@@ -106,9 +109,35 @@ fn apiGetLatestReleaseJson(owner: string, repo: string) string
 	return r.getString();
 }
 
-//! If the release JSON `root` has an asset `targetName`, return its URL, or `null` otherwise.
-fn filterReleaseAssets(root: json.Value, targetName: string) string
+class Release
 {
+public:
+	this(url: string, tag: string)
+	{
+		this.url = url;
+		this.tag = tag;
+	}
+
+public:
+	url: string;
+	tag: string;
+}
+
+//! If the release JSON `root` has an asset `targetName`, return its URL, or `null` otherwise.
+fn filterReleaseAssets(root: json.Value, targetName: string) Release
+{
+	// Get the version tag.
+	/+
+	if (!root.hasObjectKey("tag_name")) {
+		return null;
+	}
+	tagNameVal := root.lookupObjectKey("tag_name");
+	if (tagNameVal.type() != json.DomType.STRING) {
+		return null;
+	}
+	tagStr := tagNameVal.str();+/
+
+	// Get the assets.
 	if (!root.hasObjectKey("assets")) {
 		return null;
 	}
@@ -116,6 +145,8 @@ fn filterReleaseAssets(root: json.Value, targetName: string) string
 	if (assetsArrayVal.type() != json.DomType.ARRAY) {
 		return null;
 	}
+
+	// Go through the assets and look for our target.
 	assetsArray := assetsArrayVal.array();
 	foreach (assetRoot; assetsArray) {
 		if (!assetRoot.hasObjectKey("name")) {
@@ -132,7 +163,7 @@ fn filterReleaseAssets(root: json.Value, targetName: string) string
 		if (url.type() != json.DomType.STRING) {
 			return null;
 		}
-		return url.str();
+		return new Release(url.str(), "");
 	}
 	return null;
 }
