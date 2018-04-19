@@ -23,6 +23,7 @@ import io = watt.io;
 import json = watt.json;
 import http = watt.http;
 import text = watt.text.string;
+import semver = watt.text.semver;
 import path = [watt.path, watt.text.path];
 
 fn parseUrl(drv: Driver, url: string) Repo
@@ -114,13 +115,18 @@ class Release
 public:
 	this(url: string, tag: string)
 	{
+		if (tag.length > 1 && tag[0] == 'v') {
+			tag = tag[1 .. $];
+		}
 		this.url = url;
-		this.tag = tag;
+		if (semver.Release.isValid(tag)) {
+			this.ver = new semver.Release(tag);
+		}
 	}
 
 public:
 	url: string;
-	tag: string;
+	ver: semver.Release;
 }
 
 //! If the release JSON `root` has an asset ending in `targetEnd`, return its URL, or `null` otherwise.

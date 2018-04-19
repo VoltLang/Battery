@@ -36,7 +36,6 @@ fn boot(drv: interfaces.Driver, cfg: config.Configuration, arg: params.ArgParser
 	toolchainArchive := github.downloadLatestReleaseFile("VoltLang", "Toolchain", "win_x86-64.zip");
 	toolchainDir     := path.dirName(toolchainArchive);
 	extract.archive(toolchainArchive, toolchainDir);
-	file.remove(toolchainArchive);
 
 	nasmPath := path.concatenatePath(toolchainDir, NasmExe);
 	if (file.exists(nasmPath)) {
