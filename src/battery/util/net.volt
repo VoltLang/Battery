@@ -108,10 +108,10 @@ fn downloadDependency(name: string) string
 	io.writeln(new "Downloading ${name}");
 	switch (name) {
 	case "watt":
-		archiveFilename = downloadSource(server:`www.github.com`, url:`/VoltLang/Watt/archive/master.zip`, useHttps:true);
+		archiveFilename = github.downloadLatestSource("VoltLang", "Watt");
 		break;
 	case "volta":
-		archiveFilename = downloadSource(server:`www.github.com`, url:`/VoltLang/Volta/archive/master.zip`, useHttps:true);
+		archiveFilename = github.downloadLatestSource("VoltLang", "Volta");
 		break;
 	default:
 		break;
