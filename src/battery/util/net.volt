@@ -147,12 +147,12 @@ fn download(server: string, url: string, useHttps: bool, destinationDirectory: s
 	req.port = useHttps ? 443 : 80;
 	req.secure = useHttps;
 
-	fn progressBar()
+	fn progressBar() http.Status
 	{
 		if (req.contentLength() == 0) {
 			io.write(new "${req.bytesDownloaded()} bytes\r");
 			io.output.flush();
-			return;
+			return http.Status.Continue;
 		}
 		downloaded := cast(f64)req.bytesDownloaded();
 		maximum    := cast(f64)req.contentLength();
@@ -168,6 +168,7 @@ fn download(server: string, url: string, useHttps: bool, destinationDirectory: s
 		}
 		io.write(new "] ${cast(i32)(ratio * 100)}%\r");
 		io.output.flush();
+		return http.Status.Continue;
 	}
 
 	h.loop(progressBar);
