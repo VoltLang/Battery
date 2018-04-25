@@ -34,8 +34,10 @@ fn boot(drv: interfaces.Driver, cfg: config.Configuration, arg: params.ArgParser
 	}
 
 	toolchainArchive := github.downloadLatestReleaseFile("VoltLang", "Toolchain", "win_x86-64.zip");
-	toolchainDir     := path.dirName(toolchainArchive);
-	extract.archive(toolchainArchive, toolchainDir);
+	toolchainDir     := path.dirName(toolchainArchive.path);
+	if (!toolchainArchive.preExisting) {
+		extract.archive(toolchainArchive.path, toolchainDir);
+	}
 
 	nasmPath := path.concatenatePath(toolchainDir, NasmExe);
 	if (file.exists(nasmPath)) {
@@ -54,7 +56,9 @@ fn downloadTool(name: string) string
 	name = conv.toLower(name);
 	downloadDir := path.concatenatePath(ToolDir, name);
 	path.mkdirP(downloadDir);
-	archiveFilename, exeName: string;
+	exeName: string;
+	archiveFilename: github.Path;
+	archiveFilename.failure = true;
 	io.writeln(new "Downloading tool executable ${name}");
 	switch (name) {
 	case "volta":
@@ -64,12 +68,15 @@ fn downloadTool(name: string) string
 	default:
 		break;
 	}
-	if (archiveFilename is null) {
+	if (archiveFilename.failure) {
 		io.writeln(new "Couldn't download tool '${name}'"); io.output.flush();
 		return null;
 	}
-	extract.archive(archiveFilename, downloadDir);
 	finalPath := path.concatenatePath(downloadDir, exeName);
+	if (file.exists(finalPath) && archiveFilename.preExisting) {
+		return finalPath;
+	}
+	extract.archive(archiveFilename.path, downloadDir);
 	if (!file.exists(finalPath)) {
 		io.writeln(new "Couldn't download tool '${name}'"); io.output.flush();
 		return null;
@@ -104,7 +111,7 @@ fn downloadDependency(name: string) string
 	name = conv.toLower(name);
 	downloadDir := path.concatenatePath(SrcDir, name);
 	path.mkdirP(downloadDir);
-	archiveFilename: string;
+	archiveFilename: github.Path;
 	io.writeln(new "Downloading ${name}");
 	switch (name) {
 	case "watt":
@@ -116,14 +123,19 @@ fn downloadDependency(name: string) string
 	default:
 		break;
 	}
-	if (archiveFilename is null) {
+	if (archiveFilename.failure) {
 		return null;
 	}
-	extractedPath := extract.archive(archiveFilename, downloadDir);
+
+	extractedPath := extract.findRoot(downloadDir);
+	if (extractedPath is null && archiveFilename.preExisting) {
+		extractedPath = extract.archive(archiveFilename.path, downloadDir);
+	}
+
 	if (extractedPath !is null) {
 		io.writeln(new "Extracted to '${extractedPath}'"); io.output.flush();
 	} else {
-		io.writeln(new "Failed to extract '${archiveFilename}'"); io.output.flush();
+		io.writeln(new "Failed to extract '${archiveFilename.path}'"); io.output.flush();
 	}
 	return extractedPath;
 }

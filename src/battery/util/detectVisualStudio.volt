@@ -332,7 +332,7 @@ fn vswherePath() string
 	if (watt.exists(DefaultVswherePath)) {
 		return DefaultVswherePath;
 	}
-	return github.downloadLatestReleaseFile("Microsoft", "vswhere", "vswhere.exe");
+	return github.downloadLatestReleaseFile("Microsoft", "vswhere", "vswhere.exe").path;
 }
 
 fn vswhereQuery(vswhereExePath: string, productName: string, propertyName: string) string

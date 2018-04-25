@@ -43,10 +43,6 @@ fn archive(filename: string, destination: string) string
 	return findRoot(destination);
 }
 
-private:
-
-enum TarHeaderFile = "pax_global_header";
-
 /* Find a folder containing 'battery.toml' in a path where
  * an archive has just been extracted.
  * Either the battery.toml will be directly in `destination`,
@@ -78,6 +74,10 @@ fn findRoot(destination: string) string
 	watt.searchDir(destination, "*", dgt);
 	return result;
 }
+
+private:
+
+enum TarHeaderFile = "pax_global_header";
 
 fn extractZip(filename: string, destination: string)
 {

@@ -24,6 +24,16 @@ class Repo
 	proj: string;
 }
 
+struct Path
+{
+	//! Did this path fail to download?
+	failure: bool;
+	//! Was this path already there, and not downloaded from this call?
+	preExisting: bool;
+	//! The actual path string.
+	path: string;
+}
+
 fn parseUrl(drv: Driver, url: string) Repo
 {
 	// Strip any whitespace.
@@ -77,20 +87,23 @@ fn parseUrl(drv: Driver, url: string) Repo
  * Get the latest release from `owner/repo`'s source, download it
  * and return the path, or return `null` on failure.
  */
-fn downloadLatestSource(owner: string, repo: string) string
+fn downloadLatestSource(owner: string, repo: string) Path
 {
+	p: Path;
+	p.failure = true;
+
 	latestReleaseJson := apiGetLatestReleaseJson(owner, repo);
 	if (latestReleaseJson is null) {
-		return null;
+		return p;
 	}
 	jsonRoot := json.parse(latestReleaseJson);
 	tag      := tagName(jsonRoot);
 	if (tag is null) {
-		return null;
+		return p;
 	}
 	zipUrl   := sourceZip(jsonRoot);
 	if (zipUrl is null) {
-		return null;
+		return p;
 	}
 
 	newName := new "${owner}${repo}_${tag}.zip";
@@ -98,15 +111,20 @@ fn downloadLatestSource(owner: string, repo: string) string
 	if (file.exists(existingPath)) {
 		io.writeln(new "Using existing file ${newName}");
 		io.output.flush();
-		return existingPath;
+		p.failure = false;
+		p.preExisting = true;
+		p.path = existingPath;
+		return p;
 	}
 
 	zipFile := downloadSourceZip(zipUrl);
 	if (zipFile is null) {
-		return null;
+		return p;
 	}
 	file.rename(zipFile, existingPath);
-	return existingPath;
+	p.failure = false;
+	p.path = existingPath;
+	return p;
 }
 
 /*!
@@ -116,87 +134,33 @@ fn downloadLatestSource(owner: string, repo: string) string
  * name ending in `targetEnd`, download it and return the path to the downloaded
  * file. Otherwise, return `null`.
  */
-fn downloadLatestReleaseFile(owner: string, repo: string, targetEnd: string) string
+fn downloadLatestReleaseFile(owner: string, repo: string, targetEnd: string) Path
 {
+	p: Path;
+	p.failure = true;
+
 	latestReleaseJson   := apiGetLatestReleaseJson(owner, repo);
 	if (latestReleaseJson is null) {
-		return null;
+		return p;
 	}
 	jsonRoot      := json.parse(latestReleaseJson);
 	latestRelease := filterReleaseAssets(jsonRoot, targetEnd);
 	if (latestRelease is null) {
-		return null;
+		return p;
 	}
 	existingPath := alreadyDownloaded(latestRelease, owner, repo);
 	if (existingPath !is null) {
 		sz := file.size(existingPath);
 		if (sz == latestRelease.size) {
-			return existingPath;
+			p.failure = false;
+			p.preExisting = true;
+			p.path = existingPath;
+			return p;
 		}
 		io.writeln(new "Skipping '${latestRelease.filename}', as file size does not match.");
 		io.output.flush();
 	}
 	return downloadRelease(latestRelease.url, owner, repo);
-}
-
-//! Get the latest release JSON for a given project, or `null` on failure.
-fn apiGetLatestReleaseJson(owner: string, repo: string) string
-{
-	h := new http.Http();
-	r := new http.Request(h);
-	r.server = "api.github.com";
-	r.url    = new "/repos/${owner}/${repo}/releases/latest";
-	r.port   = 443;
-	r.secure = true;
-	h.loop();
-	if (r.errorGenerated()) {
-		return null;
-	}
-	return r.getString();
-}
-
-fn downloadSourceZip(url: string) string
-{
-	prefix := "https://api.github.com";
-	if (!text.startsWith(url, prefix)) {
-		return null;
-	}
-	url = url[prefix.length .. $];
-	return net.downloadSource("api.github.com", url, true);
-}
-
-/*!
- * Given a JSON root associated with the latest release, get the source zip.
- *
- * @Returns The URL for the zip, or `null`.
- */
-fn sourceZip(root: json.Value) string
-{
-	if (!root.hasObjectKey("zipball_url")) {
-		return null;
-	}
-	zipballUrl := root.lookupObjectKey("zipball_url");
-	if (zipballUrl.type() != json.DomType.STRING) {
-		return null;
-	}
-	return zipballUrl.str();
-}
-
-/*!
- * Given a JSON root associated with the latest release, get the tag.
- *
- * @Returns The tag, or `null`.
- */
-fn tagName(root: json.Value) string
-{
-	if (!root.hasObjectKey("tag_name")) {
-		return null;
-	}
-	tagNameVal := root.lookupObjectKey("tag_name");
-	if (tagNameVal.type() != json.DomType.STRING) {
-		return null;
-	}
-	return tagNameVal.str();
 }
 
 class Release
@@ -259,6 +223,57 @@ fn filterReleaseAssets(root: json.Value, targetEnd: string) Release
 	return null;
 }
 
+//! Download the file at `url` to the tools dir, and return the path, or `null` otherwise.
+fn downloadRelease(url: string, owner: string, repo: string) Path
+{
+	p: Path;
+	p.failure = true;
+	if (url is null) {
+		return p;
+	}
+	destination := path.concatenatePath(net.ToolDir, new "github/${owner}/${repo}");
+	path.mkdirP(destination);
+	prefix := "https://github.com";
+	if (!text.startsWith(url, prefix)) {
+		return p;
+	}
+	theUrl := url[prefix.length .. $];
+	p.path = net.download(server:`github.com`, url:cast(string)theUrl, useHttps:true, destinationDirectory:destination);
+	p.failure = false;
+	return p;
+}
+
+private:
+
+enum Prefix = "github.com/";
+
+fn downloadSourceZip(url: string) string
+{
+	prefix := "https://api.github.com";
+	if (!text.startsWith(url, prefix)) {
+		return null;
+	}
+	url = url[prefix.length .. $];
+	return net.downloadSource("api.github.com", url, true);
+}
+
+/*!
+ * Given a JSON root associated with the latest release, get the source zip.
+ *
+ * @Returns The URL for the zip, or `null`.
+ */
+fn sourceZip(root: json.Value) string
+{
+	if (!root.hasObjectKey("zipball_url")) {
+		return null;
+	}
+	zipballUrl := root.lookupObjectKey("zipball_url");
+	if (zipballUrl.type() != json.DomType.STRING) {
+		return null;
+	}
+	return zipballUrl.str();
+}
+
 //! If the given Release file is already downloaded, return the path, or `null` otherwise.
 fn alreadyDownloaded(rel: Release, owner: string, repo: string) string
 {
@@ -272,22 +287,35 @@ fn alreadyDownloaded(rel: Release, owner: string, repo: string) string
 	return null;
 }
 
-//! Download the file at `url` to the tools dir, and return the path, or `null` otherwise.
-fn downloadRelease(url: string, owner: string, repo: string) string
+/*!
+ * Given a JSON root associated with the latest release, get the tag.
+ *
+ * @Returns The tag, or `null`.
+ */
+fn tagName(root: json.Value) string
 {
-	if (url is null) {
+	if (!root.hasObjectKey("tag_name")) {
 		return null;
 	}
-	destination := path.concatenatePath(net.ToolDir, new "github/${owner}/${repo}");
-	path.mkdirP(destination);
-	prefix := "https://github.com";
-	if (!text.startsWith(url, prefix)) {
+	tagNameVal := root.lookupObjectKey("tag_name");
+	if (tagNameVal.type() != json.DomType.STRING) {
 		return null;
 	}
-	theUrl := url[prefix.length .. $];
-	return net.download(server:`github.com`, url:cast(string)theUrl, useHttps:true, destinationDirectory:destination);
+	return tagNameVal.str();
 }
 
-private:
-
-enum Prefix = "github.com/";
+//! Get the latest release JSON for a given project, or `null` on failure.
+fn apiGetLatestReleaseJson(owner: string, repo: string) string
+{
+	h := new http.Http();
+	r := new http.Request(h);
+	r.server = "api.github.com";
+	r.url    = new "/repos/${owner}/${repo}/releases/latest";
+	r.port   = 443;
+	r.secure = true;
+	h.loop();
+	if (r.errorGenerated()) {
+		return null;
+	}
+	return r.getString();
+}
