@@ -187,7 +187,7 @@ fn filterReleaseAssets(root: json.Value, targetEnd: string) Release
 		return null;
 	}
 	assetsArrayVal := root.lookupObjectKey("assets");
-	if (assetsArrayVal.type() != json.DomType.ARRAY) {
+	if (assetsArrayVal.type() != json.DomType.Array) {
 		return null;
 	}
 
@@ -198,7 +198,7 @@ fn filterReleaseAssets(root: json.Value, targetEnd: string) Release
 			continue;
 		}
 		name := assetRoot.lookupObjectKey("name");
-		if (name.type() != json.DomType.STRING || !text.endsWith(name.str(), targetEnd)) {
+		if (name.type() != json.DomType.String || !text.endsWith(name.str(), targetEnd)) {
 			continue;
 		}
 
@@ -206,7 +206,7 @@ fn filterReleaseAssets(root: json.Value, targetEnd: string) Release
 			return null;
 		}
 		url := assetRoot.lookupObjectKey("browser_download_url");
-		if (url.type() != json.DomType.STRING) {
+		if (url.type() != json.DomType.String) {
 			return null;
 		}
 
@@ -214,7 +214,7 @@ fn filterReleaseAssets(root: json.Value, targetEnd: string) Release
 			return null;
 		}
 		sz := assetRoot.lookupObjectKey("size");
-		if (sz.type() != json.DomType.LONG) {
+		if (sz.type() != json.DomType.Long) {
 			continue;
 		}
 
@@ -268,7 +268,7 @@ fn sourceZip(root: json.Value) string
 		return null;
 	}
 	zipballUrl := root.lookupObjectKey("zipball_url");
-	if (zipballUrl.type() != json.DomType.STRING) {
+	if (zipballUrl.type() != json.DomType.String) {
 		return null;
 	}
 	return zipballUrl.str();
@@ -298,7 +298,7 @@ fn tagName(root: json.Value) string
 		return null;
 	}
 	tagNameVal := root.lookupObjectKey("tag_name");
-	if (tagNameVal.type() != json.DomType.STRING) {
+	if (tagNameVal.type() != json.DomType.String) {
 		return null;
 	}
 	return tagNameVal.str();
