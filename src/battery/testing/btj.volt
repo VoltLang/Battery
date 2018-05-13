@@ -44,7 +44,7 @@ class BatteryTestsJson
 
 		jsonTxt := cast(string)read(jsonPath);
 		rootValue := json.parse(jsonTxt);
-		if (rootValue.type() != json.DomType.OBJECT) {
+		if (rootValue.type() != json.DomType.Object) {
 			error("root node not an object");
 		}
 
@@ -54,7 +54,7 @@ class BatteryTestsJson
 				error(format("root object does not declare field '%s'", fieldName));
 			}
 			val := rootValue.lookupObjectKey(fieldName);
-			if (val.type() != json.DomType.STRING) {
+			if (val.type() != json.DomType.String) {
 				error(format("field '%s' is not a string", fieldName));
 			}
 			return val.str();
@@ -66,13 +66,13 @@ class BatteryTestsJson
 				error(format("object does not declare field '%s'", fieldName));
 			}
 			val := rv.lookupObjectKey(fieldName);
-			if (val.type() != json.DomType.ARRAY) {
+			if (val.type() != json.DomType.Array) {
 				error(format("field '%s' is not an array of strings", fieldName));
 			}
 			vals := val.array();
 			strings := new string[](vals.length);
 			for (size_t i = 0; i < strings.length; ++i) {
-				if (vals[i].type() != json.DomType.STRING) {
+				if (vals[i].type() != json.DomType.String) {
 					error(format("%s element number %s is not a string",
 						fieldName, i));
 				}
