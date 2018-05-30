@@ -272,9 +272,9 @@ fn deepScan(path: string, ending: string, omissions: string[]...) string[]
 	ret: string[];
 
 	fn hit(p: string) SearchStatus {
-		switch (p) {
-		case ".", "..", ".git", ".battery", ".vls": return SearchStatus.Continue;
-		default:
+		if (p.length >= 1 && p[0] == '.') {
+			// Ignore ., .., and any unix style hidden directories (SCM etc).
+			return SearchStatus.Continue;
 		}
 
 		full := format("%s%s%s", path, dirSeparator, p);
