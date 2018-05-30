@@ -1,5 +1,6 @@
 /battery
 /battery.*
+/battery-*.*
 /self
 /self.*
 /perf.cvs
@@ -9,3 +10,5 @@
 *.swp
 .battery.config.txt
 .DS_Store
+*.suo
+*.cmd
