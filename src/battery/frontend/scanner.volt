@@ -273,7 +273,7 @@ fn deepScan(path: string, ending: string, omissions: string[]...) string[]
 
 	fn hit(p: string) SearchStatus {
 		switch (p) {
-		case ".", "..", ".git", ".battery": return SearchStatus.Continue;
+		case ".", "..", ".git", ".battery", ".vls": return SearchStatus.Continue;
 		default:
 		}
 
