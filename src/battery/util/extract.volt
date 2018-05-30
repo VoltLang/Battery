@@ -4,9 +4,9 @@ import watt = [watt.path, watt.conv, watt.io, watt.algorithm,
 watt.io.streams, watt.text.path, watt.io.file, watt.text.string];
 version (!Windows) import posix = core.c.posix.sys.stat;
 
-import miniz = lib.miniz;
-import gzip = lib.gzip;
-import tar = lib.microtar;
+import miniz = amp.archive.miniz;
+import gzip = amp.archive.gzip;
+import tar = amp.archive.microtar;
 
 /*!
  * Extract an archive file to a directory.

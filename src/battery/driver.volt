@@ -37,9 +37,9 @@ import battery.testing.tester;
 import build.util.file : modifiedMoreRecentlyThan;
 
 import net = battery.util.net;
-import miniz = lib.miniz;
-import gzip = lib.gzip;
-import microtar = lib.microtar;
+import miniz = amp.archive.miniz;
+import gzip = amp.archive.gzip;
+import microtar = amp.archive.microtar;
 import battery.util.detectVisualStudio;
 
 
