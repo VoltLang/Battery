@@ -23,7 +23,6 @@ import battery.configuration;
 import battery.interfaces;
 import battery.util.file : getLinesFromFile, getTomlConfig, getStringArray, outputConfig;
 import battery.util.path : cleanPath;
-import battery.util.extract : extractArchive;
 import battery.policy.host;
 import battery.policy.config;
 import battery.policy.tools;
