@@ -16,7 +16,6 @@ import battery.configuration;
 import battery.interfaces;
 import battery.policy.arg;
 import battery.frontend.scanner;
-import battery.frontend.github;
 
 
 fn parseTestArgs(drv: Driver, args: string[]) string
