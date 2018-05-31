@@ -8,7 +8,6 @@ module battery.util.detectVisualStudio;
 import watt = [watt.algorithm, watt.conv, watt.io.file,
 	watt.text.path, watt.text.sink, watt.text.string,
 	watt.process.pipe, watt.io.std];
-import github = battery.util.github;
 
 
 /*!
@@ -332,7 +331,7 @@ fn vswherePath() string
 	if (watt.exists(DefaultVswherePath)) {
 		return DefaultVswherePath;
 	}
-	return github.downloadLatestReleaseFile("Microsoft", "vswhere", "vswhere.exe").path;
+	return null;
 }
 
 fn vswhereQuery(vswhereExePath: string, productName: string, propertyName: string) string
