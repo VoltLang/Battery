@@ -12,7 +12,7 @@ import json = watt.json;
  */
 class BatteryTestsJson
 {
-	pattern: string;
+	patterns: string[];
 	prefix: string;
 	requiresAliases: string[string];
 	macros: string[][string];
@@ -81,7 +81,11 @@ class BatteryTestsJson
 			return strings;
 		}
 
-		pattern = getStringField("pattern");
+		if (rootValue.hasObjectKey("pattern")) {
+			patterns ~= getStringField("pattern");
+		} else {
+			patterns  = getStringArray(rootValue, "patterns");
+		}
 		prefix = getStringField("testCommandPrefix");
 
 		if (rootValue.hasObjectKey("requiresAliases")) {

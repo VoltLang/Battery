@@ -53,11 +53,13 @@ private:
 			case "", ".", "..":
 				return SearchStatus.Continue;
 			default:
-				if (globMatch(file, btj.pattern)) {
-					test := dir[base.length + 1 .. $];
-					mTests ~= new Regular(dir, test, file,
-						btj, project, mCommandStore);
-					return SearchStatus.Continue;
+				foreach (pattern; btj.patterns) {
+					if (globMatch(file, pattern)) {
+						test := dir[base.length + 1 .. $];
+						mTests ~= new Regular(dir, test, file,
+							btj, project, mCommandStore);
+						return SearchStatus.Continue;
+					}
 				}
 				fullpath := format("%s%s%s", dir, dirSeparator, file);
 				if (!isDir(fullpath)) {
