@@ -145,6 +145,9 @@ The file contains an object. The various properties are documented below.
 
 	pattern            a string, like "*.volt" or "test.volt" that
 	                   describes what files contain tests. (non-optional).
+	patterns           an array of strings, treated as 'pattern above'.
+	                   you have to specify 'pattern' or 'patterns',
+	                   you shouldn't have both. (non-optional).
 	testCommandPrefix  a string that describes what lines that contain
 	                   test commands (more on them later). (non-optional).
 	macros             an object containing lists of commands that can be
