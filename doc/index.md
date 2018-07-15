@@ -258,3 +258,14 @@ warningsEnabled		Tells the Volta compiler to generate warnings. (boolean)
 ```
 
 Platform identifiers can be simple: `[platform.msvc]`. The second part can be a string: `[platform.'msvc']`. You can `&&` or `||` platforms, as well `!`ing them: `[platform.'!msvc && !macOS]`.
+
+### llvm.toml
+
+```
+llvmVersion="7.0.0"
+clangPath="C:/Path/To/Clang.exe"
+```
+
+This file format is mostly intended for Windows systems where `llvm-conf` can't be used. Use `--llvmconf` with `config` on the command line, or use the `llvmConf` key to specify it.
+
+`llvmVersion` specifies the version in [semantic versioning](https://semver.org/). `clangPath` specifies the path to the clang executable to use.

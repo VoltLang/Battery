@@ -518,6 +518,7 @@ before doing anything else.
 		info("\t--cmd command    Run the command and processes output as arguments.");
 		info("\t-l lib           Add a library.");
 		info("\t-L path          Add a library path.");
+		info("\t--llvmconf       Add path to a llvm configuration file.");
 		version (OSX) {
 		info("\t-framework name  Add a framework.");
 		info("\t-F path          Add a framework search path.");
