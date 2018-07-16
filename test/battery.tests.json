@@ -1,0 +1,11 @@
+{
+	"pattern": "test.volt",
+	"testCommandPrefix": "//T ",
+	"macros": {
+		"default": [
+			"//T run:volta -o %t %s",
+			"//T run:%t"
+		]
+	}
+}
+
