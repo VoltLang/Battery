@@ -29,6 +29,8 @@ import battery.policy.tools;
 import battery.policy.validate;
 import battery.frontend.parameters;
 import battery.frontend.scanner;
+import llvmVersion = battery.frontend.llvmVersion;
+import llvmConf = battery.frontend.llvmConf;
 import battery.backend.builder;
 import battery.backend.command : ArgsGenerator;
 import battery.testing.project;
@@ -66,7 +68,7 @@ public:
 		if (getopt(ref args, "chdir", ref chdirPath)) {
 			chdir(chdirPath);
 		}
-
+		llvmConf.parseArguments(ref args);
 		arch = HostArch;
 		platform = HostPlatform;
 		mPwd = new string(fullPath("."), dirSeparator);
@@ -95,6 +97,9 @@ public:
 
 	fn config(args: string[])
 	{
+		// Since this might add clang, we do it early.
+		llvmConf.scan(args);
+
 		mkdir(BatteryDirectory);
 		originalArgs := args;
 		// Filter out --release, --arch and --platform arguments.
@@ -129,6 +134,10 @@ public:
 		arg := new ArgParser(this);
 		arg.parseConfig(args);
 
+		if (llvmConf.parsed) {
+			addCmd(false, "clang", llvmConf.clangPath);
+		}
+
 		// If we get volta via the command line, no need for bootstrap config.
 		if (getCmd(false, "volta") !is null) {
 			mBootstrapConfig = null;
@@ -141,6 +150,10 @@ public:
 			fillInConfigCommands(this, mBootstrapConfig);
 		}
 
+		if (llvmConf.parsed) {
+			addCmd(false, "clang", llvmConf.clangPath);
+		}
+
 		// Do this after the arguments has been parsed.
 		doConfig(this, mConfig);
 		fillInConfigCommands(this, mConfig);
@@ -151,6 +164,7 @@ public:
 		batteryTomls: string[];
 		fn addProjectBatteryTxt(prj: Project)
 		{
+			llvmVersion.addVersionIdentifiers(this, prj);
 			batteryTomls ~= prj.batteryToml;
 			foreach (child; prj.children) {
 				/* Calculating the dependency graph
@@ -171,6 +185,16 @@ public:
 		verifyConfig();
 		bootstrapArgs: string[][2];
 		if (mBootstrapConfig !is null) {
+			foreach (name, command; mBootstrapConfig.tools) {
+				switch (name) {
+				case "rdmd", "gdc":
+					// Make sure the llvmVersion defines are defined for bootstrap too.
+					addLlvmVersionsToBootstrapCompiler(this, command);
+					break;
+				default:
+					break;
+				}
+			}
 			bootstrapArgs[0] = getArgs(true, mBootstrapConfig.env);
 			bootstrapArgs[1] = getArgs(true, mBootstrapConfig.tools.values);
 		}

@@ -388,6 +388,7 @@ protected:
 			case LibraryPath: lib.libPaths ~= arg.extra; break;
 			case Framework: lib.frameworks ~= arg.extra; break;
 			case FrameworkPath: lib.frameworkPaths ~= arg.extra; break;
+			case Identifier: lib.defs ~= arg.extra; break;
 			case StringPath: lib.stringPaths ~= arg.extra; break;
 			case ArgLD: lib.xld ~= arg.extra; break;
 			case ArgCC: lib.xcc ~= arg.extra; break;

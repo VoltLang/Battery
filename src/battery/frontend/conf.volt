@@ -5,10 +5,15 @@
  */
 module battery.frontend.conf;
 
+import io = watt.io;
 import file = watt.io.file;
 import toml = watt.toml;
+import wpath = watt.path;
 import text = [watt.text.string, watt.text.ascii, watt.text.path, watt.process.cmd];
 import process = watt.process.pipe;
+import semver = watt.text.semver;
+
+import llvmConf = battery.frontend.llvmConf;
 
 import battery.configuration;
 
@@ -86,7 +91,8 @@ fn verifyKeys(root: toml.Value, tomlPath: string, d: Driver)
 		case DependenciesKey, PlatformTable, NameKey, OutputKey, ScanForDKey, IsTheRTKey,
 			SrcDirKey, TestFilesKey, JsonOutputKey, LibsKey, LPathsKey, FrameworksKey, FPathsKey,
 			StringPathKey, LDArgsKey, CCArgsKey, LinkArgsKey, LinkerArgsKey,
-			AsmFilesKey, CFilesKey, ObjFilesKey, VoltFilesKey, IdentKey, CommandKey, WarningKey:
+			AsmFilesKey, CFilesKey, ObjFilesKey, VoltFilesKey, IdentKey, CommandKey, WarningKey,
+			LlvmConfig:
 			continue;
 		default:
 			d.info(new "Warning: unknown key '${key}' in config file '${tomlPath}'");
@@ -120,6 +126,7 @@ enum VoltFilesKey    = "voltFiles";
 enum IdentKey        = "versionIdentifiers";
 enum CommandKey      = "commands";
 enum WarningKey      = "warningsEnabled";
+enum LlvmConfig      = "llvmConfig";
 
 fn parseCommand(cmd: string, c: Configuration, b: Project)
 {

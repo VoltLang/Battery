@@ -10,6 +10,7 @@ import battery.interfaces;
 import battery.configuration;
 import battery.driver;
 import battery.util.path : searchPath;
+import llvmVersion = battery.frontend.llvmVersion;
 
 
 
@@ -232,6 +233,25 @@ fn addRdmdArgs(drv: Driver, config: Configuration, c: Command)
 	}
 }
 
+fn addLlvmVersionsToBootstrapCompiler(drv: Driver, c: Command)
+{
+	fn getVersionFlag(s: string) string
+	{
+		if (c.name == "rdmd") {
+			return new "-version=${s}";
+		} else if (c.name == "gdc") {
+			return new "-fversion=${s}";
+		} else {
+			assert(false, "unknown bootstrap compiler");
+		}
+	}
+
+	llvmVersions := llvmVersion.identifiers(llvmVersion.get(drv));
+	foreach (v; llvmVersions) {
+		c.args ~= getVersionFlag(v);
+	}
+}
+
 
 /*
  *
@@ -249,6 +269,11 @@ fn addGdcArgs(drv: Driver, config: Configuration, c: Command)
 	final switch (config.arch) with (Arch) {
 	case X86: c.args ~= "-m32"; break;
 	case X86_64: c.args ~= "-m64"; break;
+	}
+
+	llvmVersions := llvmVersion.identifiers(llvmVersion.get(drv));
+	foreach (v; llvmVersions) {
+		c.args ~= format("-fversion=%s", v);
 	}
 }
 

@@ -1,2 +1,2 @@
 name = "battery"
-dependencies = ["battery.lib"]
+dependencies = ["battery.lib", "watt.toml"]

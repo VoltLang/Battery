@@ -316,7 +316,14 @@ enum UseAsLinker
 	YES,
 }
 
-fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
+enum Silent
+{
+	NO,
+	YES,
+}
+
+fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker,
+	silent: Silent = Silent.NO)
 {
 	llvm7, llvm60, llvm50, llvm40, llvm39, llvm: LLVMConfig;
 	llvm.fillInFromDriver(drv, config);
@@ -338,13 +345,15 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 	} else if (llvm39.fillInFromPath(config, "-3.9")) {
 		llvm = llvm39;
 	} else {
-		llvm.printMissing();
-		llvm7.printMissing();
-		llvm60.printMissing();
-		llvm50.printMissing();
-		llvm40.printMissing();
-		llvm39.printMissing();
-		drv.abort("could not find a valid llvm toolchain");
+		if (!silent) {
+			llvm.printMissing();
+			llvm7.printMissing();
+			llvm60.printMissing();
+			llvm50.printMissing();
+			llvm40.printMissing();
+			llvm39.printMissing();
+			drv.abort("could not find a valid llvm toolchain");
+		}
 	}
 
 	if (llvm.config !is null && llvm.needConfig) {
@@ -401,6 +410,10 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 				linker.args ~= ["-flto=thin", "-fuse-ld=lld"];
 			}
 		}
+	}
+
+	if (silent) {
+		return;
 	}
 
 	drv.info("Using LLVM%s toolchain from %s.", llvm.suffix, llvm.drvAll ? "arguments" : "path");
