@@ -318,15 +318,17 @@ enum UseAsLinker
 
 fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 {
-	llvm60, llvm50, llvm40, llvm39, llvm: LLVMConfig;
+	llvm7, llvm60, llvm50, llvm40, llvm39, llvm: LLVMConfig;
 	llvm.fillInFromDriver(drv, config);
 
-	llvm60 = llvm50 = llvm40 = llvm39 = llvm;
+	llvm7 = llvm60 = llvm50 = llvm40 = llvm39 = llvm;
 
 	if (llvm.drvAll) {
 		// Nothing todo
 	} else if (llvm.fillInFromPath(config, null)) {
 		// Nothing todo
+	} else if (llvm7.fillInFromPath(config, "-7")) {
+		llvm = llvm7;
 	} else if (llvm60.fillInFromPath(config, "-6.0")) {
 		llvm = llvm60;
 	} else if (llvm50.fillInFromPath(config, "-5.0")) {
@@ -337,6 +339,7 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 		llvm = llvm39;
 	} else {
 		llvm.printMissing();
+		llvm7.printMissing();
 		llvm60.printMissing();
 		llvm50.printMissing();
 		llvm40.printMissing();
