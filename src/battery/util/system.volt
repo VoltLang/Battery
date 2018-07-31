@@ -13,16 +13,18 @@ import watt.text.format;
 
 fn processorCount() u32
 {
+	if (gForceCount != 0) {
+		return gForceCount;
+	}
 	count: u32;
 	version (Windows) {
 		si: SYSTEM_INFO;
 		GetSystemInfo(&si);
 		count = si.dwNumberOfProcessors;
-	}
-	version (Posix) {
+	} else version (Posix) {
 		count = cast(u32)sysconf(_SC_NPROCESSORS_ONLN);
 	} else {
-		count = 9;
+		static assert(false);
 	}
 	if (count == 0) {
 		throw new Exception("processorCount failed to detect cpus.");
@@ -58,3 +60,12 @@ fn getBuiltIdent() string
 {
 	return format("%s-%s", getBuiltArch(), getBuiltPlatform());
 }
+
+fn forceCoreCount(j: u32)
+{
+	gForceCount = j;
+}
+
+private:
+
+global gForceCount: u32;

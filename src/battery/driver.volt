@@ -23,6 +23,7 @@ import battery.configuration;
 import battery.interfaces;
 import battery.util.file : getLinesFromFile, getTomlConfig, getStringArray, outputConfig;
 import battery.util.path : cleanPath;
+import system = battery.util.system;
 import battery.policy.host;
 import battery.policy.config;
 import battery.policy.tools;
@@ -68,6 +69,16 @@ public:
 		if (getopt(ref args, "chdir", ref chdirPath)) {
 			chdir(chdirPath);
 		}
+
+		j: i32;
+		if (getopt(ref args, "j", ref j)) {
+			if (j <= 0) {
+				info("Ignoring zero or negative j.");
+			} else {
+				system.forceCoreCount(cast(u32)j);
+			}
+		}
+
 		llvmConf.parseArguments(ref args);
 		arch = HostArch;
 		platform = HostPlatform;
@@ -447,7 +458,7 @@ public:
 	{
 		printVersion();
 		info(`
-usage: battery [--chdir dir] <command>
+usage: battery [--chdir dir, -j N] <command>
 
 These are the available commands:
 	help <command>   Prints more help about a command.
@@ -463,6 +474,9 @@ Normal usecase when standing in a project directory.
 
 The --chdir flag changes the working directory of the battery process
 before doing anything else.
+The -j flag tells battery how many programs it can run at once. By
+default this is the same as the number of processors (cores) installed
+in your system.
 `);
 	}
 
