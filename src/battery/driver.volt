@@ -44,7 +44,7 @@ class DefaultDriver : Driver
 public:
 	enum BatteryDirectory = ".battery";
 	enum BatteryConfigFile = "${BatteryDirectory}${dirSeparator}config.txt";
-	enum VersionNumber = "0.1.20-dev";
+	enum VersionNumber = "0.1.20";
 	enum VersionString = "battery version ${VersionNumber}";
 
 
