@@ -16,6 +16,8 @@ import semver = watt.text.semver;
 import llvmConf = battery.frontend.llvmConf;
 
 import battery.configuration;
+import battery.util.parsing;
+
 
 fn parseTomlConfig(tomlFilename: string, path: string, d: Driver, c: Configuration, b: Project)
 {

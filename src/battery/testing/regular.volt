@@ -13,11 +13,14 @@ import watt.io.streams;
 import watt.text.string;
 import watt.text.format;
 
+import build.util.cmdgroup;
+
 import battery.configuration;
+import battery.util.parsing;
 import battery.testing.test;
 import battery.testing.project;
 import battery.testing.btj;
-import build.util.cmdgroup;
+
 
 class Regular : Test
 {

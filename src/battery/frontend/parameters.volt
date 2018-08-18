@@ -15,6 +15,8 @@ import watt.text.getopt;
 import battery.configuration;
 import battery.interfaces;
 import battery.policy.arg;
+import battery.util.parsing;
+import battery.util.printing;
 import battery.frontend.scanner;
 
 
@@ -48,8 +50,8 @@ fn parseTestArgs(drv: Driver, args: string[]) string
 fn getArgs(arch: Arch, platform: Platform, isRelease: bool, isLTO: bool) string[]
 {
 	ret: string[] = [
-		"--arch", toString(arch),
-		"--platform", toString(platform)
+		"--arch", archToString(arch),
+		"--platform", platformToString(platform)
 		];
 	if (isRelease) {
 		ret ~= "--release";

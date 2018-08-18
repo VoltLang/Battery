@@ -10,6 +10,7 @@ import core.c.stdlib : exit;
 import battery.interfaces;
 import battery.configuration;
 import battery.util.path : cleanPath;
+import battery.util.printing;
 import battery.policy.tools : ClangName, LLVMArName;
 
 
@@ -59,8 +60,8 @@ public:
 		this.exes = exes;
 		this.store = [:];
 
-		this.archStr = .toString(config.arch);
-		this.platformStr = .toString(config.platform);
+		this.archStr = archToString(config.arch);
+		this.platformStr = platformToString(config.platform);
 
 		this.buildDir = ".battery" ~ dirSeparator ~
 			this.archStr ~ "-" ~ this.platformStr;
