@@ -64,7 +64,7 @@ fn infoCmd(drv: Driver, c: Configuration, cmd: Command, given: bool = false)
 	}
 }
 
-/**
+/*!
  * Ensures that a command/tool is there.
  * Will fill in arguments if it knows how to.
  */
@@ -118,7 +118,7 @@ fn addClangArgs(drv: Driver, config: Configuration, c: Command)
 	c.args ~= ["-target", config.getLLVMTargetString()];
 }
 
-/// configs used with LLVM tools, Clang and Volta.
+//! configs used with LLVM tools, Clang and Volta.
 fn getLLVMTargetString(config: Configuration) string
 {
 	final switch (config.platform) with (Platform) {
@@ -162,7 +162,7 @@ fn addNasmArgs(drv: Driver, config: Configuration, c: Command)
 	c.args ~= ["-f", config.getNasmFormatString()];
 }
 
-/// Returns the format to be outputed for this configuration.
+//! Returns the format to be outputed for this configuration.
 fn getNasmFormatString(config: Configuration) string
 {
 	final switch (config.platform) with (Platform) {
@@ -293,7 +293,7 @@ fn getShortName(name: string) string
 }
 
 private:
-/// Search the command path and make a Command instance.
+//! Search the command path and make a Command instance.
 fn makeCommand(drv: Driver, config: Configuration, name: string, cmd: string,
                print: string) Command
 {

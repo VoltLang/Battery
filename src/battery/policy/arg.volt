@@ -8,7 +8,7 @@ module battery.policy.arg;
 import battery.interfaces;
 
 
-/**
+/*!
  * Class for argument processing.
  */
 class Arg
@@ -67,10 +67,10 @@ public:
 		HostToolArg,
 	}
 
-	/// Always set, often the original param.
+	//! Always set, often the original param.
 	flag: string;
 
-	/// Extra option to the flag.
+	//! Extra option to the flag.
 	extra: string;
 
 	condArch: int;

@@ -8,19 +8,19 @@ import build.util.cmdgroup;
 import battery.testing.project;
 
 
-/**
+/*!
  * Test status 
  */
 enum Result
 {
-	FAIL,  ///< Test failed, regressed, is expected to succeed.
-	XFAIL, ///< Test failed, but is expected to fail.
-	XPASS, ///< Test passed, improved, but is expected to fail.
-	PASS,  ///< Test passed, and that was expected.
-	SKIPPED,  ///< Test was skipped.
+	FAIL,    //!< Test failed, regressed, is expected to succeed.
+	XFAIL,   //!< Test failed, but is expected to fail.
+	XPASS,   //!< Test passed, improved, but is expected to fail.
+	PASS,    //!< Test passed, and that was expected.
+	SKIPPED, //!< Test was skipped.
 }
 
-/**
+/*!
  * Base class for all types of tests.
  */
 abstract class Test

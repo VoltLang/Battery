@@ -86,7 +86,7 @@ public:
 		assert(rt !is null);
 	}
 
-	/**
+	/*!
 	 * Generates a Volta command line to build a binary.
 	 */
 	fn genVoltArgs(base: Project, kind: Kind, cb: Callback) string[]

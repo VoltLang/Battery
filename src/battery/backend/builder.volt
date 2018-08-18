@@ -35,7 +35,7 @@ public:
 
 
 protected:
-	/// Store of objects each Lib/Exe produces.
+	//! Store of objects each Lib/Exe produces.
 	mStore: Store[string];
 
 	mGen: ArgsGenerator;

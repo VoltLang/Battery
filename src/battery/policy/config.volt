@@ -454,11 +454,11 @@ public:
 	numUCRT: string;
 	numWinSDK: string;
 
-	/// Include directories, derived from the above fields.
+	//! Include directories, derived from the above fields.
 	inc: string[];
-	/// Library directories, derived from the above fields.
+	//! Library directories, derived from the above fields.
 	lib: string[];
-	/// Extra path, for binaries.
+	//! Extra path, for binaries.
 	path: string[];
 
 

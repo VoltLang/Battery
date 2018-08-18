@@ -7,7 +7,7 @@ import watt.text.format;
 import watt.io.file;
 import json = watt.json;
 
-/**
+/*!
  * Parse the battery.tests.json.
  */
 class BatteryTestsJson
@@ -17,7 +17,7 @@ class BatteryTestsJson
 	requiresAliases: string[string];
 	macros: string[][string];
 
-	/// How each command will start, 
+	//! How each command will start.
 	runPrefix: string;
 	retvalPrefix: string;
 	requiresPrefix: string;
@@ -25,7 +25,7 @@ class BatteryTestsJson
 	macroPrefix: string;
 	checkPrefix: string;
 
-	/// Get the commands associated with a macro, or an empty list.
+	//! Get the commands associated with a macro, or an empty list.
 	fn getMacro(name: string) string[]
 	{
 		p := name in macros;

@@ -22,22 +22,22 @@ import build.util.cmdgroup;
 class Regular : Test
 {
 public:
-	/// Commands from the test file to execute.
+	//! Commands from the test file to execute.
 	runs: string[][];
 
-	/// Expected results of commands.
+	//! Expected results of commands.
 	retvals: i32[];
 
-	/// Temporary file name for this test.
+	//! Temporary file name for this test.
 	tempName: string;
 
-	/// Directory name.
+	//! Directory name.
 	srcDir: string;
 
-	/// Test file name.
+	//! Test file name.
 	srcFile: string;
 
-	/// Actual test file's name.
+	//! Actual test file's name.
 	testFileName: string;
 
 	cmdGroup: CmdGroup;
@@ -56,7 +56,7 @@ private:
 	mChecks: string[];
 
 public:
-	/**
+	/*!
 	 * Construct a new Regular test.
 	 * Params:
 	 *   srcDir: The directory that contains the test.
@@ -422,7 +422,7 @@ class RequireExpression
 		}
 	}
 
-	/// Is this entire chain true or false?
+	//! Is this entire chain true or false?
 	fn evaluate(arch: Arch, platform: Platform, requiresAliases: string[string]) bool
 	{
 		b := evaluateProject(arch, platform, requiresAliases);
@@ -447,7 +447,7 @@ class RequireExpression
 		} 
 	}
 
-	/// Is the underlying condition true or false, ignore next and isNot.
+	//! Is the underlying condition true or false, ignore next and isNot.
 	fn evaluateProject(arch: Arch, platform: Platform, requiresAliases: string[string]) bool
 	{
 		aliasedptr := val in requiresAliases;

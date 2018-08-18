@@ -18,7 +18,7 @@ import battery.testing.regular;
 import battery.testing.btj;
 
 
-/**
+/*!
  * Searches for tests cases.
  */
 class Searcher

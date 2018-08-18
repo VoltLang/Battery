@@ -31,7 +31,7 @@ enum PathBatteryToml = "battery.toml";
 enum PathTestJson    = "battery.tests.json";
 enum PathTestSimple  = "battery.tests.simple";
 
-/**
+/*!
  * Scan a directory and see what it holds.
  */
 fn scanDir(drv: Driver, c: Configuration, path: string) Project

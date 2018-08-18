@@ -88,7 +88,7 @@ fn getArgs(boot: bool, cmds: Command[]) string[]
 	return ret;
 }
 
-/**
+/*!
  * Turn Libs and Exes into command line arguments.
  */
 fn getArgs(libs: Lib[], exes: Exe[]) string[]
@@ -226,7 +226,7 @@ fn getArgsExe(e: Exe) string[]
 	return ret;
 }
 
-/**
+/*!
  * Parser args and turns them into Libs and Exes.
  */
 class ArgParser
@@ -737,7 +737,7 @@ struct ToArgs
 	}
 }
 
-/**
+/*!
  * In light of ranges in Volt.
  */
 private struct Range
