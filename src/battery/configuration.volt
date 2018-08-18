@@ -12,30 +12,7 @@ public import battery.defines;
 public import battery.interfaces;
 
 
-//! What kind of linker is being used, selects arguments.
-enum LinkerKind
-{
-	Invalid, //!< Internal error state.
-	Link,    //!< MSVC
-	Clang,   //!< LLVM Clang
-}
 
-//! What kind of C-compiler is being used, selects arguments.
-enum CCKind
-{
-	Invalid, //!< Internal error state.
-	Clang,   //!< LLVM Clang
-}
-
-//! Tracking if a configuration is native, host or cross-compile.
-enum ConfigKind
-{
-	Invalid,   //!< Internal error state.
-	Bootstrap, //!< For boostraping the volted binary.
-	Native,    //!< Target is the same as the host system.
-	Host,      //!< For cross-compile, this config is the host system.
-	Cross,     //!< For cross-compile, this is the target config.
-}
 
 /*!
  * A build configuration for one or more builds.

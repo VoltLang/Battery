@@ -67,36 +67,6 @@ class Exe : Project
 	srcVolt: string[];
 }
 
-class Command
-{
-	//! Textual name.
-	name: string;
-	//! Name and path.
-	cmd: string;
-	//! Extra args to give when invoking.
-	args: string[];
-	//! Name to print.
-	print: string;
-
-	this()
-	{
-	}
-
-	this(cmd: string, args: string[])
-	{
-		this.cmd = cmd;
-		this.args = args;
-	}
-
-	this(name: string, c: Command)
-	{
-		this.name = name;
-		this.cmd = c.cmd;
-		this.print = c.print;
-		this.args = new string[](c.args);
-	}
-}
-
 /*!
  * Interface to the main class that controles the entire process.
  */

@@ -1,7 +1,7 @@
 // Copyright 2016-2018, Jakob Bornecrantz.
 // SPDX-License-Identifier: BSL-1.0
 /*!
- * Common enums and "defines".
+ * Common enums and classes, aka "defines".
  */
 module battery.defines;
 
@@ -25,11 +25,71 @@ enum Platform
 }
 
 /*!
- * Each of these listed architectures corresponds
- * to a Version identifier.
+ * Each of these listed architectures corresponds to a Version identifier.
  */
 enum Arch
 {
 	X86,
 	X86_64,
+}
+
+/*!
+ * What kind of linker is being used, selects arguments.
+ */
+enum LinkerKind
+{
+	Invalid, //!< Internal error state.
+	Link,    //!< MSVC
+	Clang,   //!< LLVM Clang
+}
+
+/*!
+ * What kind of C-compiler is being used, selects arguments.
+ */
+enum CCKind
+{
+	Invalid, //!< Internal error state.
+	Clang,   //!< LLVM Clang
+}
+
+/*!
+ * Tracking if a configuration is native, host or cross-compile.
+ */
+enum ConfigKind
+{
+	Invalid,   //!< Internal error state.
+	Bootstrap, //!< For boostraping the volted binary.
+	Native,    //!< Target is the same as the host system.
+	Host,      //!< For cross-compile, this config is the host system.
+	Cross,     //!< For cross-compile, this is the target config.
+}
+
+/*!
+ * Represents a single command that can be launched.
+ */
+class Command
+{
+public:
+	name: string;   //!< Textual name.
+	cmd: string;    //!< Name and path.
+	args: string[]; //!< Extra args to give when invoking.
+	print: string;  //!< Name to print.
+
+
+public:
+	this() { }
+
+	this(cmd: string, args: string[])
+	{
+		this.cmd = cmd;
+		this.args = args;
+	}
+
+	this(name: string, c: Command)
+	{
+		this.name = name;
+		this.cmd = c.cmd;
+		this.print = c.print;
+		this.args = new string[](c.args);
+	}
 }
