@@ -1,13 +1,15 @@
-// Copyright © 2015-2016, Jakob Bornecrantz.  All rights reserved.
-// See copyright just below.
+// Copyright 2012-2018, Jakob Bornecrantz.
+// Copyright 2016-2018, Bernard Helyer.
+// SPDX-License-Identifier: BSL-1.0
 module battery.license;
 
 
-/**
+/*!
  * This is the license for the Battery.
  */
 enum string license = `
-Copyright © 2015-2016, Jakob Bornecrantz. All rights reserved.
+Copyright 2012-2018, Jakob Bornecrantz.
+Copyright 2016-2018, Bernard Helyer.
 
 Boost Software License - Version 1.0 - August 17th, 2003
 

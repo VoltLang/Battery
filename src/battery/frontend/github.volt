@@ -1,6 +1,6 @@
-// Copyright © 2016-2017, Jakob Bornecrantz.  All rights reserved.
-// See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
-/**
+// Copyright 2016-2018, Jakob Bornecrantz.
+// SPDX-License-Identifier: BSL-1.0
+/*!
  * Holds to interact with github, like parsing a url.
  */
 module battery.frontend.github;

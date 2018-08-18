@@ -1,5 +1,5 @@
-// Copyright © 2015-2016, Jakob Bornecrantz.  All rights reserved.
-// See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
+// Copyright 2015-2018, Jakob Bornecrantz.
+// SPDX-License-Identifier: BSL-1.0
 module battery.policy.host;
 
 import watt.process : retrieveEnvironment, Environment, searchPath;

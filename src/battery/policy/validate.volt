@@ -1,5 +1,5 @@
-// Copyright © 2017-2018, Jakob Bornecrantz.  All rights reserved.
-// See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
+// Copyright 2017-2018, Jakob Bornecrantz.
+// SPDX-License-Identifier: BSL-1.0
 module battery.policy.validate;
 
 import watt.text.ascii : isAlpha, isAlphaNum;
