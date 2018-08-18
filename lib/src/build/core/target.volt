@@ -12,7 +12,7 @@ import watt.text.format : format;
 import build.util.file : getTimes;
 
 
-/**
+/*!
  * Holds all inspected files/targets for a build. The caching supplied
  * by this class helps with both speed and ease of use.
  */
@@ -51,7 +51,7 @@ public:
 	}
 }
 
-/**
+/*!
  * Most basic building block, represent a single file on the file
  * system. Can be used as a dependency and as a target to be built.
  */
@@ -72,24 +72,24 @@ public:
 	alias BUILDING = Status.BUILDING;
 	alias BUILT    = Status.BUILT;
 
-	/// What is the status of this target.
-	/// Used to skip updating the date.
+	//! What is the status of this target.
+	//! Used to skip updating the date.
 	status: Status;
 
-	/// Name, for file also actuall filename.
+	//! Name, for file also actuall filename.
 	name: string;
 
-	/// Rule to build this targe.
+	//! Rule to build this targe.
 	rule: Rule;
 
-	/// Will be built, but if no rule and missing will be ignored.
+	//! Will be built, but if no rule and missing will be ignored.
 	deps: Target[];
 
-	/// Cached last modified time.
+	//! Cached last modified time.
 	mod: ulong;
 
 public:
-	/// Updates the @mod field to the files last modified time.
+	//! Updates the @mod field to the files last modified time.
 	fn updateTime()
 	{
 		// Somebody might have set a higher status.
@@ -115,25 +115,25 @@ public:
 	}
 }
 
-/**
+/*!
  * Rule to be executed. Can be shared for multiple targets.
  */
 final class Rule
 {
 public:
-	/// To run be executed.
+	//! To run be executed.
 	cmd: string;
 
-	/// To be given to cmd.
+	//! To be given to cmd.
 	args: string[];
 
-	/// Echoed to stdout.
+	//! Echoed to stdout.
 	print: string;
 
-	/// Files needed directly to run this rule.
+	//! Files needed directly to run this rule.
 	input: Target[];
 
-	/// When the rule is running these targets will be locked.
+	//! When the rule is running these targets will be locked.
 	outputs: Target[];
 
 public:

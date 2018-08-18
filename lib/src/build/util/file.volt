@@ -73,7 +73,7 @@ fn getTimes(name: string, out access: u64, out modified: u64)
 	}
 }
 
-/**
+/*!
  * Replaces @oldPrefix and @oldSuffix with @newPrefix and @newSuffix.
  *
  * Assumes that name starts and ends with @oldPrefix, @oldSuffix.

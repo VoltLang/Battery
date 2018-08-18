@@ -1,7 +1,7 @@
 // Copyright 2012-2018, Jakob Bornecrantz.
 // SPDX-License-Identifier: BSL-1.0
 /*!
- *
+ * Code for launching multiple processes and keeping track of them.
  */
 module build.util.cmdgroup;
 
@@ -19,7 +19,7 @@ import watt.process;
 import watt.text.format;
 
 
-/**
+/*!
  * Helper class to launch one or more processes
  * to run along side the main process.
  */
@@ -31,42 +31,42 @@ public:
 private:
 	cmdStore: Cmd[];
 
-	/// Environment to launch all processes in.
+	//! Environment to launch all processes in.
 	env: Environment;
 
-	/// For Windows waitOne, to avoid unneeded allocations.
+	//! For Windows waitOne, to avoid unneeded allocations.
 	version (Windows) __handles: Pid.OsHandle[];
 
-	/// Number of simultanious jobs.
+	//! Number of simultanious jobs.
 	maxWaiting: uint;
 
-	/// Number of running jobs at this moment.
+	//! Number of running jobs at this moment.
 	waiting: uint;
 
-	/**
+	/*!
 	 * Small container representing a executed command, is recycled.
 	 */
 	static class Cmd
 	{
 	public:
-		/// Executable.
+		//! Executable.
 		cmd: string;
 
-		/// Arguments to be passed.
+		//! Arguments to be passed.
 		args: string[];
 
-		/// Called when command has completed.
+		//! Called when command has completed.
 		done: DoneDg;
 
-		/// System specific process handle.
+		//! System specific process handle.
 		handle: Pid.OsHandle;
 
-		/// In use.
+		//! In use.
 		used: bool;
 
 
 	public:
-		/**
+		/*!
 		 * Initialize all the fields.
 		 */
 		fn set(cmd: string, args: string[], dgt: DoneDg,
@@ -79,7 +79,7 @@ private:
 			this.handle = handle;
 		}
 
-		/**
+		/*!
 		 * Reset to a unused state.
 		 */
 		fn reset()
@@ -256,7 +256,7 @@ private:
 	}
 }
 
-/**
+/*!
  * Exception form and when execquting commands.
  */
 class CmdException : Exception

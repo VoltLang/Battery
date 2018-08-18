@@ -250,7 +250,8 @@ fn getVisualStudio2017Installation(out installationInfo: VisualStudioInstallatio
 	return true;
 }
 
-/* Try to find a string value from a key in various places.
+/*
+ * Try to find a string value from a key in various places.
  *
  * This is based on the way VS's own batch files looks for things in the registry.
  * Using the given `keyHead`, HKLM\SOFTWARE\(Wow6432Node) will be checked.

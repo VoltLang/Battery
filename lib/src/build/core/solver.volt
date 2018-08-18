@@ -15,7 +15,7 @@ import build.core.target : Target, Rule;
 import build.util.cmdgroup : CmdGroup;
 
 
-/**
+/*!
  * Builds a target, will throw exceptions on build failure.
  */
 fn doBuild(t: Target, numJobs: uint, env: Environment, verbose: bool)
@@ -24,7 +24,7 @@ fn doBuild(t: Target, numJobs: uint, env: Environment, verbose: bool)
 	build(t, g, verbose);
 }
 
-/**
+/*!
  * Internal looping build function.
  */
 private fn build(root: Target, g: CmdGroup, verbose: bool)
@@ -39,7 +39,7 @@ private fn build(root: Target, g: CmdGroup, verbose: bool)
 	}
 }
 
-/**
+/*!
  * Internal recursive build function.
  */
 private fn build(t: Target, g: CmdGroup, verbose: bool, ref shouldRestart: bool)
