@@ -1,5 +1,5 @@
-// Copyright © 2018, Bernard Helyer.  All rights reserved.
-// See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
+// Copyright 2018, Bernard Helyer.
+// SPDX-License-Identifier: BSL-1.0
 /*!
  * Detect Visual Studio installations.
  */

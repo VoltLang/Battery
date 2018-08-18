@@ -1,5 +1,8 @@
-// Copyright © 2016, Jakob Bornecrantz.  All rights reserved.
-// See copyright notice in src/battery/license.volt (BOOST ver. 1.0).
+// Copyright 2016-2018, Jakob Bornecrantz.
+// SPDX-License-Identifier: BSL-1.0
+/*!
+ * Functions for parsing Make compatible dependancy files.
+ */
 module build.util.make;
 
 import core.exception;

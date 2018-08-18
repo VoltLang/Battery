@@ -1,7 +1,6 @@
-// Copyright © 2012-2016, Jakob Bornecrantz.  All rights reserved.
-// See copyright notice in src/battery/license.d (BOOST ver. 1.0).
-
-/**
+// Copyright 2012-2018, Jakob Bornecrantz.
+// SPDX-License-Identifier: BSL-1.0
+/*!
  * The basic building blocks for a build.
  */
 module build.core.target;

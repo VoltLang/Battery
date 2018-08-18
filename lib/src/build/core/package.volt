@@ -1,5 +1,9 @@
-// Copyright © 2012-2016, Jakob Bornecrantz.  All rights reserved.
-// See copyright notice in src/battery/license.d (BOOST ver. 1.0).
+// Copyright 2012-2018, Jakob Bornecrantz.
+// SPDX-License-Identifier: BSL-1.0
+/*!
+ * Main package for the build system for
+ * [Battery](https://github.com/VoltLang/Battery).
+ */
 module build.core;
 
 public import build.core.solver;
