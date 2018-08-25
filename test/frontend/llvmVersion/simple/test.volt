@@ -1,19 +1,22 @@
 module test;
 
+import io = watt.io.std;
 import semver = watt.text.semver;
 import llvmVersion = battery.frontend.llvmVersion;
 
+
 global tests := [
-"6.0.0",
-"LlvmVersion6", "LlvmVersion6_0", "LlvmVersion6_0_0",
-"7.0.1",
-"LlvmVersion7", "LlvmVersion7_0", "LlvmVersion7_0_1",
 "3.9.0-svn",
-"LlvmVersion3", "LlvmVersion3_9", "LlvmVersion3_9_0",
+"LlvmVersion3", "LLVMVersion3", "LLVMVersion3_9", "LLVMVersion3_9_0",
 "1.2.3",
-"LlvmVersion1", "LlvmVersion1_2", "LlvmVersion1_2_3",
-"7.0.0",
-"LlvmVersion7", "LlvmVersion7_0", "LlvmVersion7_0_0",
+"LlvmVersion1", "LLVMVersion1", "LLVMVersion1_2", "LLVMVersion1_2_3",
+"7.0.1",
+"LlvmVersion7", "LLVMVersion7", "LLVMVersion7_0", "LLVMVersion7_0_1",
+	"LLVMVersion7AndAbove",
+"8.3.0",
+"LlvmVersion8", "LLVMVersion8", "LLVMVersion8_3", "LLVMVersion8_3_0",
+	"LLVMVersion7AndAbove",
+	"LLVMVersion8AndAbove",
 ];
 
 fn pop() string
@@ -35,11 +38,13 @@ fn main() i32
 		}
 		testVersion := new semver.Release(testVersionStr);
 
-		a := llvmVersion.identifiers(testVersion);
-		b: string[3];
-		b[0] = pop(); b[1] = pop(); b[2] = pop();
-		if (a[..] != b[..]) {
-			return 2;
+		as := llvmVersion.identifiers(testVersion);
+		foreach (a; as) {
+			b := pop();
+			if (a != b) {
+				io.error.writefln("%s != %s", a, b);
+				return 2;
+			}
 		}
 	}
 	return 0;

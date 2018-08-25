@@ -16,7 +16,8 @@ import battery  = [
 	battery.policy.tools,
 ];
 
-enum IdentifierPrefix = "LlvmVersion";
+enum IdentifierPrefixLegacy = "LlvmVersion";
+enum IdentifierPrefix = "LLVMVersion";
 
 /*!
  * Get the installed LLVM version from the system.
@@ -37,8 +38,7 @@ fn addVersionIdentifiers(drv: battery.Driver, prj: battery.Project) bool
 	if (!text.startsWith(prj.name, "volta")) {
 		return false;
 	}
-	idents := identifiers(get(drv));
-	prj.defs ~= idents[..];
+	prj.defs ~= identifiers(get(drv));
 	return true;
 }
 
@@ -47,17 +47,24 @@ fn addVersionIdentifiers(drv: battery.Driver, prj: battery.Project) bool
  * compiling code.
  *
  * So if you pass a version of `3.9.1`, this function will return
- * an array containing `LlvmVersion3`, `LlvmVersion3_9`, and `LlvmVersion3_9_1`,
- * and the version of intrinsics used: LlvmIntrinsics1 (explicit alignment <= 6)
- * or LlvmIntrinsics2 (>= 7).
+ * an array containing `LLVMVersion3`, `LLVMVersion3_9`, and `LLVMVersion3_9_1`.
+ * If you pass it a version of greater then 7, like say `8.1.0`. The extra
+ * identifiers `LLVMVersion7AndAbove` and `LLVMVersion8AndAbove` will be
+ * returned.
  */
-fn identifiers(ver: semver.Release) string[3]
+fn identifiers(ver: semver.Release) string[]
 {
 	assert(ver !is null);
-	idents: string[3];
-	idents[0] = new "${IdentifierPrefix}${ver.major}";
-	idents[1] = new "${IdentifierPrefix}${ver.major}_${ver.minor}";
-	idents[2] = new "${IdentifierPrefix}${ver.major}_${ver.minor}_${ver.patch}";
+	idents: string[];
+
+	idents ~= new "${IdentifierPrefixLegacy}${ver.major}";
+	idents ~= new "${IdentifierPrefix}${ver.major}";
+	idents ~= new "${IdentifierPrefix}${ver.major}_${ver.minor}";
+	idents ~= new "${IdentifierPrefix}${ver.major}_${ver.minor}_${ver.patch}";
+
+	if (ver.major >= 7) foreach (i; 7 .. ver.major + 1) {
+		idents ~= new "${IdentifierPrefix}${i}AndAbove";
+	}
 	return idents;
 }
 
