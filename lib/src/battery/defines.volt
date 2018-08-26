@@ -18,10 +18,10 @@ module battery.defines;
  */
 enum Platform
 {
-	MSVC,
-	Linux,
-	OSX,
-	Metal,
+	MSVC,  //!< Windows and MSVC compatible.
+	Linux, //!< Linux.
+	OSX,   //!< Apple OSX
+	Metal, //!< Bare Metal
 }
 
 /*!
@@ -29,8 +29,8 @@ enum Platform
  */
 enum Arch
 {
-	X86,
-	X86_64,
+	X86,    //!< X86 32 Bit
+	X86_64, //!< X86 64 Bit aka AMD64.
 }
 
 /*!
