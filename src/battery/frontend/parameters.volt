@@ -13,7 +13,7 @@ import watt.text.string : startsWith, endsWith;
 import watt.text.getopt;
 
 import battery.configuration;
-import battery.interfaces;
+import battery.commonInterfaces;
 import battery.policy.arg;
 import battery.util.parsing;
 import battery.util.printing;

@@ -3,10 +3,11 @@
 /*!
  * Main interfaces for code of battery.
  */
-module battery.interfaces;
+module battery.commonInterfaces;
 
 static import watt.text.sink;
 public import battery.defines;
+import battery.configuration;
 
 
 /*!

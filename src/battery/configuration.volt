@@ -9,9 +9,7 @@ import core.exception;
 
 import watt.process : Environment;
 public import battery.defines;
-public import battery.interfaces;
-
-
+public import battery.commonInterfaces;
 
 
 /*!

@@ -4,7 +4,7 @@ module battery.policy.validate;
 
 import watt.text.ascii : isAlpha, isAlphaNum;
 
-import battery.interfaces;
+import battery.commonInterfaces;
 
 
 fn validateProjectNameOrAbort(drv: Driver, name: string)

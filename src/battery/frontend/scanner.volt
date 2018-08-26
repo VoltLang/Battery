@@ -13,7 +13,7 @@ import watt.text.format : format;
 import watt.text.string : endsWith, replace;
 import watt.conv : toLower;
 
-import battery.interfaces;
+import battery.commonInterfaces;
 import battery.configuration;
 import battery.util.file : getLinesFromFile;
 import battery.frontend.parameters : ArgParser;

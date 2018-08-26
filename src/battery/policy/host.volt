@@ -3,7 +3,7 @@
 module battery.policy.host;
 
 import watt.process : retrieveEnvironment, Environment, searchPath;
-import battery.interfaces;
+import battery.commonInterfaces;
 import battery.configuration;
 import battery.policy.config;
 

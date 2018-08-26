@@ -7,7 +7,7 @@ import watt.text.string : endsWith;
 import watt.text.format;
 import io = watt.io;
 import core.c.stdlib : exit;
-import battery.interfaces;
+import battery.commonInterfaces;
 import battery.configuration;
 import battery.util.path : cleanPath;
 import battery.util.printing;

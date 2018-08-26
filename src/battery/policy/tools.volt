@@ -6,7 +6,7 @@ import watt.text.format : format;
 import watt.text.string : split, startsWith, endsWith;
 import watt.path : pathSeparator, dirSeparator, exists;
 import watt.process : retriveEnvironment, Environment;
-import battery.interfaces;
+import battery.commonInterfaces;
 import battery.configuration;
 import battery.driver;
 import battery.util.path : searchPath;

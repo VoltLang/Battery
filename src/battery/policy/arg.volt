@@ -5,7 +5,7 @@
  */
 module battery.policy.arg;
 
-import battery.interfaces;
+import battery.commonInterfaces;
 
 
 /*!

@@ -20,7 +20,7 @@ import watt.conv;
 import watt.io.file : exists, isFile, chdir;
 
 import battery.configuration;
-import battery.interfaces;
+import battery.commonInterfaces;
 import battery.util.file : getLinesFromFile, getTomlConfig, getStringArray, outputConfig;
 import battery.util.path : cleanPath;
 import system = battery.util.system;

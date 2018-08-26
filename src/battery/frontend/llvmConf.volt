@@ -8,7 +8,7 @@
  */
 module battery.frontend.llvmConf;
 
-import battery.interfaces;
+import battery.commonInterfaces;
 import     io = watt.io;
 import   toml = watt.toml;
 import getopt = watt.text.getopt;

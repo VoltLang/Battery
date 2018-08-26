@@ -10,7 +10,7 @@ import text     = watt.text.string;
 import semver   = watt.text.semver;
 import process  = watt.process;
 import battery  = [
-	battery.interfaces,
+	battery.commonInterfaces,
 	battery.configuration,
 	battery.policy.config,
 	battery.policy.tools,

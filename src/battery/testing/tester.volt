@@ -7,7 +7,7 @@ import watt.path : dirSeparator;
 import watt.text.string : endsWith, indexOf;
 import watt.process;
 
-import battery.interfaces;
+import battery.commonInterfaces;
 import battery.configuration;
 import battery.policy.tools;
 import battery.backend.command;
