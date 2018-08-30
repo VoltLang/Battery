@@ -99,6 +99,10 @@ fn getImpl(drv: battery.Driver) semver.Release
 			return null;
 		}
 		configOutput = text.strip(configOutput);
+		if (configOutput.length > 3 && configOutput[$-3 .. $] == "svn") {
+			// When you build from SVN you'll get 8.0.0svn (say). Trim the last part off.
+			configOutput = configOutput[0 .. $-3];
+		}
 		if (configRetval != 0 || !semver.Release.isValid(configOutput)) {
 			return null;
 		}
