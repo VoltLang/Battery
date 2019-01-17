@@ -608,7 +608,9 @@ fn getDirsFromRegistry(ref vars: VarsForMSVC, drv: Driver, env: Environment)
 {
 	vsInstalls := getVisualStudioInstallations();
 	if (vsInstalls.length == 0) {
-		drv.abort("couldn't find visual studio installation");
+		drv.info("couldn't find visual studio installation falling back to env vars");
+		vars.getDirsFromEnv(drv, env);
+		return;
 	}
 
 	// Advanced Visual Studio Selection Algorithm Copyright Bernard Helyer, Donut Steel (@todo)
