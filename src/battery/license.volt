@@ -8,8 +8,8 @@ module battery.license;
  * This is the license for the Battery.
  */
 enum string license = `
-Copyright 2012-2018, Jakob Bornecrantz.
-Copyright 2016-2018, Bernard Helyer.
+Copyright 2012-2019, Jakob Bornecrantz.
+Copyright 2016-2019, Bernard Helyer.
 
 Boost Software License - Version 1.0 - August 17th, 2003
 
