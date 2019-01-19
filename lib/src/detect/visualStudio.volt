@@ -7,7 +7,7 @@ module detect.visualStudio;
 
 import watt = [watt.algorithm, watt.conv, watt.io.file,
 	watt.text.path, watt.text.sink, watt.text.string];
-
+static import battery.util.log;
 
 /*!
  * An enumeration of supported Visual Studio versions.
@@ -118,7 +118,17 @@ fn getVisualStudioInstallation(ver: VisualStudioVersion, out installationInfo: V
 	}
 }
 
+/*!
+ * So we get the right prefix on logged messages.
+ */
+private global log: battery.util.log.Logger = {"detect.visualStudio"};
+
 private:
+
+fn dumpVisualStudioInstallation(ref installationInfo: VisualStudioInstallation)
+{
+
+}
 
 version (Windows):
 
@@ -232,12 +242,14 @@ fn getVisualStudio2017Installation(out installationInfo: VisualStudioInstallatio
 {
 	retval := getVcInstallDir2017(out installationInfo.vcInstallDir);
 	if (!retval) {
+		log.info("Could not find vcInstallDir2017");
 		return false;
 	}
 
 	installationInfo.addLibPath(watt.concatenatePath(installationInfo.vcInstallDir, "lib\\x64"));
 
 	if (!getUniversalSdkInformation(ref installationInfo)) {
+		log.info("Could not find vcInstallDir2017");
 		return false;
 	}
 
@@ -247,6 +259,7 @@ fn getVisualStudio2017Installation(out installationInfo: VisualStudioInstallatio
 	}
 
 	installationInfo.ver = VisualStudioVersion.V2017;
+	log.info("Found VisualStudioVersion.V2017");
 	return true;
 }
 
