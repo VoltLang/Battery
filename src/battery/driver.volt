@@ -21,6 +21,7 @@ import watt.io.file : exists, isFile, chdir;
 
 import battery.configuration;
 import battery.commonInterfaces;
+import battery.util.log : newLog, Logger;
 import battery.util.file : getLinesFromFile, getTomlConfig, getStringArray, outputConfig;
 import battery.util.path : cleanPath;
 import battery.util.printing;
@@ -39,7 +40,14 @@ import battery.testing.project;
 import battery.testing.tester;
 import build.util.file : modifiedMoreRecentlyThan;
 
+/*!
+ * So we get the right prefix on logged messages.
+ */
+private global log: Logger = {"driver"};
 
+/*!
+ * Controls the flow of the program.
+ */
 class DefaultDriver : Driver
 {
 public:
@@ -109,10 +117,16 @@ public:
 
 	fn config(args: string[])
 	{
+		// Create the battery directory before the logging file.
+		mkdir(BatteryDirectory);
+
+		// Setup logging file.
+		newLog(new "${BatteryDirectory}${dirSeparator}config-log.txt");
+		log.info("starting config");
+
 		// Since this might add clang, we do it early.
 		llvmConf.scan(args);
 
-		mkdir(BatteryDirectory);
 		originalArgs := args;
 		// Filter out --release, --arch and --platform arguments.
 		isRelease, isLTO: bool;
