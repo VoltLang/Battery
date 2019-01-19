@@ -266,6 +266,6 @@ llvmVersion="7.0.0"
 clangPath="C:/Path/To/Clang.exe"
 ```
 
-This file format is mostly intended for Windows systems where `llvm-conf` can't be used. Use `--llvmconf` with `config` on the command line, or use the `llvmConf` key to specify it.
+This file format is mostly intended for Windows systems where `llvm-conf` can't be used. Use `--llvmconf` with `config` on the command line, or use the `llvmConfig` key to specify it.
 
 `llvmVersion` specifies the version in [semantic versioning](https://semver.org/). `clangPath` specifies the path to the clang executable to use.
