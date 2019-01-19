@@ -23,6 +23,7 @@ import battery.configuration;
 import battery.commonInterfaces;
 import battery.util.file : getLinesFromFile, getTomlConfig, getStringArray, outputConfig;
 import battery.util.path : cleanPath;
+import battery.util.printing;
 import system = battery.util.system;
 import battery.policy.host;
 import battery.policy.config;
@@ -137,7 +138,7 @@ public:
 			info("native compile");
 		} else {
 			info("cross compiling to %s-%s",
-			     .toString(arch), .toString(platform));
+			     arch.archToString(), platform.platformToString());
 			mConfig.kind = ConfigKind.Cross;
 		}
 
