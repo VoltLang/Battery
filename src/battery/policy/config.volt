@@ -15,7 +15,7 @@ import battery.commonInterfaces;
 import battery.configuration;
 import battery.policy.tools;
 import battery.util.path : searchPath;
-import detect.visualStudio;
+import battery.detect.visualStudio;
 
 
 fn getProjectConfig(drv: Driver, arch: Arch, platform: Platform) Configuration
