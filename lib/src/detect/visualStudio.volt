@@ -7,7 +7,7 @@ module detect.visualStudio;
 
 import watt = [watt.algorithm, watt.conv, watt.io.file,
 	watt.text.path, watt.text.sink, watt.text.string];
-static import battery.util.log;
+
 
 /*!
  * An enumeration of supported Visual Studio versions.
@@ -85,49 +85,49 @@ fn visualStudioVersionToString(ver: VisualStudioVersion) string
 fn getVisualStudioInstallations() VisualStudioInstallation[]
 {
 	installations: VisualStudioInstallation[];
-	for (i: i32; i < cast(i32)VisualStudioVersion.MaxVersion; ++i) {
-		ver := cast(VisualStudioVersion)i;
-		installationInfo: VisualStudioInstallation;
-		if (getVisualStudioInstallation(ver, out installationInfo)) {
-			installations ~= installationInfo;
-		}
+	installationInfo: VisualStudioInstallation;
+
+	// Prefer 2017
+	version (Windows) if (getVisualStudio2017Installation(out installationInfo)) {
+		installations ~= installationInfo;
 	}
+	version (Windows) if (getVisualStudio2015Installation(out installationInfo)) {
+		installations ~= installationInfo;
+	}
+
 	return installations;
 }
 
-/*!
- * Query information on a particular Visual Studio version.
- *
- * @Param ver The version to look for.
- * @Param installationInfo Filled in with information if the specified version was found.
- * @Returns `true` if the version was found; `installationInfo` will be filled in.
- */
-fn getVisualStudioInstallation(ver: VisualStudioVersion, out installationInfo: VisualStudioInstallation) bool
-{
-	version (Windows) {
-		final switch (ver) with (VisualStudioVersion) {
-		case Unknown, MaxVersion:
-			return false;
-		case V2015:
-			return getVisualStudio2015Installation(out installationInfo);
-		case V2017:
-			return getVisualStudio2017Installation(out installationInfo);
-		}
-	} else {
-		return false;
-	}
-}
+
+private:
+
+static import battery.util.log;
 
 /*!
  * So we get the right prefix on logged messages.
  */
-private global log: battery.util.log.Logger = {"detect.visualStudio"};
+global log: battery.util.log.Logger = {"detect.visualStudio"};
 
-private:
-
-fn dumpVisualStudioInstallation(ref installationInfo: VisualStudioInstallation)
+fn dumpVisualStudioInstallation(ref installationInfo: VisualStudioInstallation, message: string)
 {
+	ss: watt.StringSink;
 
+	ss.sink(message);
+	watt.format(ss.sink, "\n\t ver = %s", installationInfo.ver.visualStudioVersionToString());
+	watt.format(ss.sink, "\n\t vcInstallDir = %s", installationInfo.vcInstallDir);
+	watt.format(ss.sink, "\n\t windowsSdkDir = %s", installationInfo.windowsSdkDir);
+	watt.format(ss.sink, "\n\t windowsSdkVersion = %s", installationInfo.windowsSdkVersion);
+	watt.format(ss.sink, "\n\t universalCrtDir = %s", installationInfo.universalCrtDir);
+	watt.format(ss.sink, "\n\t universalCrtVersion = %s", installationInfo.universalCrtVersion);
+	watt.format(ss.sink, "\n\t linkerPath = %s", installationInfo.linkerPath);
+	watt.format(ss.sink, "\n\t libs = [");
+	foreach (_lib; installationInfo.mLibs) {
+		ss.sink("\n\t\t");
+		ss.sink(_lib);
+	}
+	ss.sink("]");
+
+	log.info(ss.toString());
 }
 
 version (Windows):
@@ -218,14 +218,18 @@ fn getUniversalSdkInformation(ref installationInfo: VisualStudioInstallation) bo
 // Get the information on VS2015, if we can find it.
 fn getVisualStudio2015Installation(out installationInfo: VisualStudioInstallation) bool
 {
+	log.info("Searching for Visual Studio 2017 using registry");
+
 	retval := getVcInstallDir2015(out installationInfo.vcInstallDir);
 	if (!retval) {
+		log.info("Could not find vcInstallDir");
 		return false;
 	}
 
 	installationInfo.addLibPath(watt.concatenatePath(installationInfo.vcInstallDir, "LIB\\amd64"));
 
 	if (!getUniversalSdkInformation(ref installationInfo)) {
+		log.info("Could not get Universal SDK information");
 		return false;
 	}
 
@@ -235,21 +239,24 @@ fn getVisualStudio2015Installation(out installationInfo: VisualStudioInstallatio
 	}
 
 	installationInfo.ver = VisualStudioVersion.V2015;
+	installationInfo.dumpVisualStudioInstallation("Found a VisualStudioInstallation");
 	return true;
 }
 
 fn getVisualStudio2017Installation(out installationInfo: VisualStudioInstallation) bool
 {
+	log.info("Searching for Visual Studio 2017 using registry");
+
 	retval := getVcInstallDir2017(out installationInfo.vcInstallDir);
 	if (!retval) {
-		log.info("Could not find vcInstallDir2017");
+		log.info("Could not find vcInstallDir");
 		return false;
 	}
 
 	installationInfo.addLibPath(watt.concatenatePath(installationInfo.vcInstallDir, "lib\\x64"));
 
 	if (!getUniversalSdkInformation(ref installationInfo)) {
-		log.info("Could not find vcInstallDir2017");
+		log.info("Could not get Universal SDK information");
 		return false;
 	}
 
@@ -259,7 +266,7 @@ fn getVisualStudio2017Installation(out installationInfo: VisualStudioInstallatio
 	}
 
 	installationInfo.ver = VisualStudioVersion.V2017;
-	log.info("Found VisualStudioVersion.V2017");
+	installationInfo.dumpVisualStudioInstallation("Found a VisualStudioInstallation");
 	return true;
 }
 
