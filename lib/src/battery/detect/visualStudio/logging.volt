@@ -11,6 +11,7 @@ import watt = [watt.text.sink, watt.text.string];
 
 import battery.detect.visualStudio;
 
+
 /*!
  * So we get the right prefix on logged messages.
  */
@@ -21,14 +22,14 @@ fn dumpVisualStudioInstallation(ref installationInfo: VisualStudioInstallation, 
 	ss: watt.StringSink;
 
 	ss.sink(message);
-	watt.format(ss.sink, "\n\t ver = %s", installationInfo.ver.visualStudioVersionToString());
-	watt.format(ss.sink, "\n\t vcInstallDir = %s", installationInfo.vcInstallDir);
-	watt.format(ss.sink, "\n\t windowsSdkDir = %s", installationInfo.windowsSdkDir);
-	watt.format(ss.sink, "\n\t windowsSdkVersion = %s", installationInfo.windowsSdkVersion);
-	watt.format(ss.sink, "\n\t universalCrtDir = %s", installationInfo.universalCrtDir);
-	watt.format(ss.sink, "\n\t universalCrtVersion = %s", installationInfo.universalCrtVersion);
-	watt.format(ss.sink, "\n\t linkerPath = %s", installationInfo.linkerPath);
-	watt.format(ss.sink, "\n\t libs = [");
+	watt.format(ss.sink, "\n\tver = %s", installationInfo.ver.visualStudioVersionToString());
+	watt.format(ss.sink, "\n\tvcInstallDir = %s", installationInfo.vcInstallDir);
+	watt.format(ss.sink, "\n\twindowsSdkDir = %s", installationInfo.windowsSdkDir);
+	watt.format(ss.sink, "\n\twindowsSdkVersion = %s", installationInfo.windowsSdkVersion);
+	watt.format(ss.sink, "\n\tuniversalCrtDir = %s", installationInfo.universalCrtDir);
+	watt.format(ss.sink, "\n\tuniversalCrtVersion = %s", installationInfo.universalCrtVersion);
+	watt.format(ss.sink, "\n\tlinkerPath = %s", installationInfo.linkerPath);
+	watt.format(ss.sink, "\n\tlibs = [");
 	foreach (_lib; installationInfo.libsAsPaths) {
 		ss.sink("\n\t\t");
 		ss.sink(_lib);
