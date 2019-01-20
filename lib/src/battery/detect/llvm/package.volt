@@ -269,6 +269,7 @@ fn getVersionFromConfig(cmd: string) semver.Release
 {
 	configOutput: string;
 	configRetval: u32;
+	ret: semver.Release;
 
 	try {
 		configOutput = watt.getOutput(cmd, ["--version"], ref configRetval);
@@ -279,22 +280,21 @@ fn getVersionFromConfig(cmd: string) semver.Release
 			configOutput = configOutput[0 .. $-3];
 		}
 
-		return new semver.Release(configOutput);
+		ret = new semver.Release(configOutput);
 	} catch (watt.ProcessException e) {
 		log.info(new "Failed to run '${cmd}'\n\t${e.msg}");
-		return null;
 	} catch (Exception e) {
 		log.info(new "Failed to parse output from '${cmd}'\n\t${e.msg}");
-		return null;
 	}
 
-	return null;
+	return ret;
 }
 
 fn getVersionFromClang(cmd: string) semver.Release
 {
 	clangOutput: string;
 	clangRetval: u32;
+	ret: semver.Release;
 
 	try {
 		clangOutput = watt.getOutput(cmd, ["-v"], ref clangRetval);
@@ -306,13 +306,11 @@ fn getVersionFromClang(cmd: string) semver.Release
 			return null;
 		}
 
-		return new semver.Release(line);
+		ret = new semver.Release(line);
 	} catch (watt.ProcessException e) {
 		log.info(new "Failed to run '${cmd}'\n\t${e.msg}");
-		return null;
 	} catch (Exception e) {
 		log.info(new "Failed to parse output from '${cmd}'\n\t${e.msg}");
-		return null;
 	}
 
 	return null;
