@@ -214,6 +214,7 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 	arg.arch = config.arch;
 	arg.platform = config.platform;
 	arg.path = config.env.getOrNull("PATH");
+	arg.need.fillInNeeded(config);
 	arg.configCmd = configFromArg !is null ? configFromArg.cmd : null;
 	arg.arCmd = arFromArg !is null ? arFromArg.cmd : null;
 	arg.clangCmd = clangFromArg !is null ? clangFromArg.cmd : null;
@@ -225,13 +226,10 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 		drv.abort("Could not find any LLVM Toolchain!");
 	}
 
-	need: llvm.Needed;
-	need.fillInNeeded(config);
-
 	result: llvm.Result;
 	found: bool;
 	foreach (ref res; results) {
-		if (!res.hasNeeded(ref need)) {
+		if (!res.hasNeeded(ref arg.need)) {
 			continue;
 		}
 
@@ -250,16 +248,16 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 	linkCommand: Command;
 	clangCommand: Command;
 
-	if (result.configCmd !is null && need.config) {
+	if (result.configCmd !is null && arg.need.config) {
 		configCommand = config.addTool(LLVMConfigName, result.configCmd, result.configArgs);
 	}
-	if (result.arCmd !is null && need.ar) {
+	if (result.arCmd !is null && arg.need.ar) {
 		arCommand = config.addTool(LLVMArName, result.arCmd, result.arArgs);
 	}
-	if (result.ldCmd !is null && need.ld) {
+	if (result.ldCmd !is null && arg.need.ld) {
 		ldCommand = config.addTool(LDLLDName, result.ldCmd, result.ldArgs);
 	}
-	if (result.linkCmd !is null && need.link) {
+	if (result.linkCmd !is null && arg.need.link) {
 		linkCommand = config.addTool(LLDLinkName, result.linkCmd, result.linkArgs);
 	}
 

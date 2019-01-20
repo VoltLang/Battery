@@ -10,6 +10,7 @@ import core.exception;
 
 import watt = [
 	watt.io.file,
+	watt.text.ascii,
 	watt.text.string,
 	watt.text.sink,
 	watt.process];
@@ -37,6 +38,7 @@ public:
 struct Argument
 {
 public:
+	need: Needed;       //!< Which commands are needed.
 	arch: Arch;         //!< Arch we want to compile against.
 	platform: Platform; //!< Platform we want to compile against.
 
@@ -81,7 +83,7 @@ fn detect(ref arg: Argument, out results: Result[]) bool
 
 	// Arguments have the highest precedence.
 	if (getFromArgs(ref arg, out result)) {
-		results ~= result;	
+		results ~= result;
 	}
 
 	// Then the config.
@@ -103,15 +105,34 @@ fn detect(ref arg: Argument, out results: Result[]) bool
 	}
 
 	// Dump the info.
+	found := false;
 	foreach (ref r; results) {
-		r.dump("Found");
+		if (!hasNeeded(ref arg, ref r)) {
+			dump(ref arg, ref r, "Rejected");
+		} else if (found) {
+			dump(ref arg, ref r, "Skipped");
+		} else {
+			dump(ref arg, ref r, "Selected");
+			result = r;
+			found = true;
+		}
 	}
 
-	return results.length != 0;
+	return found;
 }
 
 
 private:
+
+fn hasNeeded(ref arg: Argument, ref res: Result) bool
+{
+	if (arg.need.config && (res.configCmd is null)) return false;
+	if (arg.need.clang && (res.clangCmd is null)) return false;
+	if (arg.need.ar && (res.arCmd is null)) return false;
+	if (arg.need.link && (res.linkCmd is null)) return false;
+	if (arg.need.ld && (res.ldCmd is null)) return false;
+	return true;
+}
 
 fn getFromConf(ref arg: Argument, out res: Result) bool
 {
@@ -143,20 +164,20 @@ fn getFromArgs(ref arg: Argument, out res: Result) bool
 		return false;
 	}
 
-	if (checkArgCmd(arg.arCmd, "llvm-ar")) {
+	if (arg.need.ar && checkArgCmd(arg.arCmd, "llvm-ar")) {
 		res.arCmd = arg.arCmd;
 	}
 
-	if (checkArgCmd(arg.clangCmd, "clang")) {
+	if (arg.need.clang && checkArgCmd(arg.clangCmd, "clang")) {
 		res.clangCmd = arg.clangCmd;
 		res.clangArgs = getClangArgs(ref arg);
 	}
 
-	if (checkArgCmd(arg.ldCmd, "ld.lld")) {
+	if (arg.need.ld && checkArgCmd(arg.ldCmd, "ld.lld")) {
 		res.ldCmd = arg.ldCmd;
 	}
 
-	if (checkArgCmd(arg.linkCmd, "lld-link")) {
+	if (arg.need.link && checkArgCmd(arg.linkCmd, "lld-link")) {
 		res.linkCmd = arg.linkCmd;
 	}
 
@@ -166,9 +187,17 @@ fn getFromArgs(ref arg: Argument, out res: Result) bool
 
 fn getFromPath(ref arg: Argument, suffix: string, out res: Result) bool
 {
-	res.configCmd = searchPath(arg.path, "llvm-config" ~ suffix);
+	// First look for llvm-config if it is needed.
+	configCmd: string;
+	if (arg.need.config) {
+		configCmd = searchPath(arg.path, "llvm-config" ~ suffix);
+	}
+	if (configCmd !is null) {
+		res.ver = getVersionFromConfig(configCmd);
+	}
 
-	if (res.configCmd is null) {
+	// Error out if llvm-config is needed and is missing.
+	if (configCmd is null && arg.need.config) {
 		if (suffix is null) {
 			log.info(new "Could not find 'llvm-config${suffix}' on the path, skipping other commands.");
 		} else {
@@ -177,15 +206,35 @@ fn getFromPath(ref arg: Argument, suffix: string, out res: Result) bool
 		return false;
 	}
 
-	res.ver = getVersionFromConfig(res.configCmd);
+	// Setup clang and use as fallback for version.
+	clangCmd: string;
+	if (arg.need.clang || !arg.need.config) {
+		clangCmd = searchPath(arg.path, "clang" ~ suffix);
+	}
+	if (res.ver is null && clangCmd !is null) {
+		res.ver = getVersionFromClang(clangCmd);
+	}
+
 	if (res.ver is null) {
+		log.info(new "Could not determine LLVM${suffix} version!");
 		return false;
 	}
 
-	res.arCmd = searchPath(arg.path, "llvm-ar" ~ suffix);
-	res.clangCmd = searchPath(arg.path, "clang" ~ suffix);
-	res.ldCmd = searchPath(arg.path, "ld.lld" ~ suffix);
-	res.linkCmd = searchPath(arg.path, "lld-link" ~ suffix);
+	if (arg.need.config) {
+		res.configCmd = configCmd;
+	}
+	if (arg.need.ar) {
+		res.arCmd = searchPath(arg.path, "llvm-ar" ~ suffix);
+	}
+	if (arg.need.clang) {
+		res.clangCmd = clangCmd;
+	}
+	if (arg.need.ld) {
+		res.ldCmd = searchPath(arg.path, "ld.lld" ~ suffix);
+	}
+	if (arg.need.link) {
+		res.linkCmd = searchPath(arg.path, "lld-link" ~ suffix);
+	}
 
 	if (res.clangCmd !is null) {
 		res.clangArgs = getClangArgs(ref arg);
@@ -232,14 +281,71 @@ fn getVersionFromConfig(cmd: string) semver.Release
 
 		return new semver.Release(configOutput);
 	} catch (watt.ProcessException e) {
-		log.info(new "Failed to run llvm-config ${cmd}\n\t{e.msg}");
+		log.info(new "Failed to run '${cmd}'\n\t${e.msg}");
 		return null;
 	} catch (Exception e) {
-		log.info(new "Failed to parse output from '${cmd}'\n\t{e.msg}");
+		log.info(new "Failed to parse output from '${cmd}'\n\t${e.msg}");
 		return null;
 	}
 
 	return null;
+}
+
+fn getVersionFromClang(cmd: string) semver.Release
+{
+	clangOutput: string;
+	clangRetval: u32;
+
+	try {
+		clangOutput = watt.getOutput(cmd, ["-v"], ref clangRetval);
+
+		// Extract what we are looking for.
+		line := extractClangVersionString(clangOutput);
+		if (line is null) {
+			log.info("Missing or invalid clang version line!");
+			return null;
+		}
+
+		return new semver.Release(line);
+	} catch (watt.ProcessException e) {
+		log.info(new "Failed to run '${cmd}'\n\t${e.msg}");
+		return null;
+	} catch (Exception e) {
+		log.info(new "Failed to parse output from '${cmd}'\n\t${e.msg}");
+		return null;
+	}
+
+	return null;
+}
+
+enum VersionLine = "clang version ";
+
+fn extractClangVersionString(output: string) string
+{
+	line: string;
+	foreach (l; watt.splitLines(watt.strip(output))) {
+		if (!watt.startsWith(VersionLine, line)) {
+			continue;
+		}
+		line = l;
+		break;
+	}
+
+	if (line.length <= VersionLine.length) {
+		return null;
+	}
+
+	// Cut off any junk at the end of the version string.
+	index := VersionLine.length;
+	while (index < line.length && !watt.isWhite(line[index])) {
+		index++;
+	}
+
+	if (index == VersionLine.length) {
+		return null;
+	}
+
+	return line[VersionLine.length .. index];
 }
 
 

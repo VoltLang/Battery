@@ -17,22 +17,32 @@ import battery.detect.llvm;
  */
 global log: battery.util.log.Logger = {"detect.llvm"};
 
-fn dump(ref res: Result, message: string)
+fn dump(ref arg: Argument, ref res: Result, message: string)
 {
 	ss: watt.StringSink;
 
 	ss.sink(message);
 	watt.format(ss.sink, "\n\tfrom = %s", res.from);
 	watt.format(ss.sink, "\n\tver = %s", res.ver);
-	watt.format(ss.sink, "\n\tconfigCmd = '%s'", res.configCmd);
-	watt.format(ss.sink, "\n\tconfigArgs = %s", res.configArgs);
-	watt.format(ss.sink, "\n\tarCmd = '%s'", res.arCmd);
-	watt.format(ss.sink, "\n\tarArgs = %s", res.arArgs);
-	watt.format(ss.sink, "\n\tclangCmd = '%s'", res.clangCmd);
-	watt.format(ss.sink, "\n\tclangArgs = %s", res.clangArgs);
-	watt.format(ss.sink, "\n\tldCmd = '%s'", res.ldCmd);
-	watt.format(ss.sink, "\n\tldArgs = %s", res.ldArgs);
-	watt.format(ss.sink, "\n\tlinkCmd = '%s'", res.linkCmd);
-	watt.format(ss.sink, "\n\tlinkArgs = %s", res.linkArgs);
+	if (arg.need.config) {
+		watt.format(ss.sink, "\n\tconfigCmd = '%s'", res.configCmd);
+		watt.format(ss.sink, "\n\tconfigArgs = %s", res.configArgs);
+	}
+	if (arg.need.ar) {
+		watt.format(ss.sink, "\n\tarCmd = '%s'", res.arCmd);
+		watt.format(ss.sink, "\n\tarArgs = %s", res.arArgs);
+	}
+	if (arg.need.clang) {
+		watt.format(ss.sink, "\n\tclangCmd = '%s'", res.clangCmd);
+		watt.format(ss.sink, "\n\tclangArgs = %s", res.clangArgs);
+	}
+	if (arg.need.ld) {
+		watt.format(ss.sink, "\n\tldCmd = '%s'", res.ldCmd);
+		watt.format(ss.sink, "\n\tldArgs = %s", res.ldArgs);
+	}
+	if (arg.need.link) {
+		watt.format(ss.sink, "\n\tlinkCmd = '%s'", res.linkCmd);
+		watt.format(ss.sink, "\n\tlinkArgs = %s", res.linkArgs);
+	}
 	log.info(ss.toString());
 }
