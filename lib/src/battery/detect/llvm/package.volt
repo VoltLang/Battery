@@ -313,7 +313,7 @@ fn getVersionFromClang(cmd: string) semver.Release
 		log.info(new "Failed to parse output from '${cmd}'\n\t${e.msg}");
 	}
 
-	return null;
+	return ret;
 }
 
 enum VersionLine = "clang version ";
