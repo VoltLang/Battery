@@ -12,6 +12,7 @@ import battery.driver;
 import battery.util.path : searchPath;
 import llvmVersion = battery.frontend.llvmVersion;
 
+import nasm = battery.detect.nasm;
 
 
 enum VoltaName = "volta";
@@ -70,15 +71,19 @@ fn infoCmd(drv: Driver, c: Configuration, cmd: Command, given: bool = false)
  */
 fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
 {
-	cmd := drv.getCmd(c.isBootstrap, name);
+	switch (name) {
+	case NasmName: return handleNASM(drv, c);
+	default: break;
+	}
 
+	cmd := drv.getCmd(c.isBootstrap, name);
 	if (cmd is null) {
 		switch (name) {
-		case NasmName:  cmd = getNasm(drv, c, name); break;
 		case ClangName: cmd = getClang(drv, c, name); break;
 		case RdmdName:  cmd = getRdmd(drv, c, name); break;
 		case GdcName:   cmd = getGdc(drv, c, name); break;
 		case LinkName:  cmd = getLink(drv, c, name); break;
+		case NasmName: assert(false);
 		default: assert(false);
 		}
 
@@ -90,17 +95,46 @@ fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
 	}
 
 	switch (name) {
-	case NasmName:  addNasmArgs(drv, c, cmd); break;
 	case ClangName: addClangArgs(drv, c, cmd); break;
 	case RdmdName:  addRdmdArgs(drv, c, cmd); break;
 	case GdcName:   addRdmdArgs(drv, c, cmd); break;
 	case LinkName: break;
+	case NasmName: assert(false);
 	default: assert(false);
 	}
 
 	return cmd;
 }
 
+/*!
+ * Transitional function to new detect code.
+ */
+fn handleNASM(drv: Driver, c: Configuration) Command
+{
+	res: nasm.Result;
+	arg: nasm.Argument;
+	arg.arch = c.arch;
+	arg.platform = c.platform;
+	arg.path = c.env.getOrNull("PATH");
+
+	cmd := drv.getCmd(c.isBootstrap, NasmName);
+	if (cmd !is null) {
+		arg.argCmd = cmd.cmd;
+		arg.argArgs = cmd.args;
+	} else {
+		cmd = new Command();
+	}
+
+	if (!nasm.detect(ref arg, out res)) {
+		drv.abort("Failed to find nasm!");
+	}
+
+	cmd.cmd = res.cmd;
+	cmd.args = res.args;
+	cmd.name = NasmName;
+	cmd.print = NasmPrint;
+	return cmd;
+}
 
 /*
  *
@@ -144,52 +178,6 @@ fn getLLVMTargetString(config: Configuration) string
 		}
 	}
 }
-
-
-/*
- *
- * Nasm functions.
- *
- */
-
-fn getNasm(drv: Driver, config: Configuration, name: string) Command
-{
-	return drv.makeCommand(config, name, NasmCommand, NasmPrint);
-}
-
-fn addNasmArgs(drv: Driver, config: Configuration, c: Command)
-{
-	c.args ~= ["-f", config.getNasmFormatString()];
-}
-
-//! Returns the format to be outputed for this configuration.
-fn getNasmFormatString(config: Configuration) string
-{
-	final switch (config.platform) with (Platform) {
-	case MSVC:
-		final switch (config.arch) with (Arch) {
-		case X86: return "win32";
-		case X86_64: return "win64";
-		}
-	case OSX:
-		final switch (config.arch) with (Arch) {
-		case X86: return "macho32";
-		case X86_64: return "macho64";
-		}
-	case Linux:
-		final switch (config.arch) with (Arch) {
-		case X86: return "elf32";
-		case X86_64: return "elf64";
-		}
-	case Metal:
-		final switch (config.arch) with (Arch) {
-		case X86: return "elf32";
-		case X86_64: return "elf64";
-		}
-	}
-}
-
-
 
 
 /*
