@@ -216,7 +216,7 @@ fn getFromPath(ref arg: Argument, suffix: string, out res: Result) bool
 	}
 
 	if (res.ver is null) {
-		log.info(new "Could not determine LLVM${suffix} version!");
+		log.info(new "Could not determine LLVM${suffix} version!\n\tllvm-config = '${configCmd}'\n\tclang = '${clangCmd}'");
 		return false;
 	}
 
