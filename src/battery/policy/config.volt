@@ -772,10 +772,9 @@ fn fillInConfigCommands(drv: Driver, config: Configuration)
  *
  */
 
-
 fn makeCommandFromPath(config: Configuration, cmd: string, name: string) Command
 {
-	cmd = searchPath(cmd, config.env.getOrNull("PATH"));
+	cmd = searchPath(config.env.getOrNull("PATH"), cmd);
 	if (cmd is null) {
 		return null;
 	}

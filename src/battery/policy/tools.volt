@@ -292,7 +292,7 @@ private:
 fn makeCommand(drv: Driver, config: Configuration, name: string, cmd: string,
                print: string) Command
 {
-	cmd = searchPath(cmd, config.env.getOrNull("PATH"));
+	cmd = searchPath(config.env.getOrNull("PATH"), cmd);
 	if (cmd is null) {
 		return null;
 	}

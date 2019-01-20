@@ -16,7 +16,7 @@ fn cleanPath(s: string) string
 	return normalisePath(makePathAppendable(s));
 }
 
-fn searchPath(cmd: string, path: string) string
+fn searchPath(path: string, cmd: string) string
 {
 	if (path is null) {
 		return null;

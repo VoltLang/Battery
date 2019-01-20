@@ -166,7 +166,7 @@ fn getFromArgs(ref arg: Argument, out res: Result) bool
 
 fn getFromPath(ref arg: Argument, suffix: string, out res: Result) bool
 {
-	res.configCmd = searchPath("llvm-config" ~ suffix, arg.path);
+	res.configCmd = searchPath(arg.path, "llvm-config" ~ suffix);
 
 	if (res.configCmd is null) {
 		if (suffix is null) {
@@ -182,10 +182,10 @@ fn getFromPath(ref arg: Argument, suffix: string, out res: Result) bool
 		return false;
 	}
 
-	res.arCmd = searchPath("llvm-ar" ~ suffix, arg.path);
-	res.clangCmd = searchPath("clang" ~ suffix, arg.path);
-	res.ldCmd = searchPath("ld.lld" ~ suffix, arg.path);
-	res.linkCmd = searchPath("lld-link" ~ suffix, arg.path);
+	res.arCmd = searchPath(arg.path, "llvm-ar" ~ suffix);
+	res.clangCmd = searchPath(arg.path, "clang" ~ suffix);
+	res.ldCmd = searchPath(arg.path, "ld.lld" ~ suffix);
+	res.linkCmd = searchPath(arg.path, "lld-link" ~ suffix);
 
 	if (res.clangCmd !is null) {
 		res.clangArgs = getClangArgs(ref arg);

@@ -52,7 +52,7 @@ fn detect(path: string, cmd: string) string
  */
 fn detect(ref arg: Argument, out res: Result) bool
 {
-	cmd := searchPath(arg.cmd.appendExeIfNeeded(), arg.path);
+	cmd := searchPath(arg.path, arg.cmd.appendExeIfNeeded());
 	if (cmd is null) {
 		arg.dump("Failed to find command!");
 		return false;
