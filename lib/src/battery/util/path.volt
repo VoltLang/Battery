@@ -6,7 +6,6 @@
 module battery.util.path;
 
 import watt.path : pathSeparator, dirSeparator, exists;
-import watt.process : Environment;
 import watt.text.path : normalisePath, makePathAppendable;
 import watt.text.format : format;
 import watt.text.string : replace, split, endsWith;
@@ -17,10 +16,12 @@ fn cleanPath(s: string) string
 	return normalisePath(makePathAppendable(s));
 }
 
-fn searchPath(cmd: string, env: Environment) string
+fn searchPath(cmd: string, path: string) string
 {
-	path := env.getOrNull("PATH");
-	assert(path !is null);
+	if (path is null) {
+		return null;
+	}
+
 	assert(pathSeparator.length == 1);
 
 	fmt := "%s%s%s";
