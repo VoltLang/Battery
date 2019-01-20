@@ -1,4 +1,5 @@
 // Copyright 2018, Bernard Helyer.
+// Copyright 2019, Jakob Bornecrantz.
 // SPDX-License-Identifier: BSL-1.0
 /*!
  * Detect Visual Studio installations.
