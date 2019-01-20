@@ -17,6 +17,8 @@ import battery.policy.tools;
 import battery.util.path : searchPath;
 import battery.detect.visualStudio;
 
+import llvm = battery.detect.llvm;
+
 
 fn getProjectConfig(drv: Driver, arch: Arch, platform: Platform) Configuration
 {
@@ -153,161 +155,45 @@ fn doEnv(drv: Driver, config: Configuration, outside: Environment)
  *
  */
 
-
-struct LLVMConfig
+fn fillInNeeded(ref need: llvm.Needed, config: Configuration)
 {
-public:
-	drv: Driver;
-	suffix: string;
-
-	config: Command;
-	ar: Command;
-	clang: Command;
-	ld: Command;
-	link: Command;
-
-	drvAll: bool;
-	drvConfig, drvAr, drvClang, drvLd, drvLink: bool;
-	needConfig, needAr, needClang, needLd, needLink: bool;
-
-
-public:
-	fn fillInNeeded(config: Configuration)
-	{
-		// For Windows llvm-config is not needed.
-		version (!Windows) {
-			this.needConfig = true;
-		}
-
-		// Bootstrap does not require anything more.
-		if (config.isBootstrap) {
-			return;
-		}
-
-		// Need clang for the rest.
-		this.needClang = true;
-
-		// Platform specific.
-		final switch (config.platform) with (Platform) {
-		case MSVC:
-			this.needLink = config.isLTO || config.isCross;
-			this.needAr = config.isLTO;
-			break;
-		case Metal, Linux:
-			this.needLd = config.isLTO;
-			this.needAr = config.isLTO;
-			break;
-		case OSX:
-			this.needAr = config.isLTO;
-			break;
-		}
+	// For Windows llvm-config is not needed.
+	version (!Windows) {
+		need.config = true;
 	}
 
-	fn fillInFromDriver(drv: Driver, config: Configuration)
-	{
-		this.drv = drv;
-		fillInNeeded(config);
-
-		this.config = drv.getCmd(config.isBootstrap, LLVMConfigName);
-		this.ar =     drv.getCmd(config.isBootstrap, LLVMArName);
-		this.clang =  drv.getCmd(config.isBootstrap, ClangName);
-		this.ld =     drv.getCmd(config.isBootstrap, LDLLDName);
-		this.link =   drv.getCmd(config.isBootstrap, LLDLinkName);
-
-		this.drvConfig = this.config !is null;
-		this.drvAr = this.ar !is null;
-		this.drvClang = this.clang !is null;
-		this.drvLd = this.ld !is null;
-		this.drvLink = this.link !is null;
-		this.drvAll = hasNeeded;
+	// Bootstrap does not require anything more.
+	if (config.isBootstrap) {
+		return;
 	}
 
-	fn fillInFromPath(config: Configuration, suffix: string) bool
-	{
-		this.suffix = suffix;
+	// Need clang for the rest.
+	need.clang = true;
 
-		if (this.config is null) {
-			this.config = config.makeCommandFromPath(LLVMConfigCommand ~ suffix, LLVMConfigName);
-		}
-		if (this.ar is null) {
-			this.ar = config.makeCommandFromPath(LLVMArCommand ~ suffix, LLVMArName);
-		}
-		if (this.clang is null) {
-			this.clang = config.makeCommandFromPath(ClangCommand ~ suffix, ClangName);
-			if (this.clang !is null) {
-				addClangArgs(drv, config, this.clang);
-			}
-		}
-		if (this.ld is null) {
-			this.ld = config.makeCommandFromPath(LDLLDCommand ~ suffix, LDLLDName);
-		}
-		if (this.link is null) {
-			this.link = config.makeCommandFromPath(LLDLinkCommand ~ suffix, LLDLinkName);
-		}
-
-		return hasNeeded;
+	// Platform specific.
+	final switch (config.platform) with (Platform) {
+	case MSVC:
+		need.link = config.isLTO || config.isCross;
+		need.ar = config.isLTO;
+		break;
+	case Metal, Linux:
+		need.ld = config.isLTO;
+		need.ar = config.isLTO;
+		break;
+	case OSX:
+		need.ar = config.isLTO;
+		break;
 	}
+}
 
-	@property fn hasNeeded() bool
-	{
-		if (needConfig && (this.config is null)) return false;
-		if (needClang && (this.clang is null)) return false;
-		if (needAr && (this.ar is null)) return false;
-		if (needLink && (this.link is null)) return false;
-		if (needLd && (this.ld is null)) return false;
-		return true;
-	}
-
-	fn printMissing()
-	{
-		shouldPrint := (suffix is null) ||
-			(needConfig && !drvConfig && config !is null) ||
-			(needClang && !drvClang && clang !is null) ||
-			(needAr && !drvAr && ar !is null) ||
-			(needLink && !drvLink && link !is null) ||
-			(needLd && !drvLd && ld !is null);
-		if (!shouldPrint) {
-			drv.info("llvm%s toolchain not detected at all!", suffix);
-			return;
-		}
-
-		tmp := suffix is null ? "generic " : null;
-		drv.info("%sllvm%s toolchain partially detected!", tmp, suffix);
-		if (needConfig) {
-			printFoundOrMissingCmd(LLVMConfigCommand, config);
-		}
-		if (needClang) {
-			printFoundOrMissingCmd(ClangCommand, clang);
-		}
-		if (needAr) {
-			printFoundOrMissingCmd(LLVMArCommand, ar);
-		}
-		if (needLink) {
-			printFoundOrMissingCmd(LDLLDCommand, link);
-		}
-		if (needLd) {
-			printFoundOrMissingCmd(LLDLinkCommand, ld);
-		}
-	}
-
-	fn printFoundOrMissingCmd(name: string, cmd: Command)
-	{
-		if (cmd !is null) {
-			printFoundCmd(name, cmd.cmd);
-		} else {
-			printMissingCmd(name);
-		}
-	}
-
-	fn printMissingCmd(cmd: string)
-	{
-		drv.info("\t%s%s missing!", cmd, suffix);
-	}
-
-	fn printFoundCmd(cmd: string, path: string)
-	{
-		drv.info("\t%s%s found '%s'", cmd, suffix, path);
-	}
+fn hasNeeded(ref res: llvm.Result, ref need: llvm.Needed) bool
+{
+	if (need.config && (res.configCmd is null)) return false;
+	if (need.clang && (res.clangCmd is null)) return false;
+	if (need.ar && (res.arCmd is null)) return false;
+	if (need.link && (res.linkCmd is null)) return false;
+	if (need.ld && (res.ldCmd is null)) return false;
+	return true;
 }
 
 enum UseAsLinker
@@ -316,60 +202,65 @@ enum UseAsLinker
 	YES,
 }
 
-enum Silent
+fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 {
-	NO,
-	YES,
-}
+	configFromArg := drv.getCmd(config.isBootstrap, LLVMConfigName);
+	arFromArg :=     drv.getCmd(config.isBootstrap, LLVMArName);
+	clangFromArg :=  drv.getCmd(config.isBootstrap, ClangName);
+	ldFromArg :=     drv.getCmd(config.isBootstrap, LDLLDName);
+	linkFromArg :=   drv.getCmd(config.isBootstrap, LLDLinkName);
 
-fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker,
-	silent: Silent = Silent.NO)
-{
-	llvm8, llvm7, llvm60, llvm50, llvm40, llvm39, llvm: LLVMConfig;
-	llvm.fillInFromDriver(drv, config);
+	arg: llvm.Argument;
+	arg.arch = config.arch;
+	arg.platform = config.platform;
+	arg.path = config.env.getOrNull("PATH");
+	arg.configCmd = configFromArg !is null ? configFromArg.cmd : null;
+	arg.arCmd = arFromArg !is null ? arFromArg.cmd : null;
+	arg.clangCmd = clangFromArg !is null ? clangFromArg.cmd : null;
+	arg.ldCmd = ldFromArg !is null ? ldFromArg.cmd : null;
+	arg.linkCmd = linkFromArg !is null ? linkFromArg.cmd : null;
 
-	llvm8 = llvm7 = llvm60 = llvm50 = llvm40 = llvm39 = llvm;
+	results: llvm.Result[];
+	if (!llvm.detect(ref arg, out results)) {
+		drv.abort("Could not find any LLVM Toolchain!");
+	}
 
-	if (llvm.drvAll) {
-		// Nothing todo
-	} else if (llvm.fillInFromPath(config, null)) {
-		// Nothing todo
-	} else if (llvm8.fillInFromPath(config, "-8")) {
-		llvm = llvm8;
-	} else if (llvm7.fillInFromPath(config, "-7")) {
-		llvm = llvm7;
-	} else if (llvm60.fillInFromPath(config, "-6.0")) {
-		llvm = llvm60;
-	} else if (llvm50.fillInFromPath(config, "-5.0")) {
-		llvm = llvm50;
-	} else if (llvm40.fillInFromPath(config, "-4.0")) {
-		llvm = llvm40;
-	} else if (llvm39.fillInFromPath(config, "-3.9")) {
-		llvm = llvm39;
-	} else {
-		if (!silent) {
-			llvm.printMissing();
-			llvm8.printMissing();
-			llvm7.printMissing();
-			llvm60.printMissing();
-			llvm50.printMissing();
-			llvm40.printMissing();
-			llvm39.printMissing();
-			drv.abort("could not find a valid llvm toolchain");
+	need: llvm.Needed;
+	need.fillInNeeded(config);
+
+	result: llvm.Result;
+	found: bool;
+	foreach (ref res; results) {
+		if (!res.hasNeeded(ref need)) {
+			continue;
 		}
+
+		result = res;
+		found = true;
+		break;
 	}
 
-	if (llvm.config !is null && llvm.needConfig) {
-		config.addTool(LLVMConfigName, llvm.config.cmd, llvm.config.args);
+	if (!found) {
+		drv.abort("No valid LLVM Toolchains found!");
 	}
-	if (llvm.ar !is null && llvm.needAr) {
-		config.addTool(LLVMArName, llvm.ar.cmd, llvm.ar.args);
+
+	configCommand: Command;
+	arCommand: Command;
+	ldCommand: Command;
+	linkCommand: Command;
+	clangCommand: Command;
+
+	if (result.configCmd !is null && need.config) {
+		configCommand = config.addTool(LLVMConfigName, result.configCmd, result.configArgs);
 	}
-	if (llvm.ld !is null && llvm.needLd) {
-		config.addTool(LDLLDName, llvm.ld.cmd, llvm.ld.args);
+	if (result.arCmd !is null && need.ar) {
+		arCommand = config.addTool(LLVMArName, result.arCmd, result.arArgs);
 	}
-	if (llvm.link !is null && llvm.needLink) {
-		config.addTool(LLDLinkName, llvm.link.cmd, llvm.link.args);
+	if (result.ldCmd !is null && need.ld) {
+		ldCommand = config.addTool(LDLLDName, result.ldCmd, result.ldArgs);
+	}
+	if (result.linkCmd !is null && need.link) {
+		linkCommand = config.addTool(LLDLinkName, result.linkCmd, result.linkArgs);
 	}
 
 	// If needed setup the linker command.
@@ -378,21 +269,21 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker,
 		linker = drv.getCmd(config.isBootstrap, LinkerName);
 
 		// If linker was not given use clang as the linker.
-		if (linker is null) {
-			linker = llvm.clang;
-		}
-
 		// Always add it to the config.
-		linker = config.addTool(LinkerName, linker.cmd, linker.args);
+		if (linker is null) {
+			linker = config.addTool(LinkerName, result.clangCmd, result.clangArgs);
+		} else {
+			linker = config.addTool(LinkerName, linker.cmd, linker.args);
+		}
 	}
 
 	if (!config.isBootstrap) {
 		// A tiny bit of sanity checking.
-		assert(llvm.clang !is null);
+		assert(result.clangCmd !is null);
 
 		// Setup clang and cc tools.
-		clang := config.addTool(ClangName, llvm.clang.cmd, llvm.clang.args);
-		cc := config.addTool(CCName, llvm.clang.cmd, llvm.clang.args);
+		clang := config.addTool(ClangName, result.clangCmd, result.clangArgs);
+		cc := config.addTool(CCName, result.clangCmd, result.clangArgs);
 
 		// Add any extra arguments.
 		if (config.isRelease) {
@@ -415,16 +306,14 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker,
 		}
 	}
 
-	if (silent) {
-		return;
-	}
+	config.llvmVersion = result.ver;
 
-	drv.info("Using LLVM%s toolchain from %s.", llvm.suffix, llvm.drvAll ? "arguments" : "path");
-	if (llvm.config !is null && llvm.needConfig) drv.infoCmd(config, llvm.config, llvm.drvConfig);
-	if (llvm.clang  !is null && llvm.needClang)  drv.infoCmd(config, llvm.clang,  llvm.drvClang);
-	if (llvm.ar     !is null && llvm.needAr)     drv.infoCmd(config, llvm.ar,     llvm.drvAr);
-	if (llvm.ld     !is null && llvm.needLd)     drv.infoCmd(config, llvm.ld,     llvm.drvLd);
-	if (llvm.link   !is null && llvm.needLink)   drv.infoCmd(config, llvm.link,   llvm.drvLink);
+	drv.info("Using LLVM-%s toolchain from %s.", result.ver, result.from);
+	if (configCommand !is null) drv.infoCmd(config, configCommand, result.from);
+	if (clangCommand  !is null) drv.infoCmd(config, clangCommand,  result.from);
+	if (arCommand     !is null) drv.infoCmd(config, arCommand,     result.from);
+	if (ldCommand     !is null) drv.infoCmd(config, ldCommand,     result.from);
+	if (linkCommand   !is null) drv.infoCmd(config, linkCommand,   result.from);
 }
 
 

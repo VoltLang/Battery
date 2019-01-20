@@ -1,4 +1,5 @@
 // Copyright 2018, Bernard Helyer.
+// Copyright 2019, Jakob Bornecrantz.
 // SPDX-License-Identifier: BSL-1.0
 /*!
  * Code for handling a small config file that declares information regarding LLVM.
@@ -8,93 +9,48 @@
  */
 module battery.frontend.llvmConf;
 
-import battery.commonInterfaces;
-import     io = watt.io;
-import   toml = watt.toml;
 import getopt = watt.text.getopt;
-import semver = watt.text.semver;
 import   file = watt.io.file;
 import   path = [watt.path, watt.text.path];
 
 
+/*!
+ * Parse llvmConf-related command line arguments.
+ *
+ * This parses the argument `--llvmconf` from `args` and also scans any directories.
+ */
+fn parseArguments(ref args: string[], out llvmConf: string)
+{
+	configPath: string;
+	if (!getopt.getopt(ref args, "llvmconf", ref llvmConf)) {
+		scan(args, out llvmConf);
+	}
+}
+
+
+private:
+
 enum DefaultLlvmTomlName = "llvm.toml";
 
-fn scan(args: string[]) bool
+fn scan(args: string[], out llvmConf: string) bool
 {
 	foreach (arg; args) {
 		if (arg[0] == '-') {
 			continue;
 		}
-		if (scan(arg)) {
+		if (scan(arg, out llvmConf)) {
 			return true;
 		}
 	}
 	return false;
 }
 
-fn scan(fpath: string) bool
+fn scan(fpath: string, out llvmConf: string) bool
 {
 	proposedPath := path.concatenatePath(fpath, DefaultLlvmTomlName);
 	if (file.exists(proposedPath)) {
-		parse(proposedPath);
+		llvmConf = proposedPath;
 		return true;
 	}
 	return false;
 }
-
-/*!
- * Parse llvmConf-related command line arguments.
- *
- * This parses the argument `--llvmconf` from `args`.
- */
-fn parseArguments(ref args: string[])
-{
-	configPath: string;
-	if (getopt.getopt(ref args, "llvmconf", ref configPath)) {
-		parse(configPath);
-	}
-}
-
-@property fn parsed() bool
-{
-	return gParsed;
-}
-
-@property fn llvmVersion() semver.Release
-{
-	assert(gParsed);
-	return gLlvmVersion;
-}
-
-@property fn clangPath() string
-{
-	assert(gParsed);
-	return gClangPath;
-}
-
-/*!
- * Given a path to a llvm.conf file, retrieve the contained values.
- *
- * The config file is a small [TOML](https://github.com/toml-lang/toml) file.
- * `llvmVersion` is a [semver](https://semver.org/) string.
- * `clangPath` is a string with a path to the clang executable.
- *
- * @Param confPath The path to the config file.
- */
-fn parse(confPath: string)
-{
-	if (gParsed) {
-		return;
-	}
-	confStr := cast(string)file.read(confPath);
-	value   := toml.parse(confStr);
-	gLlvmVersion = new semver.Release(value["llvmVersion"].str());
-	gClangPath   = value["clangPath"].str();
-	gParsed = true;
-}
-
-private:
-
-global gParsed: bool;
-global gLlvmVersion: semver.Release;
-global gClangPath: string;

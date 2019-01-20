@@ -5,40 +5,20 @@
  */
 module battery.frontend.llvmVersion;
 
-import llvmConf = battery.frontend.llvmConf;
 import text     = watt.text.string;
 import semver   = watt.text.semver;
-import process  = watt.process;
-import battery  = [
-	battery.commonInterfaces,
-	battery.configuration,
-	battery.policy.config,
-	battery.policy.tools,
-];
+import battery  = battery.commonInterfaces;
+
 
 enum IdentifierPrefixLegacy = "LlvmVersion";
 enum IdentifierPrefix = "LLVMVersion";
 
-/*!
- * Get the installed LLVM version from the system.
- *
- * @Returns The LLVM version or `null` if no LLVM could be detected.
- */
-fn get(drv: battery.Driver) semver.Release
-{
-	if (!gCached) {
-		gReleaseCache = getImpl(drv);
-		gCached = true;
-	}
-	return gReleaseCache;
-}
-
-fn addVersionIdentifiers(drv: battery.Driver, prj: battery.Project) bool
+fn addVersionIdentifiers(ver: semver.Release, prj: battery.Project) bool
 {
 	if (!text.startsWith(prj.name, "volta")) {
 		return false;
 	}
-	prj.defs ~= identifiers(get(drv));
+	prj.defs ~= identifiers(ver);
 	return true;
 }
 
@@ -66,46 +46,4 @@ fn identifiers(ver: semver.Release) string[]
 		idents ~= new "${IdentifierPrefix}${i}AndAbove";
 	}
 	return idents;
-}
-
-private:
-
-global gReleaseCache: semver.Release;
-global gCached: bool;
-
-fn getImpl(drv: battery.Driver) semver.Release
-{
-	version (Windows) {
-		if (llvmConf.parsed) {
-			return llvmConf.llvmVersion;
-		} else {
-			return null;
-		}
-	} else {
-		dummyConfig := new battery.Configuration();
-		dummyConfig.kind = battery.ConfigKind.Native;
-		dummyConfig.env = process.retrieveEnvironment();
-		battery.doToolChainLLVM(drv, dummyConfig, battery.UseAsLinker.NO, battery.Silent.YES);
-		configCmd := dummyConfig.getTool(battery.LLVMConfigName);
-		if (configCmd is null) {
-			return null;
-		}
-
-		configOutput: string;
-		configRetval: u32;
-		try {
-			configOutput = process.getOutput(configCmd.cmd, ["--version"], ref configRetval);
-		} catch (process.ProcessException e) {
-			return null;
-		}
-		configOutput = text.strip(configOutput);
-		if (configOutput.length > 3 && configOutput[$-3 .. $] == "svn") {
-			// When you build from SVN you'll get 8.0.0svn (say). Trim the last part off.
-			configOutput = configOutput[0 .. $-3];
-		}
-		if (configRetval != 0 || !semver.Release.isValid(configOutput)) {
-			return null;
-		}
-		return new semver.Release(configOutput);
-	}
 }

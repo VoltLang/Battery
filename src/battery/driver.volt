@@ -65,6 +65,7 @@ protected:
 	mExe: Exe[];
 	mLib: Lib[];
 	mPwd: string;
+	mLLVMConf: string;
 
 	mBootstrapCommands: Command[string];
 	mTargetCommands: Command[string];
@@ -88,7 +89,8 @@ public:
 			}
 		}
 
-		llvmConf.parseArguments(ref args);
+
+		llvmConf.parseArguments(ref args, out mLLVMConf);
 		arch = HostArch;
 		platform = HostPlatform;
 		mPwd = new string(fullPath("."), dirSeparator);
@@ -124,9 +126,6 @@ public:
 		newLog(new "${BatteryDirectory}${dirSeparator}config-log.txt");
 		log.info("starting config");
 
-		// Since this might add clang, we do it early.
-		llvmConf.scan(args);
-
 		originalArgs := args;
 		// Filter out --release, --arch and --platform arguments.
 		isRelease, isLTO: bool;
@@ -160,10 +159,6 @@ public:
 		arg := new ArgParser(this);
 		arg.parseConfig(args);
 
-		if (llvmConf.parsed) {
-			addCmd(false, "clang", llvmConf.clangPath);
-		}
-
 		// If we get volta via the command line, no need for bootstrap config.
 		if (getCmd(false, "volta") !is null) {
 			mBootstrapConfig = null;
@@ -172,15 +167,13 @@ public:
 		// Handle bootstrapping of volted.
 		if (mBootstrapConfig !is null) {
 			// Need fill in bootstrap commands seperatly.
+			mBootstrapConfig.llvmConf = mLLVMConf;
 			doConfig(this, mBootstrapConfig);
 			fillInConfigCommands(this, mBootstrapConfig);
 		}
 
-		if (llvmConf.parsed) {
-			addCmd(false, "clang", llvmConf.clangPath);
-		}
-
 		// Do this after the arguments has been parsed.
+		mConfig.llvmConf = mLLVMConf;
 		doConfig(this, mConfig);
 		fillInConfigCommands(this, mConfig);
 
@@ -190,7 +183,7 @@ public:
 		batteryTomls: string[];
 		fn addProjectBatteryTxt(prj: Project)
 		{
-			llvmVersion.addVersionIdentifiers(this, prj);
+			llvmVersion.addVersionIdentifiers(mConfig.llvmVersion, prj);
 			batteryTomls ~= prj.batteryToml;
 			foreach (child; prj.children) {
 				/* Calculating the dependency graph
@@ -215,7 +208,7 @@ public:
 				switch (name) {
 				case "rdmd", "gdc":
 					// Make sure the llvmVersion defines are defined for bootstrap too.
-					addLlvmVersionsToBootstrapCompiler(this, command);
+					addLlvmVersionsToBootstrapCompiler(this, mBootstrapConfig, command);
 					break;
 				default:
 					break;

@@ -56,6 +56,11 @@ enum HostRdmdPrint =   "  HOSTRDMD ";
 enum HostGdcName =     "  HOSTGDC  ";
 
 
+fn infoCmd(drv: Driver, c: Configuration, cmd: Command, from: string)
+{
+	drv.info("\t%scmd %s: '%s' from %s.", c.getCmdPre(), cmd.name, cmd.cmd, from);
+}
+
 fn infoCmd(drv: Driver, c: Configuration, cmd: Command, given: bool = false)
 {
 	if (given) {
@@ -221,7 +226,7 @@ fn addRdmdArgs(drv: Driver, config: Configuration, c: Command)
 	}
 }
 
-fn addLlvmVersionsToBootstrapCompiler(drv: Driver, c: Command)
+fn addLlvmVersionsToBootstrapCompiler(drv: Driver, config: Configuration, c: Command)
 {
 	fn getVersionFlag(s: string) string
 	{
@@ -234,7 +239,8 @@ fn addLlvmVersionsToBootstrapCompiler(drv: Driver, c: Command)
 		}
 	}
 
-	llvmVersions := llvmVersion.identifiers(llvmVersion.get(drv));
+	assert(config.llvmVersion !is null);
+	llvmVersions := llvmVersion.identifiers(config.llvmVersion);
 	foreach (v; llvmVersions) {
 		c.args ~= getVersionFlag(v);
 	}
@@ -259,7 +265,8 @@ fn addGdcArgs(drv: Driver, config: Configuration, c: Command)
 	case X86_64: c.args ~= "-m64"; break;
 	}
 
-	llvmVersions := llvmVersion.identifiers(llvmVersion.get(drv));
+	assert(config.llvmVersion !is null);
+	llvmVersions := llvmVersion.identifiers(config.llvmVersion);
 	foreach (v; llvmVersions) {
 		c.args ~= format("-fversion=%s", v);
 	}

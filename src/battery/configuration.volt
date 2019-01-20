@@ -7,6 +7,7 @@ module battery.configuration;
 
 import core.exception;
 
+import semver = watt.text.semver;
 import watt.process : Environment;
 public import battery.defines;
 public import battery.commonInterfaces;
@@ -36,6 +37,12 @@ public:
 	isLTO: bool;
 	//! Should we generate vdoc json files.
 	shouldJSON: bool;
+
+	//! The llvmConf path, given by --llvmconf.
+	llvmConf: string;
+
+	//! LLVM version.
+	llvmVersion: semver.Release;
 
 	//! Base clang command.
 	clangCmd: Command;
