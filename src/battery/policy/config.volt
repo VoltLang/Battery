@@ -447,10 +447,9 @@ public:
 	//! Best guess which MSVC thing we are using.
 	msvcVer: VisualStudioVersion;
 
-	//! Install directory for compiler and linker, from @p VCINSTALLDIR env.
-	dirVC: string;
-	//! Install directory for compiler and linker, from @p VCTOOLSINSTALLDIR env.
-	dirVCTools: string;
+	//! Install directory for compiler and linker, from either
+	//! @p VCTOOLSINSTALLDIR or @p VCINSTALLDIR env.
+	dirVCInstall: string;
 
 	dirUCRT: string;
 	dirWinSDK: string;
@@ -606,7 +605,7 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 
 fn getDirsFromRegistry(ref vars: VarsForMSVC, drv: Driver, env: Environment)
 {
-	vsInstalls := getVisualStudioInstallations();
+	vsInstalls := getVisualStudioInstallations(env);
 	if (vsInstalls.length == 0) {
 		drv.info("couldn't find visual studio installation falling back to env vars");
 		vars.getDirsFromEnv(drv, env);
@@ -616,20 +615,14 @@ fn getDirsFromRegistry(ref vars: VarsForMSVC, drv: Driver, env: Environment)
 	// Advanced Visual Studio Selection Algorithm Copyright Bernard Helyer, Donut Steel (@todo)
 	vsInstall := vsInstalls[0];
 
-	vars.msvcVer   = vsInstall.ver;
-	vars.dirVC     = vsInstall.vcInstallDir;
-	/* The environment building code assumes 2017 will put results here,
-	 * and 2015 in dirVC. (They were from %VCINSTALLDIR% and %VCTOOLSINSTALLDIR%).
-	 * The detect code puts everything in dirVC, but the cross compilation code
-	 * still uses getDirsFromEnv, so mirroring it is the simplest solution. -BAH APR 18
-	 */
-	vars.dirVCTools= vars.dirVC;
-	vars.dirUCRT   = vsInstall.universalCrtDir;
-	vars.dirWinSDK = vsInstall.windowsSdkDir;
-	vars.numUCRT   = vsInstall.universalCrtVersion;
-	vars.numWinSDK = vsInstall.windowsSdkVersion;
-	vars.oldLib    = vsInstall.lib;
-	vars.oldPath   = env.getOrNull("PATH");
+	vars.msvcVer      = vsInstall.ver;
+	vars.dirVCInstall = vsInstall.vcInstallDir;
+	vars.dirUCRT      = vsInstall.universalCrtDir;
+	vars.dirWinSDK    = vsInstall.windowsSdkDir;
+	vars.numUCRT      = vsInstall.universalCrtVersion;
+	vars.numWinSDK    = vsInstall.windowsSdkVersion;
+	vars.oldLib       = vsInstall.lib;
+	vars.oldPath      = env.getOrNull("PATH");
 	if (vsInstall.linkerPath !is null) {
 		vars.path ~= vsInstall.linkerPath;
 	}
@@ -637,39 +630,29 @@ fn getDirsFromRegistry(ref vars: VarsForMSVC, drv: Driver, env: Environment)
 
 fn getDirsFromEnv(ref vars: VarsForMSVC, drv: Driver, env: Environment)
 {
-	fn getOrWarn(name: string) string {
-		value := env.getOrNull(name);
-		if (value.length == 0) {
-			drv.info("error: need to set env var '%s'", name);
-		}
-		return value;
+	vsInstalls := getVisualStudioInstallations(env);
+	if (vsInstalls.length == 0) {
+		drv.info("couldn't find visual studio installation falling back to env vars");
+		return;
 	}
 
-	vars.oldInc = env.getOrNull("INCLUDE");
-	vars.oldLib = env.getOrNull("LIB");
+	// Advanced Visual Studio Selection Algorithm Copyright Bernard Helyer, Donut Steel (@todo)
+	vsInstall := vsInstalls[0];
 
-	vars.dirVC = env.getOrNull("VCINSTALLDIR");
-	vars.dirVCTools = env.getOrNull("VCTOOLSINSTALLDIR");
-
-	if (vars.dirVCTools !is null) {
-		vars.msvcVer = VisualStudioVersion.V2017;
-	} else if (vars.dirVC !is null) {
-		vars.msvcVer = VisualStudioVersion.V2015;
-	} else {
-		drv.info("error: Make sure you have VS Tools 2015 or 2017 installed.");
-		drv.info("error: need to set env var 'VCINSTALLDIR' or 'VCTOOLSINSTALLDIR'.");
+	vars.msvcVer      = vsInstall.ver;
+	vars.dirVCInstall = vsInstall.vcInstallDir;
+	vars.dirUCRT      = vsInstall.universalCrtDir;
+	vars.dirWinSDK    = vsInstall.windowsSdkDir;
+	vars.numUCRT      = vsInstall.universalCrtVersion;
+	vars.numWinSDK    = vsInstall.windowsSdkVersion;
+	vars.oldLib       = vsInstall.lib;
+	if (vsInstall.linkerPath !is null) {
+		vars.path ~= vsInstall.linkerPath;
 	}
 
-	vars.dirUCRT = getOrWarn("UniversalCRTSdkDir");
-	vars.dirWinSDK = getOrWarn("WindowsSdkDir");
-	vars.numUCRT = getOrWarn("UCRTVersion");
-	vars.numWinSDK = getOrWarn("WindowsSDKVersion");
-
-	if ((vars.dirVC.length == 0 && vars.dirVCTools.length == 0) ||
-	    vars.dirUCRT.length == 0 || vars.dirWinSDK.length == 0 ||
-	    vars.numUCRT.length == 0 || vars.numWinSDK.length == 0) {
-		drv.abort("missing environmental variable");
-	}
+	vars.oldInc  = env.getOrNull("INCLUDE");
+	vars.oldLib  = env.getOrNull("LIB");
+	vars.oldPath = env.getOrNull("PATH");
 }
 
 fn fillInListsForMSVC(ref vars: VarsForMSVC)
@@ -681,17 +664,17 @@ fn fillInListsForMSVC(ref vars: VarsForMSVC)
 	case Unknown, MaxVersion:
 		break;
 	case V2015:
-		vars.tPath(format("%s/BIN/amd64", vars.dirVC));
-		vars.tPath(format("%s/VCPackages", vars.dirVC));
-		vars.tInc(format("%s/INCLUDE", vars.dirVC));
-		vars.tLib(format("%s/LIB/amd64", vars.dirVC));
+		vars.tPath(format("%s/BIN/amd64", vars.dirVCInstall));
+		vars.tPath(format("%s/VCPackages", vars.dirVCInstall));
+		vars.tInc(format("%s/INCLUDE", vars.dirVCInstall));
+		vars.tLib(format("%s/LIB/amd64", vars.dirVCInstall));
 		break;
 	case V2017:
-		vars.tPath(format("%s/bin/HostX64/x64", vars.dirVCTools));
-		vars.tInc(format("%s/ATLMFC/include", vars.dirVCTools));
-		vars.tInc(format("%s/include", vars.dirVCTools));
-		vars.tLib(format("%s/ATLMFC/lib/x64", vars.dirVCTools));
-		vars.tLib(format("%s/lib/x64", vars.dirVCTools));
+		vars.tPath(format("%s/bin/HostX64/x64", vars.dirVCInstall));
+		vars.tInc(format("%s/ATLMFC/include", vars.dirVCInstall));
+		vars.tInc(format("%s/include", vars.dirVCInstall));
+		vars.tLib(format("%s/ATLMFC/lib/x64", vars.dirVCInstall));
+		vars.tLib(format("%s/lib/x64", vars.dirVCInstall));
 		break;
 	}
 
@@ -706,17 +689,11 @@ fn fillInListsForMSVC(ref vars: VarsForMSVC)
 
 fn diffVars(drv: Driver, l: VarsForMSVC, r: VarsForMSVC)
 {
-	if (r.dirVC != l.dirVC &&
-	    (r.dirVC != null || l.dirVC != null)) {
-		drv.info("dirVC");
-		drv.info("\tl: %s", l.dirVC);
-		drv.info("\tr: %s", r.dirVC);
-	}
-	if (r.dirVCTools != l.dirVCTools &&
-	    (r.dirVCTools != null || l.dirVCTools != null)) {
-		drv.info("dirVCTools");
-		drv.info("\tl: %s", l.dirVCTools);
-		drv.info("\tr: %s", r.dirVCTools);
+	if (r.dirVCInstall != l.dirVCInstall &&
+	    (r.dirVCInstall != null || l.dirVCInstall != null)) {
+		drv.info("dirVCInstall");
+		drv.info("\tl: %s", l.dirVCInstall);
+		drv.info("\tr: %s", r.dirVCInstall);
 	}
 	if (r.dirUCRT != l.dirUCRT &&
 	    (r.dirUCRT != null || l.dirUCRT != null)) {

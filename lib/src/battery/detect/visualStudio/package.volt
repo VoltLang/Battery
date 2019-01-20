@@ -5,7 +5,7 @@
  */
 module battery.detect.visualStudio;
 
-import watt = [watt.io.file, watt.text.sink];
+import watt = [watt.io.file, watt.text.sink, watt.process.environment];
 
 import battery.detect.visualStudio.logging;
 import battery.detect.visualStudio.windows;
@@ -88,7 +88,7 @@ fn visualStudioVersionToString(ver: VisualStudioVersion) string
  * Only returns supported versions. Only works on 64 bit systems. An installation
  * is only considered valid if VC is installed.
  */
-fn getVisualStudioInstallations() VisualStudioInstallation[]
+fn getVisualStudioInstallations(env: watt.Environment) VisualStudioInstallation[]
 {
 	installations: VisualStudioInstallation[];
 	installationInfo: VisualStudioInstallation;
@@ -100,6 +100,56 @@ fn getVisualStudioInstallations() VisualStudioInstallation[]
 	version (Windows) if (getVisualStudio2015Installation(out installationInfo)) {
 		installations ~= installationInfo;
 	}
+	if (getVisualStudioEnvInstallations(out installationInfo, env)) {
+		installations ~= installationInfo;
+	}
 
 	return installations;
+}
+
+fn getVisualStudioEnvInstallations(out installationInfo: VisualStudioInstallation, env: watt.Environment) bool
+{
+	log.info("Searching for Visual Studio using enviroment");
+
+	//installationInfo.oldInc = env.getOrNull("INCLUDE");
+	//installationInfo.oldLib = env.getOrNull("LIB");
+
+	dirVC := env.getOrNull("VCINSTALLDIR");
+	dirVCTools := env.getOrNull("VCTOOLSINSTALLDIR");
+
+	if (dirVCTools !is null) {
+		installationInfo.ver = VisualStudioVersion.V2017;
+		installationInfo.vcInstallDir = dirVCTools;
+	} else if (dirVC !is null) {
+		installationInfo.ver = VisualStudioVersion.V2015;
+		installationInfo.vcInstallDir = dirVC;
+	} else {
+		log.info("Neither VS Tools 2015 or 2017 was found via environment.");
+		log.info("Looked for 'VCINSTALLDIR' or 'VCTOOLSINSTALLDIR'.");
+		return false;
+	}
+
+	fn getOrWarn(name: string) string {
+		value := env.getOrNull(name);
+		if (value.length == 0) {
+			log.info(new "Missing env var '${name}'");
+		}
+		return value;
+	}
+
+	installationInfo.universalCrtDir = getOrWarn("UniversalCRTSdkDir");
+	installationInfo.windowsSdkDir = getOrWarn("WindowsSdkDir");
+	installationInfo.universalCrtVersion = getOrWarn("UCRTVersion");
+	installationInfo.windowsSdkVersion = getOrWarn("WindowsSDKVersion");
+
+	if (installationInfo.universalCrtDir.length == 0 ||
+	    installationInfo.universalCrtVersion.length == 0 ||
+	    installationInfo.windowsSdkDir.length == 0 ||
+	    installationInfo.windowsSdkVersion.length == 0) {
+		log.info("failed to find needed environmental variables.");
+		return false;
+	}
+
+	installationInfo.dumpVisualStudioInstallation("Found a VisualStudioInstallation");
+	return true;
 }
