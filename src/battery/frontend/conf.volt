@@ -88,26 +88,48 @@ fn parseTomlConfig(tomlFilename: string, path: string, d: Driver, c: Configurati
 
 private:
 
-fn verifyKeys(root: toml.Value, tomlPath: string, d: Driver)
+fn verifyKeys(root: toml.Value, tomlPath: string, d: Driver, prefix: string = null)
 {
 	keys := root.tableKeys();
 	foreach (key; keys) {
 		val := root[key];
-		if (val.type == toml.Value.Type.Table) {
-			verifyKeys(val, tomlPath, d);
-			continue;
-		}
+
 		switch (key) {
-		case DependenciesKey, PlatformTable, NameKey, OutputKey, ScanForDKey, IsTheRTKey,
+		case PlatformTable:
+			verifyPlatformTable(val, tomlPath, d, prefix);
+			continue;
+		case DependenciesKey, NameKey, OutputKey, ScanForDKey, IsTheRTKey,
 			SrcDirKey, TestFilesKey, JsonOutputKey, LibsKey, LPathsKey, FrameworksKey, FPathsKey,
 			StringPathKey, LDArgsKey, CCArgsKey, LinkArgsKey, LinkerArgsKey,
 			AsmFilesKey, CFilesKey, ObjFilesKey, VoltFilesKey, IdentKey, CommandKey, WarningKey,
 			LlvmConfig:
 			continue;
 		default:
-			d.info(new "Warning: unknown key '${key}' in config file '${tomlPath}'");
+			d.info(new "Warning: unknown key \"${prefix}${key}\" in config file '${tomlPath}'");
 			break;
 		}
+	}
+}
+
+fn verifyPlatformTable(table: toml.Value, tomlPath: string, d: Driver, prefix: string)
+{
+	tableName := new "${prefix}${PlatformTable}";
+	if (table.type != toml.Value.Type.Table) {
+		d.abort(new "key \"${tableName}\" must be a table in config file '${tomlPath}'");
+		return;
+	}
+
+	foreach (key; table.tableKeys()) {
+		val := table[key];
+
+		name := new "${tableName}.'${key}'";
+
+		if (val.type != toml.Value.Type.Table) {
+			d.abort(new "key \"${name}\" must be table in config file '${tomlPath}'");
+			continue;
+		}
+
+		verifyKeys(val, tomlPath, d, new "${name}.");
 	}
 }
 
