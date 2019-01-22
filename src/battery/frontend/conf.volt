@@ -17,10 +17,18 @@ import llvmConf = battery.frontend.llvmConf;
 
 import battery.configuration;
 import battery.util.parsing;
+import battery.util.log;
+
+private global log: Logger = {"frontend.conf"};
 
 
 fn parseTomlConfig(tomlFilename: string, path: string, d: Driver, c: Configuration, b: Project)
 {
+	log.info(new "Parsing '${tomlFilename}'");
+
+	assert(file.exists(tomlFilename), "Toml file doesn't exists! " ~ tomlFilename);
+
+
 	root := toml.parse(cast(string)file.read(tomlFilename));
 
 	verifyKeys(root, tomlFilename, d);

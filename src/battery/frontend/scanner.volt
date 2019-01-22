@@ -53,6 +53,11 @@ fn scanDir(drv: Driver, c: Configuration, path: string, parent: string) Project
 		drv.abort("path '%s' does not have a '%s' folder", s.inputPath, PathSrc);
 	}
 
+	// Must have a battery.toml file.
+	if (!s.hasBatteryToml) {
+		drv.abort("path '%s' does not have a '%s' file", s.inputPath, PathBatteryToml);
+	}
+
 	// Because of DMD
 	if (s.name == "volta" && !s.hasMainD) {
 		drv.abort("volta needs 'src/main.d'");
