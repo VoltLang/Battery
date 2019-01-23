@@ -658,11 +658,6 @@ in your system.
 		c.cmd = cmd;
 
 		setCmd(boot, name, c);
-
-		if (name == "clang") {
-			// Tell clang to output the right architecture.
-			addClangArgs(this, mConfig, c);
-		}
 	}
 
 	override fn addCmdArg(boot: bool, name: string, arg: string)

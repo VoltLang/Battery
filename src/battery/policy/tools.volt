@@ -53,124 +53,10 @@ enum LDLLDPrint =      "  LD.LLD   ";
 enum LLDLinkPrint =    "  LLD-LINK ";
 
 enum HostRdmdPrint =   "  HOSTRDMD ";
-enum HostGdcName =     "  HOSTGDC  ";
+enum HostGdcPrint =    "  HOSTGDC  ";
 
-
-fn infoCmd(drv: Driver, c: Configuration, cmd: Command, from: string)
-{
-	drv.info("\t%scmd %s: '%s' from %s.", c.getCmdPre(), cmd.name, cmd.cmd, from);
-}
-
-fn infoCmd(drv: Driver, c: Configuration, cmd: Command, given: bool = false)
-{
-	if (given) {
-		drv.info("\t%scmd %s: '%s' from arguments.", c.getCmdPre(), cmd.name, cmd.cmd);
-	} else {
-		drv.info("\t%scmd %s: '%s' from path.", c.getCmdPre(), cmd.name, cmd.cmd);
-	}
-}
-
-/*!
- * Ensures that a command/tool is there.
- * Will fill in arguments if it knows how to.
- */
-fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
-{
-	cmd := drv.getCmd(c.isBootstrap, name);
-	if (cmd is null) {
-		switch (name) {
-		case ClangName: cmd = getClang(drv, c, name); break;
-		case LinkName:  cmd = getLink(drv, c, name); break;
-		case RdmdName: assert(false, "rdmd has new code!");
-		case GdcName: assert(false, "gdc has new code!");
-		case NasmName: assert(false, "nasm has new code!");
-		default: assert(false);
-		}
-
-		if (cmd is null) {
-			drv.abort("could not find the %scommand '%s'", c.getCmdPre(), name);
-		}
-	} else {
-		drv.infoCmd(c, cmd, true);
-	}
-
-	switch (name) {
-	case ClangName: addClangArgs(drv, c, cmd); break;
-	case LinkName: break;
-	case RdmdName: assert(false);
-	case GdcName: assert(false);
-	case NasmName: assert(false);
-	default: assert(false);
-	}
-
-	return cmd;
-}
-
-
-/*
- *
- * Clang functions.
- *
- */
-
-fn getClang(drv: Driver, config: Configuration, name: string) Command
-{
-	return drv.makeCommand(config, name, ClangCommand, ClangPrint);
-}
-
-fn addClangArgs(drv: Driver, config: Configuration, c: Command)
-{
-	c.args ~= ["-target", config.getLLVMTargetString()];
-}
-
-//! configs used with LLVM tools, Clang and Volta.
-fn getLLVMTargetString(config: Configuration) string
-{
-	final switch (config.platform) with (Platform) {
-	case MSVC:
-		final switch (config.arch) with (Arch) {
-		case X86: return null;
-		case X86_64: return "x86_64-pc-windows-msvc";
-		}
-	case OSX:
-		final switch (config.arch) with (Arch) {
-		case X86: return "i386-apple-macosx10.9.0";
-		case X86_64: return "x86_64-apple-macosx10.9.0";
-		}
-	case Linux:
-		final switch (config.arch) with (Arch) {
-		case X86: return "i386-pc-linux-gnu";
-		case X86_64: return "x86_64-pc-linux-gnu";
-		}
-	case Metal:
-		final switch (config.arch) with (Arch) {
-		case X86: return "i686-pc-none-elf";
-		case X86_64: return "x86_64-pc-none-elf";
-		}
-	}
-}
-
-
-/*
- *
- * MSVC functions.
- *
- */
-
-fn getCL(drv: Driver, config: Configuration, name: string) Command
-{
-	return drv.makeCommand(config, name, CLCommand, CLPrint);
-}
-
-fn getLink(drv: Driver, config: Configuration, name: string) Command
-{
-	return drv.makeCommand(config, name, LinkCommand, LinkPrint);
-}
-
-fn getLLDLink(drv: Driver, config: Configuration, name: string) Command
-{
-	return drv.makeCommand(config, name, LLDLinkCommand, LLDLinkPrint);
-}
+enum BootRdmdPrint =   "  BOOTRDMD ";
+enum BootGdcPrint =    "  BOOTGDC  ";
 
 
 /*
@@ -178,6 +64,11 @@ fn getLLDLink(drv: Driver, config: Configuration, name: string) Command
  * Generic helpers.
  *
  */
+
+fn infoCmd(drv: Driver, c: Configuration, cmd: Command, from: string)
+{
+	drv.info("\t%scmd %s: '%s' from %s.", c.getCmdPre(), cmd.name, cmd.cmd, from);
+}
 
 fn addLlvmVersionsToBootstrapCompiler(drv: Driver, config: Configuration, c: Command)
 {
@@ -197,34 +88,6 @@ fn addLlvmVersionsToBootstrapCompiler(drv: Driver, config: Configuration, c: Com
 	foreach (v; llvmVersions) {
 		c.args ~= getVersionFlag(v);
 	}
-}
-
-fn getShortName(name: string) string
-{
-	if (startsWith(name, "host-")) {
-		return name[5 .. $];
-	}
-	return name;
-}
-
-private:
-//! Search the command path and make a Command instance.
-fn makeCommand(drv: Driver, config: Configuration, name: string, cmd: string,
-               print: string) Command
-{
-	cmd = searchPath(config.env.getOrNull("PATH"), cmd);
-	if (cmd is null) {
-		return null;
-	}
-
-	c := new Command();
-	c.cmd = cmd;
-	c.name = name;
-	c.print = print;
-
-	drv.infoCmd(config, c);
-
-	return c;
 }
 
 fn getCmdPre(c: Configuration) string

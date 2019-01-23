@@ -84,7 +84,7 @@ fn doConfig(drv: Driver, config: Configuration)
 	drvVolta := drv.getCmd(config.isBootstrap, "volta");
 	if (drvVolta !is null) {
 		config.addTool("volta", drvVolta.cmd, drvVolta.args);
-		drv.infoCmd(config, drvVolta, true);
+		drv.infoCmd(config, drvVolta, "args");
 	}
 
 	// NASM is needed for RT.
@@ -416,7 +416,7 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 	if (linkerFromLLVM) {
 		drv.info("\tcmd linker: Linking with lld-link.exe from LLVM toolchain.");
 	} else {
-		drv.infoCmd(config, linker, linkerFromArg);
+		drv.infoCmd(config, linker, linkerFromArg ? "args" : "path");
 	}
 
 	cl := config.makeCommandFromPath(CLCommand, CLName);
@@ -469,7 +469,7 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 	verStr := vars.msvcVer.visualStudioVersionToString();
 	drv.info("Using MSVC %s from the enviroment.", verStr);
 	if (linkerFromArg) {
-		drv.infoCmd(config, linker, linkerFromArg);
+		drv.infoCmd(config, linker, linkerFromArg ? "args" : "path");
 	}
 }
 
@@ -811,12 +811,12 @@ fn fillInConfigCommands(drv: Driver, config: Configuration)
 
 		config.rdmdCmd = config.getTool(RdmdName);
 		if (config.rdmdCmd !is null) {
-			config.rdmdCmd.print = RdmdPrint;
+			config.rdmdCmd.print = BootRdmdPrint;
 		}
 
 		config.gdcCmd = config.getTool(GdcName);
 		if (config.gdcCmd !is null) {
-			config.gdcCmd.print = GdcPrint;
+			config.gdcCmd.print = BootGdcPrint;
 		}
 
 		// Done now.
