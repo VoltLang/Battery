@@ -6,9 +6,11 @@
 module battery.util.path;
 
 import watt.path : pathSeparator, dirSeparator, exists;
+import watt.io.file : isFile;
 import watt.text.path : normalisePath, makePathAppendable;
 import watt.text.format : format;
 import watt.text.string : replace, split, endsWith;
+import battery.util.log : Logger;
 
 
 fn cleanPath(s: string) string
@@ -37,4 +39,18 @@ fn searchPath(path: string, cmd: string) string
 	}
 
 	return null;
+}
+
+fn checkArgCmd(ref log: Logger, cmd: string, name: string) bool
+{
+	if (cmd is null) {
+		return false;
+	}
+
+	if (isFile(cmd)) {
+		return true;
+	}
+
+	log.info(new "The ${name} command given as '${cmd}' does not exists!");
+	return false;
 }
