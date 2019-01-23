@@ -20,6 +20,7 @@ import battery.detect.visualStudio;
 import llvm = battery.detect.llvm;
 import gdc = battery.detect.gdc;
 import rdmd = battery.detect.rdmd;
+import nasm = battery.detect.nasm;
 
 
 fn getProjectConfig(drv: Driver, arch: Arch, platform: Platform) Configuration
@@ -87,8 +88,7 @@ fn doConfig(drv: Driver, config: Configuration)
 	}
 
 	// NASM is needed for RT.
-	drvNasm := fillInCommand(drv, config, NasmName);
-	config.addTool(NasmName, drvNasm.cmd, drvNasm.args);
+	doNASM(drv, config);
 }
 
 fn doEnv(drv: Driver, config: Configuration, outside: Environment)
@@ -771,6 +771,34 @@ fn doRDMD(drv: Driver, config: Configuration) bool
 	return true;
 }
 
+fn doNASM(drv: Driver, config: Configuration) bool
+{
+	results: nasm.Result[];
+	result: nasm.Result;
+
+	// Setup the path.
+	path := config.env.getOrNull("PATH");
+	nasm.detectFromPath(path, out results);
+
+	// Did we get anything from the path?
+	fromArgs := drv.getCmd(config.isBootstrap, NasmName);
+	if (fromArgs !is null && nasm.detectFromArgs(fromArgs.cmd, fromArgs.args, out result)) {
+		results = result ~ results;
+	}
+
+	// Didn't find any.
+	if (results.length == 0) {
+		return false;
+	}
+
+	// Add any extra arguments needed.s
+	nasm.addArgs(ref results[0], config.arch, config.platform, out result);
+
+	// Do that adding.
+	c := config.addTool(NasmName, result.cmd, result.args);
+	drv.infoCmd(config, c, result.from);
+	return true;
+}
 
 /*
  *

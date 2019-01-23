@@ -76,11 +76,6 @@ fn infoCmd(drv: Driver, c: Configuration, cmd: Command, given: bool = false)
  */
 fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
 {
-	switch (name) {
-	case NasmName: return handleNASM(drv, c);
-	default: break;
-	}
-
 	cmd := drv.getCmd(c.isBootstrap, name);
 	if (cmd is null) {
 		switch (name) {
@@ -111,35 +106,6 @@ fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
 	return cmd;
 }
 
-/*!
- * Transitional function to new detect code.
- */
-fn handleNASM(drv: Driver, c: Configuration) Command
-{
-	res: nasm.Result;
-	arg: nasm.Argument;
-	arg.arch = c.arch;
-	arg.platform = c.platform;
-	arg.path = c.env.getOrNull("PATH");
-
-	cmd := drv.getCmd(c.isBootstrap, NasmName);
-	if (cmd !is null) {
-		arg.argCmd = cmd.cmd;
-		arg.argArgs = cmd.args;
-	} else {
-		cmd = new Command();
-	}
-
-	if (!nasm.detect(ref arg, out res)) {
-		drv.abort("Failed to find nasm!");
-	}
-
-	cmd.cmd = res.cmd;
-	cmd.args = res.args;
-	cmd.name = NasmName;
-	cmd.print = NasmPrint;
-	return cmd;
-}
 
 /*
  *

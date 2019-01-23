@@ -11,21 +11,8 @@ import watt = [watt.text.sink, watt.text.string];
 static import battery.util.log;
 
 import battery.defines;
-import path = battery.detect.path;
+import battery.util.path;
 
-
-/*!
- * A struct holding arguments for the dection code.
- */
-struct Argument
-{
-	arch: Arch;         //!< Arch we want nasm to compile against.
-	platform: Platform; //!< Platform we want nasm to compile against.
-
-	path: string;       //!< Path to search.
-	argCmd: string;     //!< Was NASM given from command line.
-	argArgs: string[];  //!< The extra arguments from command line.
-}
 
 /*!
  * The result of the dection, also holds any extra arguments to get NASM
@@ -33,6 +20,7 @@ struct Argument
  */
 struct Result
 {
+	from: string;
 	cmd: string;
 	args: string[];
 }
@@ -40,31 +28,59 @@ struct Result
 /*!
  * Detect and find the nasm command.
  */
-fn detect(ref arg: Argument, out res: Result) bool
+fn detectFromPath(path: string, out results: Result[]) bool
 {
-	log.info("Detecting NASM");
+	res: Result;
+	log.info("Detecting nasm on path.");
 
-	if (arg.argCmd !is null) {
-		res.cmd = arg.argCmd;
-		res.args = arg.getBaseArgs() ~ arg.argArgs;
-		res.dump("Got NASM from arguments");
-		return true;
+	// Command without any suffix.
+	if (fromPath(path, out res)) {
+		results ~= res;
 	}
 
-	res.cmd = path.detect(arg.path, "nasm");
-	res.args = arg.getBaseArgs();
-
-	if (res.cmd is null) {
-		log.info("Failed to find NASM");
-		return false;
-	} else {
-		log.info(new "Found NASM '${res.cmd}'");
-		return true;
+	// Dump all found.
+	foreach (ref result; results) {
+		result.dump("Found");
 	}
+
+	return results.length != 0;
 }
 
-private:
+/*!
+ * Detect nasm from arguments.
+ */
+fn detectFromArgs(cmd: string, args: string[], out result: Result) bool
+{
+	if (cmd is null) {
+		return false;
+	}
 
+	log.info("Checking nasm from args.");
+
+	if (!checkArgCmd(ref log, cmd, "nams")) {
+		return false;
+	}
+
+	result.from = "args";
+	result.cmd = cmd;
+	result.args = args;
+	result.dump("Found");
+	return true;
+}
+
+/*!
+ * Add extra arguments to the command, any given args are appended after the
+ * extra arguments.
+ */
+fn addArgs(ref from: Result, arch: Arch, platform: Platform, out res: Result)
+{
+	res.from = from.from;
+	res.cmd = from.cmd;
+	res.args = ["-f", getFormatString(arch, platform)] ~ from.args;
+}
+
+
+private:
 
 /*!
  * So we get the right prefix on logged messages.
@@ -76,6 +92,7 @@ fn dump(ref res: Result, message: string)
 	ss: watt.StringSink;
 
 	ss.sink(message);
+	watt.format(ss.sink, "\n\tfrom = %s", res.from);
 	watt.format(ss.sink, "\n\tcmd = %s", res.cmd);
 	watt.format(ss.sink, "\n\targs = [");
 	foreach (arg; res.args) {
@@ -88,36 +105,44 @@ fn dump(ref res: Result, message: string)
 }
 
 /*!
- * Returns the list of arguments needed to make NASM output the correct format.
+ * Search the path.Pretty print the result.
  */
-fn getBaseArgs(ref arg: Argument) string[]
+fn fromPath(path: string, out res: Result) bool
 {
-	return ["-f", arg.getFormatString()];
+	res.cmd = searchPath(path, "nasm");
+	if (res.cmd is null) {
+		log.info("Failed to find 'nasm' on path.");
+		return false;
+	}
+
+	res.from = "path";
+	log.info(new "Found nasm '${res.cmd}'");
+	return true;
 }
 
 /*!
  * Returns the format to be outputed for this configuration.
  */
-fn getFormatString(ref arg: Argument) string
+fn getFormatString(arch: Arch, platform: Platform) string
 {
-	final switch (arg.platform) with (Platform) {
+	final switch (platform) with (Platform) {
 	case MSVC:
-		final switch (arg.arch) with (Arch) {
+		final switch (arch) with (Arch) {
 		case X86: return "win32";
 		case X86_64: return "win64";
 		}
 	case OSX:
-		final switch (arg.arch) with (Arch) {
+		final switch (arch) with (Arch) {
 		case X86: return "macho32";
 		case X86_64: return "macho64";
 		}
 	case Linux:
-		final switch (arg.arch) with (Arch) {
+		final switch (arch) with (Arch) {
 		case X86: return "elf32";
 		case X86_64: return "elf64";
 		}
 	case Metal:
-		final switch (arg.arch) with (Arch) {
+		final switch (arch) with (Arch) {
 		case X86: return "elf32";
 		case X86_64: return "elf64";
 		}
