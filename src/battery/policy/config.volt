@@ -18,6 +18,7 @@ import battery.util.path : searchPath;
 import battery.detect.visualStudio;
 
 import llvm = battery.detect.llvm;
+import gdc = battery.detect.gdc;
 
 
 fn getProjectConfig(drv: Driver, arch: Arch, platform: Platform) Configuration
@@ -44,18 +45,7 @@ fn doConfig(drv: Driver, config: Configuration)
 		drv.info("Various tools needed by compile.");
 
 		// Get GDC or RDMD if we are bootstrapping.
-		gdc := drv.getCmd(config.isBootstrap, GdcName);
-		gdcPath := gdc is null;
-		if (gdc is null) {
-			gdc = config.makeCommandFromPath(GdcCommand ~ "-6", GdcName);
-		}
-		if (gdc is null) {
-			gdc = config.makeCommandFromPath(GdcCommand, GdcName);
-		}
-		if (gdc !is null) {
-			c := config.addTool(GdcName, gdc.cmd, gdc.args);
-			addGdcArgs(drv, config, c);
-			drv.infoCmd(config, c, !gdcPath);
+		if (doGDC(drv, config)) {
 			return;
 		}
 
@@ -703,6 +693,60 @@ fn addCommonLinkerArgsMSVC(config: Configuration, linker: Command)
 		"/defaultlib:oldnames",
 		"legacy_stdio_definitions.lib",
 	];
+}
+
+
+/*
+ *
+ * GDC
+ *
+ */
+
+fn doGDC(drv: Driver, config: Configuration) bool
+{
+	argument: gdc.Argument;
+	results: gdc.Result[];
+	result: gdc.Result;
+
+	// Setup the path.
+	argument.path = config.env.getOrNull("PATH");
+
+	// Did we get anything from the path?
+	fromArgs := drv.getCmd(config.isBootstrap, GdcName);
+	if (fromArgs !is null) {
+		argument.cmd = fromArgs.cmd;
+		argument.args = fromArgs.args;
+	}
+
+	// Detect.
+	if (!gdc.detect(ref argument, out results)) {
+		return false;
+	}
+
+	// Find a good a result from the one that the detection code found.
+	found := false;
+	foreach (res; results) {
+		// GDC 7 is a known bad.
+		if (res.ver.major == 7) {
+			continue;
+		}
+
+		// Found! :D
+		result = res;
+		found = true;
+	}
+
+	if (!found) {
+		return false;
+	}
+
+	// Add any extra arguments needed.s
+	gdc.addArgs(ref result, config.arch, config.platform);
+
+	// Do that adding.
+	c := config.addTool(GdcName, result.cmd, result.args);
+	drv.infoCmd(config, c, result.from);
+	return true;
 }
 
 

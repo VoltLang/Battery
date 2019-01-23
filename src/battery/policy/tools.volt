@@ -86,9 +86,9 @@ fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
 		switch (name) {
 		case ClangName: cmd = getClang(drv, c, name); break;
 		case RdmdName:  cmd = getRdmd(drv, c, name); break;
-		case GdcName:   cmd = getGdc(drv, c, name); break;
 		case LinkName:  cmd = getLink(drv, c, name); break;
-		case NasmName: assert(false);
+		case GdcName: assert(false, "gdc has new code!");
+		case NasmName: assert(false, "nasm has new code!");
 		default: assert(false);
 		}
 
@@ -226,6 +226,13 @@ fn addRdmdArgs(drv: Driver, config: Configuration, c: Command)
 	}
 }
 
+
+/*
+ *
+ * Generic helpers.
+ *
+ */
+
 fn addLlvmVersionsToBootstrapCompiler(drv: Driver, config: Configuration, c: Command)
 {
 	fn getVersionFlag(s: string) string
@@ -245,39 +252,6 @@ fn addLlvmVersionsToBootstrapCompiler(drv: Driver, config: Configuration, c: Com
 		c.args ~= getVersionFlag(v);
 	}
 }
-
-
-/*
- *
- * GDC functions.
- *
- */
-
-fn getGdc(drv: Driver, config: Configuration, name: string) Command
-{
-	return drv.makeCommand(config, name, GdcCommand, GdcPrint);
-}
-
-fn addGdcArgs(drv: Driver, config: Configuration, c: Command)
-{
-	final switch (config.arch) with (Arch) {
-	case X86: c.args ~= "-m32"; break;
-	case X86_64: c.args ~= "-m64"; break;
-	}
-
-	assert(config.llvmVersion !is null);
-	llvmVersions := llvmVersion.identifiers(config.llvmVersion);
-	foreach (v; llvmVersions) {
-		c.args ~= format("-fversion=%s", v);
-	}
-}
-
-
-/*
- *
- * Generic helpers.
- *
- */
 
 fn getShortName(name: string) string
 {
