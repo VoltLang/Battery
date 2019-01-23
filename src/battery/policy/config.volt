@@ -697,23 +697,17 @@ fn addCommonLinkerArgsMSVC(config: Configuration, linker: Command)
 
 fn doGDC(drv: Driver, config: Configuration) bool
 {
-	argument: gdc.Argument;
 	results: gdc.Result[];
 	result: gdc.Result;
 
 	// Setup the path.
-	argument.path = config.env.getOrNull("PATH");
+	path := config.env.getOrNull("PATH");
+	gdc.detectFromPath(path, out results);
 
 	// Did we get anything from the path?
 	fromArgs := drv.getCmd(config.isBootstrap, GdcName);
-	if (fromArgs !is null) {
-		argument.cmd = fromArgs.cmd;
-		argument.args = fromArgs.args;
-	}
-
-	// Detect.
-	if (!gdc.detect(ref argument, out results)) {
-		return false;
+	if (fromArgs !is null && gdc.detectFromArgs(fromArgs.cmd, fromArgs.args, out result)) {
+		results = result ~ results;
 	}
 
 	// Find a good a result from the one that the detection code found.
@@ -724,17 +718,16 @@ fn doGDC(drv: Driver, config: Configuration) bool
 			continue;
 		}
 
+		// Add any extra arguments needed.
+		gdc.addArgs(ref res, config.arch, config.platform, out result);
+
 		// Found! :D
-		result = res;
 		found = true;
 	}
 
 	if (!found) {
 		return false;
 	}
-
-	// Add any extra arguments needed.s
-	gdc.addArgs(ref result, config.arch, config.platform);
 
 	// Do that adding.
 	c := config.addTool(GdcName, result.cmd, result.args);

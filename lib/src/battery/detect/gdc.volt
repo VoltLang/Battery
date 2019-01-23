@@ -23,16 +23,6 @@ static import battery.util.log;
 
 
 /*!
- * A struct holding arguments for the dection code.
- */
-struct Argument
-{
-	path: string;   //!< Path to search.
-	cmd: string;    //!< Was NASM given from command line.
-	args: string[]; //!< The extra arguments from command line.
-}
-
-/*!
  * The result of the dection, also holds any extra arguments to get NASM
  * to output in the correct format.
  */
@@ -48,25 +38,20 @@ struct Result
 /*!
  * Detect and find the nasm command.
  */
-fn detect(ref arg: Argument, out results: Result[]) bool
+fn detectFromPath(path: string, out results: Result[]) bool
 {
 	res: Result;
-	log.info("Detecting GDC");
-
-	// See if we where given any.
-	if (fromArgs(ref arg, out res)) {
-		results ~= res;
-	}
+	log.info("Detecting GDC fron path.");
 
 	// Command without any suffix.
-	if (fromPath(ref arg, out res)) {
+	if (fromPath(path, out res)) {
 		results ~= res;
 	}
 
 	// Try some known suffixes.
 	suffixes := ["-6", "-7", "-9"];
 	foreach (suffix; suffixes) {
-		if (fromPath(ref arg, out res, suffix)) {
+		if (fromPath(path, out res, suffix)) {
 			results ~= res;
 		}
 	}
@@ -80,12 +65,41 @@ fn detect(ref arg: Argument, out results: Result[]) bool
 }
 
 /*!
+ * Detect gdc from arguments.
+ */
+fn detectFromArgs(cmd: string, args: string[], out result: Result) bool
+{
+	if (cmd is null) {
+		return false;
+	}
+
+	log.info("Checking gdc from args.");
+
+	if (!checkArgCmd(ref log, cmd, "gdc")) {
+		return false;
+	}
+
+	result.ver = getVersionFromGdc(cmd);
+	if (result.ver is null) {
+		return false;
+	}
+
+	result.from = "args";
+	result.cmd = cmd;
+	result.args = args;
+	result.dump("Found");
+	return true;
+}
+
+/*!
  * Add extra arguments to the command, any given args are appended after the
  * extra arguments.
  */
-fn addArgs(ref res: Result, arch: Arch, platform: Platform)
+fn addArgs(ref from: Result, arch: Arch, platform: Platform, out res: Result)
 {
-	res.args = [getTargetString(arch)] ~ res.args;
+	res.from = from.from;
+	res.cmd = from.cmd;
+	res.args = [getTargetString(arch)] ~ from.args;
 }
 
 
@@ -114,27 +128,9 @@ fn dump(ref res: Result, message: string)
 	log.info(ss.toString());
 }
 
-fn fromArgs(ref arg: Argument, out res: Result) bool
+fn fromPath(path: string, out res: Result, suffix: string = null) bool
 {
-	if (!checkArgCmd(arg.cmd, "gdc")) {
-		return false;
-	}
-
-	res.ver = getVersionFromGdc(arg.cmd);
-	if (res.ver is null) {
-		return false;
-	}
-
-	// Everything is ok, continue.
-	res.from = "args";
-	res.cmd = arg.cmd;
-	res.args = arg.args;
-	return true;
-}
-
-fn fromPath(ref arg: Argument, out res: Result, suffix: string = null) bool
-{
-	res.cmd = searchPath(arg.path, new "gdc${suffix}");
+	res.cmd = searchPath(path, new "gdc${suffix}");
 	if (res.cmd is null) {
 		log.info(new "Failed to find 'gdc${suffix}' on path.");
 		return false;
@@ -216,18 +212,4 @@ fn extractGdcVersionString(output: string) string
 	}
 
 	return line[VersionLine.length .. index];
-}
-
-fn checkArgCmd(cmd: string, name: string) bool
-{
-	if (cmd is null) {
-		return false;
-	}
-
-	if (watt.isFile(cmd)) {
-		return true;
-	}
-
-	log.info(new "The ${name} command given as '${cmd}' does not exists!");
-	return false;
 }
