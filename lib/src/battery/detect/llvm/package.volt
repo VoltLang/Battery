@@ -322,7 +322,7 @@ fn extractClangVersionString(output: string) string
 {
 	line: string;
 	foreach (l; watt.splitLines(watt.strip(output))) {
-		if (!watt.startsWith(VersionLine, line)) {
+		if (watt.startsWith(l, VersionLine) != 0) {
 			continue;
 		}
 		line = l;
