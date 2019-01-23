@@ -85,8 +85,8 @@ fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
 	if (cmd is null) {
 		switch (name) {
 		case ClangName: cmd = getClang(drv, c, name); break;
-		case RdmdName:  cmd = getRdmd(drv, c, name); break;
 		case LinkName:  cmd = getLink(drv, c, name); break;
+		case RdmdName: assert(false, "rdmd has new code!");
 		case GdcName: assert(false, "gdc has new code!");
 		case NasmName: assert(false, "nasm has new code!");
 		default: assert(false);
@@ -101,9 +101,9 @@ fn fillInCommand(drv: Driver, c: Configuration, name: string) Command
 
 	switch (name) {
 	case ClangName: addClangArgs(drv, c, cmd); break;
-	case RdmdName:  addRdmdArgs(drv, c, cmd); break;
-	case GdcName:   addRdmdArgs(drv, c, cmd); break;
 	case LinkName: break;
+	case RdmdName: assert(false);
+	case GdcName: assert(false);
 	case NasmName: assert(false);
 	default: assert(false);
 	}
@@ -204,26 +204,6 @@ fn getLink(drv: Driver, config: Configuration, name: string) Command
 fn getLLDLink(drv: Driver, config: Configuration, name: string) Command
 {
 	return drv.makeCommand(config, name, LLDLinkCommand, LLDLinkPrint);
-}
-
-
-/*
- *
- * Rdmd functions.
- *
- */
-
-fn getRdmd(drv: Driver, config: Configuration, name: string) Command
-{
-	return drv.makeCommand(config, name, RdmdCommand, RdmdPrint);
-}
-
-fn addRdmdArgs(drv: Driver, config: Configuration, c: Command)
-{
-	final switch (config.arch) with (Arch) {
-	case X86: c.args ~= "-m32"; break;
-	case X86_64: c.args ~= "-m64"; break;
-	}
 }
 
 

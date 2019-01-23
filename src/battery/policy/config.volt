@@ -19,6 +19,7 @@ import battery.detect.visualStudio;
 
 import llvm = battery.detect.llvm;
 import gdc = battery.detect.gdc;
+import rdmd = battery.detect.rdmd;
 
 
 fn getProjectConfig(drv: Driver, arch: Arch, platform: Platform) Configuration
@@ -42,23 +43,15 @@ fn doConfig(drv: Driver, config: Configuration)
 		doToolChainLLVM(drv, config, UseAsLinker.NO);
 
 		// Do a bit of logging.
-		drv.info("Various tools needed by compile.");
+		drv.info("Various tools needed by bootstrapping.");
 
-		// Get GDC or RDMD if we are bootstrapping.
+		// Get GDC if we are bootstrapping.
 		if (doGDC(drv, config)) {
 			return;
 		}
 
-		rdmd := drv.getCmd(config.isBootstrap, RdmdName);
-		rdmdPath := rdmd is null;
-		if (rdmd is null) {
-			rdmd = config.makeCommandFromPath(RdmdCommand, RdmdName);
-			rdmdPath = true;
-		}
-		if (rdmd !is null) {
-			c := config.addTool(RdmdName, rdmd.cmd, rdmd.args);
-			addRdmdArgs(drv, config, c);
-			drv.infoCmd(config, c, !rdmdPath);
+		// Fallback to RDMD.
+		if (doRDMD(drv, config)) {
 			return;
 		}
 		return;
@@ -745,6 +738,35 @@ fn doGDC(drv: Driver, config: Configuration) bool
 
 	// Do that adding.
 	c := config.addTool(GdcName, result.cmd, result.args);
+	drv.infoCmd(config, c, result.from);
+	return true;
+}
+
+fn doRDMD(drv: Driver, config: Configuration) bool
+{
+	results: rdmd.Result[];
+	result: rdmd.Result;
+
+	// Setup the path.
+	path := config.env.getOrNull("PATH");
+	rdmd.detectFromPath(path, out results);
+
+	// Did we get anything from the path?
+	fromArgs := drv.getCmd(config.isBootstrap, RdmdName);
+	if (fromArgs !is null && rdmd.detectFromArgs(fromArgs.cmd, fromArgs.args, out result)) {
+		results = result ~ results;
+	}
+
+	// Didn't find any.
+	if (results.length == 0) {
+		return false;
+	}
+
+	// Add any extra arguments needed.s
+	rdmd.addArgs(ref results[0], config.arch, config.platform, out result);
+
+	// Do that adding.
+	c := config.addTool(RdmdName, result.cmd, result.args);
 	drv.infoCmd(config, c, result.from);
 	return true;
 }
