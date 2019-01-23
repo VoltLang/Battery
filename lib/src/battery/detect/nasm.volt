@@ -3,9 +3,6 @@
 // SPDX-License-Identifier: BSL-1.0
 /*!
  * Detect and find the nasm command.
- *
- * @todo Remove lib property.
- * @todo Move expansions of libs and includes into here.
  */
 module battery.detect.nasm;
 
