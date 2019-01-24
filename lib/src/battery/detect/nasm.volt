@@ -13,6 +13,14 @@ static import battery.util.log;
 import battery.defines;
 import battery.util.path;
 
+/*!
+ * Used as a argument when supplying a command on the command line.
+ */
+struct FromArgs
+{
+	cmd: string;
+	args: string[];
+}
 
 /*!
  * The result of the dection, also holds any extra arguments to get NASM
@@ -49,21 +57,21 @@ fn detectFromPath(path: string, out results: Result[]) bool
 /*!
  * Detect nasm from arguments.
  */
-fn detectFromArgs(cmd: string, args: string[], out result: Result) bool
+fn detectFromArgs(ref arg: FromArgs, out result: Result) bool
 {
-	if (cmd is null) {
+	if (arg.cmd is null) {
 		return false;
 	}
 
 	log.info("Checking nasm from args.");
 
-	if (!checkArgCmd(ref log, cmd, "nams")) {
+	if (!checkArgCmd(ref log, arg.cmd, "nasm")) {
 		return false;
 	}
 
 	result.from = "args";
-	result.cmd = cmd;
-	result.args = args;
+	result.cmd = arg.cmd;
+	result.args = arg.args;
 	result.dump("Found");
 	return true;
 }

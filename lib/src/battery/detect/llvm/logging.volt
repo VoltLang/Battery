@@ -17,32 +17,36 @@ import battery.detect.llvm;
  */
 global log: battery.util.log.Logger = {"detect.llvm"};
 
-fn dump(ref arg: Argument, ref res: Result, message: string)
+fn dump(ref res: Result, message: string)
 {
 	ss: watt.StringSink;
 
 	ss.sink(message);
 	watt.format(ss.sink, "\n\tfrom = %s", res.from);
 	watt.format(ss.sink, "\n\tver = %s", res.ver);
-	if (arg.need.config) {
+	if (res.configCmd !is null) {
 		watt.format(ss.sink, "\n\tconfigCmd = '%s'", res.configCmd);
 		watt.format(ss.sink, "\n\tconfigArgs = %s", res.configArgs);
 	}
-	if (arg.need.ar) {
+	if (res.arCmd !is null) {
 		watt.format(ss.sink, "\n\tarCmd = '%s'", res.arCmd);
 		watt.format(ss.sink, "\n\tarArgs = %s", res.arArgs);
 	}
-	if (arg.need.clang) {
+	if (res.clangCmd !is null) {
 		watt.format(ss.sink, "\n\tclangCmd = '%s'", res.clangCmd);
 		watt.format(ss.sink, "\n\tclangArgs = %s", res.clangArgs);
 	}
-	if (arg.need.ld) {
+	if (res.ldCmd !is null) {
 		watt.format(ss.sink, "\n\tldCmd = '%s'", res.ldCmd);
 		watt.format(ss.sink, "\n\tldArgs = %s", res.ldArgs);
 	}
-	if (arg.need.link) {
+	if (res.linkCmd !is null) {
 		watt.format(ss.sink, "\n\tlinkCmd = '%s'", res.linkCmd);
 		watt.format(ss.sink, "\n\tlinkArgs = %s", res.linkArgs);
+	}
+	if (res.wasmCmd !is null) {
+		watt.format(ss.sink, "\n\twasmCmd = '%s'", res.wasmCmd);
+		watt.format(ss.sink, "\n\twasmArgs = %s", res.wasmArgs);
 	}
 	log.info(ss.toString());
 }

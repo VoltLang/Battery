@@ -33,23 +33,23 @@ public:
 }
 
 /*!
- * Arguments to the detection code.
+ * Used as a argument when supplying a command on the command line.
  */
-struct Argument
+struct FromArgs
 {
 public:
-	need: Needed;       //!< Which commands are needed.
-	arch: Arch;         //!< Arch we want to compile against.
-	platform: Platform; //!< Platform we want to compile against.
-
-	path: string;      //!< Path to search for commands.
-	confPath: string;  //!< --llvmconf argument.
-
-	configCmd: string; //!< The llvm-config command.
-	arCmd: string;     //!< The llvm-ar command.
-	clangCmd: string;  //!< The clang command.
-	ldCmd: string;     //!< The ld.lld command.
-	linkCmd: string;   //!< The lld-link command.
+	configCmd: string;    //!< The llvm-config command.
+	configArgs: string[]; //!< The arguments for llvm-config.
+	arCmd: string;        //!< The llvm-ar command.
+	arArgs: string[];     //!< The arguments for llvm-ar.
+	clangCmd: string;     //!< The clang command.
+	clangArgs: string[];  //!< The arguments for clang.
+	ldCmd: string;        //!< The ld.lld command.
+	ldArgs: string[];     //!< The arguments for ld.lld.
+	linkCmd: string;      //!< The lld-link command.
+	linkArgs: string[];   //!< The arguments for lld-link.
+	wasmCmd: string;      //!< The wasm-ld command.
+	wasmArgs: string[];   //!< The arguments for wasm-ld.
 }
 
 /*!
@@ -62,98 +62,97 @@ public:
 	ver: semver.Release;  //!< LLVM Version.
 
 	configCmd: string;    //!< The llvm-config command.
-	configArgs: string[]; //!< The llvm-config argumetns.
+	configArgs: string[]; //!< The arguments for llvm-config.
 	arCmd: string;        //!< The llvm-ar command.
-	arArgs: string[];     //!< The llvm-ar arguments.
+	arArgs: string[];     //!< The arguments for llvm-ar.
 	clangCmd: string;     //!< The clang command.
-	clangArgs: string[];  //!< The clang arguments.
+	clangArgs: string[];  //!< The arguments for clang.
 	ldCmd: string;        //!< The ld.lld command.
-	ldArgs: string[];     //!< The ld.lld arguments.
+	ldArgs: string[];     //!< The arguments for ld.lld.
 	linkCmd: string;      //!< The lld-link command.
-	linkArgs: string[];   //!< The lld-link arguments.
+	linkArgs: string[];   //!< The arguments for lld-link.
+	wasmCmd: string;      //!< The wasm-ld command.
+	wasmArgs: string[];   //!< The arguments for wasm-ld.
 }
 
 /*!
  * Detect LLVM toolchains.
  */
-fn detect(ref arg: Argument, out results: Result[]) bool
+fn detectFrom(path: string, confPaths: string[], out results: Result[]) bool
 {
 	log.info("Searching for LLVM toolchains.");
 	result: Result;
 
-	// Arguments have the highest precedence.
-	if (getFromArgs(ref arg, out result)) {
-		results ~= result;
-	}
-
-	// Then the config.
-	if (arg.getFromConf(out result)) {
-		results ~= result;
+	// First the configs.
+	foreach (confPath; confPaths) {
+		if (getFromConf(confPath, out result)) {
+			results ~= result;
+		}
 	}
 
 	// No suffix at all.
-	if (getFromPath(ref arg, null, out result)) {
+	if (getFromPath(path, null, out result)) {
 		results ~= result;
 	}
 
 	// We do not scan the suffix paths on windows.
 	suffixes := ["-9", "-8", "-7", "-6.0", "-5.0", "-4.0", "-3.9"];
 	version (!Windows) foreach (suffix; suffixes) {
-		if (getFromPath(ref arg, suffix, out result)) {
+		if (getFromPath(path, suffix, out result)) {
 			results ~= result;
 		}
 	}
 
 	// Dump the info.
-	found := false;
 	foreach (ref r; results) {
-		if (!hasNeeded(ref arg, ref r)) {
-			dump(ref arg, ref r, "Rejected");
-		} else if (found) {
-			dump(ref arg, ref r, "Skipped");
-		} else {
-			dump(ref arg, ref r, "Selected");
-			result = r;
-			found = true;
-		}
+		r.dump("Found");
 	}
 
-	return found;
+	return results.length != 0;
+}
+
+/*!
+ * Detect llvm from arguments.
+ */
+fn detectFromArgs(ref fromArgs: FromArgs, out result: Result) bool
+{
+	// Arguments have the highest precedence.
+	return getFromArgs(ref fromArgs, out result);
+}
+
+/*!
+ * Add extra arguments to the command, any given args are appended after the
+ * extra arguments.
+ */
+fn addArgs(ref from: Result, arch: Arch, platform: Platform, out res: Result)
+{
+	res = from;
+	if (res.clangCmd !is null) {
+		res.clangArgs = getClangArgs(arch, platform) ~ res.clangArgs;
+	}
 }
 
 
 private:
 
-fn hasNeeded(ref arg: Argument, ref res: Result) bool
+fn getFromConf(confPath: string, out res: Result) bool
 {
-	if (arg.need.config && (res.configCmd is null)) return false;
-	if (arg.need.clang && (res.clangCmd is null)) return false;
-	if (arg.need.ar && (res.arCmd is null)) return false;
-	if (arg.need.link && (res.linkCmd is null)) return false;
-	if (arg.need.ld && (res.ldCmd is null)) return false;
-	return true;
-}
-
-fn getFromConf(ref arg: Argument, out res: Result) bool
-{
-	if (arg.confPath is null) {
-		log.info("No llvm config file was given (--llvmconf), skipping.");
+	if (confPath is null) {
 		return false;
 	}
 
-	if (!conf.parse(arg.confPath, out res.ver, out res.clangCmd)) {
+	if (!conf.parse(confPath, out res.ver, out res.clangCmd)) {
 		return false;
 	}
 
 	res.from = "config";
-	res.clangArgs = getClangArgs(ref arg);
 	return true;
 }
 
-fn getFromArgs(ref arg: Argument, out res: Result) bool
+fn getFromArgs(ref fromArgs: FromArgs, out res: Result) bool
 {
-	if (checkArgCmd(arg.configCmd, "llvm-config")) {
-		res.configCmd = arg.configCmd;
+	if (checkArgCmd(fromArgs.configCmd, "llvm-config")) {
+		res.configCmd = fromArgs.configCmd;
 	} else {
 		log.info("The llvm-config command was not given, skipping all other given commands.");
 		return false;
@@ -164,82 +163,56 @@ fn getFromArgs(ref arg: Argument, out res: Result) bool
 		return false;
 	}
 
-	if (arg.need.ar && checkArgCmd(arg.arCmd, "llvm-ar")) {
-		res.arCmd = arg.arCmd;
+	if (checkArgCmd(fromArgs.arCmd, "llvm-ar")) {
+		res.arCmd = fromArgs.arCmd;
 	}
 
-	if (arg.need.clang && checkArgCmd(arg.clangCmd, "clang")) {
-		res.clangCmd = arg.clangCmd;
-		res.clangArgs = getClangArgs(ref arg);
+	if (checkArgCmd(fromArgs.clangCmd, "clang")) {
+		res.clangCmd = fromArgs.clangCmd;
 	}
 
-	if (arg.need.ld && checkArgCmd(arg.ldCmd, "ld.lld")) {
-		res.ldCmd = arg.ldCmd;
+	if (checkArgCmd(fromArgs.ldCmd, "ld.lld")) {
+		res.ldCmd = fromArgs.ldCmd;
 	}
 
-	if (arg.need.link && checkArgCmd(arg.linkCmd, "lld-link")) {
-		res.linkCmd = arg.linkCmd;
+	if (checkArgCmd(fromArgs.linkCmd, "lld-link")) {
+		res.linkCmd = fromArgs.linkCmd;
+	}
+
+	if (checkArgCmd(fromArgs.wasmCmd, "wasm-ld")) {
+		res.wasmCmd = fromArgs.wasmCmd;
 	}
 
 	res.from = "arguments";
 	return true;
 }
 
-fn getFromPath(ref arg: Argument, suffix: string, out res: Result) bool
+fn getFromPath(path: string, suffix: string, out res: Result) bool
 {
 	// First look for llvm-config if it is needed.
-	configCmd: string;
-	if (arg.need.config) {
-		configCmd = searchPath(arg.path, "llvm-config" ~ suffix);
-	}
-	if (configCmd !is null) {
-		res.ver = getVersionFromConfig(configCmd);
+	res.configCmd = searchPath(path, "llvm-config" ~ suffix);
+	res.clangCmd = searchPath(path, "clang" ~ suffix);
+
+	if (res.configCmd !is null) {
+		res.ver = getVersionFromConfig(res.configCmd);
+	} else if (res.clangCmd !is null) {
+		res.ver = getVersionFromClang(res.clangCmd);
 	}
 
 	// Error out if llvm-config is needed and is missing.
-	if (configCmd is null && arg.need.config) {
-		if (suffix is null) {
-			log.info(new "Could not find 'llvm-config${suffix}' on the path, skipping other commands.");
+	if (res.ver is null) {
+		if (res.configCmd is null && res.clangCmd is null) {
+			log.info(new "Could not find 'llvm-config${suffix}' nor 'clang${suffix}' on the path, skipping other commands.");
 		} else {
-			log.info(new "Could not find 'llvm-config${suffix}' on the path, skipping other commands from llvm${suffix}.");
+			log.info(new "Could not determine LLVM${suffix} version!\n\tllvm-config = '${res.configCmd}'\n\tclang = '${res.clangCmd}'");
 		}
 		return false;
 	}
 
-	// Setup clang and use as fallback for version.
-	clangCmd: string;
-	if (arg.need.clang || !arg.need.config) {
-		clangCmd = searchPath(arg.path, "clang" ~ suffix);
-	}
-	if (res.ver is null && clangCmd !is null) {
-		res.ver = getVersionFromClang(clangCmd);
-	}
-
-	if (res.ver is null) {
-		log.info(new "Could not determine LLVM${suffix} version!\n\tllvm-config = '${configCmd}'\n\tclang = '${clangCmd}'");
-		return false;
-	}
-
-	if (arg.need.config) {
-		res.configCmd = configCmd;
-	}
-	if (arg.need.ar) {
-		res.arCmd = searchPath(arg.path, "llvm-ar" ~ suffix);
-	}
-	if (arg.need.clang) {
-		res.clangCmd = clangCmd;
-	}
-	if (arg.need.ld) {
-		res.ldCmd = searchPath(arg.path, "ld.lld" ~ suffix);
-	}
-	if (arg.need.link) {
-		res.linkCmd = searchPath(arg.path, "lld-link" ~ suffix);
-	}
-
-	if (res.clangCmd !is null) {
-		res.clangArgs = getClangArgs(ref arg);
-	}
-
+	res.arCmd = searchPath(path, "llvm-ar" ~ suffix);
+	res.ldCmd = searchPath(path, "ld.lld" ~ suffix);
+	res.linkCmd = searchPath(path, "lld-link" ~ suffix);
+	res.wasmCmd = searchPath(path, "wasm-ld" ~ suffix);
 	res.from = "path";
 	return true;
 }
@@ -322,7 +295,7 @@ fn extractClangVersionString(output: string) string
 {
 	line: string;
 	foreach (l; watt.splitLines(watt.strip(output))) {
-		if (watt.startsWith(l, VersionLine) != 0) {
+		if (watt.startsWith(l, VersionLine) == 0) {
 			continue;
 		}
 		line = l;
@@ -353,32 +326,32 @@ fn extractClangVersionString(output: string) string
  *
  */
 
-fn getClangArgs(ref arg: Argument) string[]
+fn getClangArgs(arch: Arch, platform: Platform) string[]
 {
-	return ["-target", arg.getLLVMTargetString()];
+	return ["-target", getLLVMTargetString(arch, platform)];
 }
 
 //! configs used with LLVM tools, Clang and Volta.
-fn getLLVMTargetString(ref arg: Argument) string
+fn getLLVMTargetString(arch: Arch, platform: Platform) string
 {
-	final switch (arg.platform) with (Platform) {
+	final switch (platform) with (Platform) {
 	case MSVC:
-		final switch (arg.arch) with (Arch) {
+		final switch (arch) with (Arch) {
 		case X86: return null;
 		case X86_64: return "x86_64-pc-windows-msvc";
 		}
 	case OSX:
-		final switch (arg.arch) with (Arch) {
+		final switch (arch) with (Arch) {
 		case X86: return "i386-apple-macosx10.9.0";
 		case X86_64: return "x86_64-apple-macosx10.9.0";
 		}
 	case Linux:
-		final switch (arg.arch) with (Arch) {
+		final switch (arch) with (Arch) {
 		case X86: return "i386-pc-linux-gnu";
 		case X86_64: return "x86_64-pc-linux-gnu";
 		}
 	case Metal:
-		final switch (arg.arch) with (Arch) {
+		final switch (arch) with (Arch) {
 		case X86: return "i686-pc-none-elf";
 		case X86_64: return "x86_64-pc-none-elf";
 		}

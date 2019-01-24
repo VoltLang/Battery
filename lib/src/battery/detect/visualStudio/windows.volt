@@ -55,7 +55,7 @@ fn alphabeticDirectories(path: string) string[]
 	return paths;
 }
 
-fn getUniversalSdkInformation(ref installationInfo: VisualStudioInstallation) bool
+fn getUniversalSdkInformation(ref installationInfo: Result) bool
 {
 	retval := getWindowsSdkDir("v10.0", out installationInfo.windowsSdkDir);
 	if (!retval) {
@@ -97,7 +97,7 @@ fn getUniversalSdkInformation(ref installationInfo: VisualStudioInstallation) bo
 }
 
 // Get the information on VS2015, if we can find it.
-fn getVisualStudio2015Installation(out installationInfo: VisualStudioInstallation) bool
+fn getVisualStudio2015Installation(out installationInfo: Result) bool
 {
 	log.info("Searching for Visual Studio 2017 using registry");
 
@@ -120,11 +120,11 @@ fn getVisualStudio2015Installation(out installationInfo: VisualStudioInstallatio
 	}
 
 	installationInfo.ver = VisualStudioVersion.V2015;
-	installationInfo.dumpVisualStudioInstallation("Found a VisualStudioInstallation");
+	installationInfo.dump("Found a VisualStudioInstallation");
 	return true;
 }
 
-fn getVisualStudio2017Installation(out installationInfo: VisualStudioInstallation) bool
+fn getVisualStudio2017Installation(out installationInfo: Result) bool
 {
 	log.info("Searching for Visual Studio 2017 using registry");
 
@@ -147,7 +147,7 @@ fn getVisualStudio2017Installation(out installationInfo: VisualStudioInstallatio
 	}
 
 	installationInfo.ver = VisualStudioVersion.V2017;
-	installationInfo.dumpVisualStudioInstallation("Found a VisualStudioInstallation");
+	installationInfo.dump("Found a VisualStudioInstallation");
 	return true;
 }
 

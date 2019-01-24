@@ -9,7 +9,7 @@
  */
 module battery.detect.visualStudio;
 
-import watt = [watt.io.file, watt.text.sink, watt.process.environment];
+import watt = [watt.io.file, watt.text.sink];
 
 import battery.detect.visualStudio.logging;
 import battery.detect.visualStudio.windows;
@@ -28,9 +28,22 @@ enum VisualStudioVersion
 }
 
 /*!
+ * From environment.
+ */
+struct FromEnv
+{
+	vcInstallDir: string;
+	vcToolsInstallDir: string;
+	universalCrtDir: string;
+	universalCrtVersion: string;
+	windowsSdkDir: string;
+	windowsSdkVersion: string;
+}
+
+/*!
  * Contains information on a particular Visual Studio installation.
  */
-struct VisualStudioInstallation
+struct Result
 {
 public:
 	fn addLibPath(path: string)
@@ -92,34 +105,36 @@ fn visualStudioVersionToString(ver: VisualStudioVersion) string
  * Only returns supported versions. Only works on 64 bit systems. An installation
  * is only considered valid if VC is installed.
  */
-fn getVisualStudioInstallations(env: watt.Environment) VisualStudioInstallation[]
+fn detect(ref fromEnv: FromEnv, out results: Result[]) bool
 {
-	installations: VisualStudioInstallation[];
-	installationInfo: VisualStudioInstallation;
+	result: Result;
 
 	// Prefer 2017
-	version (Windows) if (getVisualStudio2017Installation(out installationInfo)) {
-		installations ~= installationInfo;
+	version (Windows) if (getVisualStudio2017Installation(out result)) {
+		results ~= result;
 	}
-	version (Windows) if (getVisualStudio2015Installation(out installationInfo)) {
-		installations ~= installationInfo;
+	version (Windows) if (getVisualStudio2015Installation(out result)) {
+		results ~= result;
 	}
-	if (getVisualStudioEnvInstallations(out installationInfo, env)) {
-		installations ~= installationInfo;
+	if (getVisualStudioEnvInstallations(ref fromEnv, out result)) {
+		results ~= result;
 	}
 
-	return installations;
+	return results.length != 0;
 }
 
-fn getVisualStudioEnvInstallations(out installationInfo: VisualStudioInstallation, env: watt.Environment) bool
+
+private:
+
+fn getVisualStudioEnvInstallations(ref fromEnv: FromEnv, out installationInfo: Result) bool
 {
 	log.info("Searching for Visual Studio using enviroment");
 
 	//installationInfo.oldInc = env.getOrNull("INCLUDE");
 	//installationInfo.oldLib = env.getOrNull("LIB");
 
-	dirVC := env.getOrNull("VCINSTALLDIR");
-	dirVCTools := env.getOrNull("VCTOOLSINSTALLDIR");
+	dirVC := fromEnv.vcInstallDir;
+	dirVCTools := fromEnv.vcToolsInstallDir;
 
 	if (dirVCTools !is null) {
 		installationInfo.ver = VisualStudioVersion.V2017;
@@ -133,18 +148,17 @@ fn getVisualStudioEnvInstallations(out installationInfo: VisualStudioInstallatio
 		return false;
 	}
 
-	fn getOrWarn(name: string) string {
-		value := env.getOrNull(name);
+	fn getOrWarn(value: string, name: string) string {
 		if (value.length == 0) {
 			log.info(new "Missing env var '${name}'");
 		}
 		return value;
 	}
 
-	installationInfo.universalCrtDir = getOrWarn("UniversalCRTSdkDir");
-	installationInfo.windowsSdkDir = getOrWarn("WindowsSdkDir");
-	installationInfo.universalCrtVersion = getOrWarn("UCRTVersion");
-	installationInfo.windowsSdkVersion = getOrWarn("WindowsSDKVersion");
+	installationInfo.universalCrtDir = getOrWarn(fromEnv.universalCrtDir, "UniversalCRTSdkDir");
+	installationInfo.windowsSdkDir = getOrWarn(fromEnv.windowsSdkDir, "WindowsSdkDir");
+	installationInfo.universalCrtVersion = getOrWarn(fromEnv.universalCrtVersion, "UCRTVersion");
+	installationInfo.windowsSdkVersion = getOrWarn(fromEnv.windowsSdkVersion, "WindowsSDKVersion");
 
 	if (installationInfo.universalCrtDir.length == 0 ||
 	    installationInfo.universalCrtVersion.length == 0 ||
@@ -154,6 +168,6 @@ fn getVisualStudioEnvInstallations(out installationInfo: VisualStudioInstallatio
 		return false;
 	}
 
-	installationInfo.dumpVisualStudioInstallation("Found a VisualStudioInstallation");
+	installationInfo.dump("Found a VisualStudioInstallation");
 	return true;
 }

@@ -15,6 +15,15 @@ static import battery.util.log;
 
 
 /*!
+ * Used as a argument when supplying a command on the command line.
+ */
+struct FromArgs
+{
+	cmd: string;
+	args: string[];
+}
+
+/*!
  * The result of the dection, also holds any extra arguments to get rdmd
  * to output in the correct format.
  */
@@ -50,21 +59,21 @@ fn detectFromPath(path: string, out results: Result[]) bool
 /*!
  * Detect rdmd from arguments.
  */
-fn detectFromArgs(cmd: string, args: string[], out result: Result) bool
+fn detectFromArgs(ref arg: FromArgs, out result: Result) bool
 {
-	if (cmd is null) {
+	if (arg.cmd is null) {
 		return false;
 	}
 
 	log.info("Checking rdmd from args.");
 
-	if (!checkArgCmd(ref log, cmd, "rdmd")) {
+	if (!checkArgCmd(ref log, arg.cmd, "rdmd")) {
 		return false;
 	}
 
 	result.from = "args";
-	result.cmd = cmd;
-	result.args = args;
+	result.cmd = arg.cmd;
+	result.args = arg.args;
 	result.dump("Found");
 	return true;
 }

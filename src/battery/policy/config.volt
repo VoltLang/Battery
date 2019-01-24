@@ -15,12 +15,12 @@ import battery.commonInterfaces;
 import battery.configuration;
 import battery.policy.tools;
 import battery.util.path : searchPath;
-import battery.detect.visualStudio;
 
 import llvm = battery.detect.llvm;
 import gdc = battery.detect.gdc;
 import rdmd = battery.detect.rdmd;
 import nasm = battery.detect.nasm;
+import msvc = battery.detect.visualStudio;
 
 
 fn getProjectConfig(drv: Driver, arch: Arch, platform: Platform) Configuration
@@ -187,36 +187,32 @@ enum UseAsLinker
 
 fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 {
-	configFromArg := drv.getCmd(config.isBootstrap, LLVMConfigName);
-	arFromArg :=     drv.getCmd(config.isBootstrap, LLVMArName);
-	clangFromArg :=  drv.getCmd(config.isBootstrap, ClangName);
-	ldFromArg :=     drv.getCmd(config.isBootstrap, LDLLDName);
-	linkFromArg :=   drv.getCmd(config.isBootstrap, LLDLinkName);
-
-	arg: llvm.Argument;
-	arg.arch = config.arch;
-	arg.platform = config.platform;
-	arg.path = config.env.getOrNull("PATH");
-	arg.need.fillInNeeded(config);
-	arg.configCmd = configFromArg !is null ? configFromArg.cmd : null;
-	arg.arCmd = arFromArg !is null ? arFromArg.cmd : null;
-	arg.clangCmd = clangFromArg !is null ? clangFromArg.cmd : null;
-	arg.ldCmd = ldFromArg !is null ? ldFromArg.cmd : null;
-	arg.linkCmd = linkFromArg !is null ? linkFromArg.cmd : null;
-
+	fromArgs: llvm.FromArgs;
 	results: llvm.Result[];
-	if (!llvm.detect(ref arg, out results)) {
-		drv.abort("Could not find any LLVM Toolchain!");
+	result: llvm.Result;
+	need: llvm.Needed;
+	confPaths := [config.llvmConf];
+	path := config.env.getOrNull("PATH");
+
+	need.fillInNeeded(config);
+	fillIfFound(drv, config, LLVMConfigName, out fromArgs.configCmd, out fromArgs.configArgs);
+	fillIfFound(drv, config, LLVMArName, out fromArgs.arCmd, out fromArgs.arArgs);
+	fillIfFound(drv, config, ClangName, out fromArgs.clangCmd, out fromArgs.clangArgs);
+	fillIfFound(drv, config, LDLLDName, out fromArgs.ldCmd, out fromArgs.ldArgs);
+	fillIfFound(drv, config, LLDLinkName, out fromArgs.linkCmd, out fromArgs.linkArgs);
+
+	llvm.detectFrom(path, confPaths, out results);
+	if (llvm.detectFromArgs(ref fromArgs, out result)) {
+		results = result ~ results;
 	}
 
-	result: llvm.Result;
 	found: bool;
 	foreach (ref res; results) {
-		if (!res.hasNeeded(ref arg.need)) {
+		if (!res.hasNeeded(ref need)) {
 			continue;
 		}
 
-		result = res;
+		llvm.addArgs(ref res, config.arch, config.platform, out result);
 		found = true;
 		break;
 	}
@@ -231,16 +227,16 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 	linkCommand: Command;
 	clangCommand: Command;
 
-	if (result.configCmd !is null && arg.need.config) {
+	if (result.configCmd !is null && need.config) {
 		configCommand = config.addTool(LLVMConfigName, result.configCmd, result.configArgs);
 	}
-	if (result.arCmd !is null && arg.need.ar) {
+	if (result.arCmd !is null && need.ar) {
 		arCommand = config.addTool(LLVMArName, result.arCmd, result.arArgs);
 	}
-	if (result.ldCmd !is null && arg.need.ld) {
+	if (result.ldCmd !is null && need.ld) {
 		ldCommand = config.addTool(LDLLDName, result.ldCmd, result.ldArgs);
 	}
-	if (result.linkCmd !is null && arg.need.link) {
+	if (result.linkCmd !is null && need.link) {
 		linkCommand = config.addTool(LLDLinkName, result.linkCmd, result.linkArgs);
 	}
 
@@ -315,7 +311,7 @@ public:
 	oldPath: string;
 
 	//! Best guess which MSVC thing we are using.
-	msvcVer: VisualStudioVersion;
+	msvcVer: msvc.VisualStudioVersion;
 
 	//! Install directory for compiler and linker, from either
 	//! @p VCTOOLSINSTALLDIR or @p VCINSTALLDIR env.
@@ -411,7 +407,7 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 	// Always add the common arguments to the linker.
 	addCommonLinkerArgsMSVC(config, linker);
 
-	verStr := vars.msvcVer.visualStudioVersionToString();
+	verStr := msvc.visualStudioVersionToString(vars.msvcVer);
 	drv.info("Using Visual Studio Build Tools %s.", verStr);
 	if (linkerFromLLVM) {
 		drv.info("\tcmd linker: Linking with lld-link.exe from LLVM toolchain.");
@@ -466,7 +462,7 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 		linker.args ~= format("/LIBPATH:%s", l);
 	}
 
-	verStr := vars.msvcVer.visualStudioVersionToString();
+	verStr := msvc.visualStudioVersionToString(vars.msvcVer);
 	drv.info("Using MSVC %s from the enviroment.", verStr);
 	if (linkerFromArg) {
 		drv.infoCmd(config, linker, linkerFromArg ? "args" : "path");
@@ -475,8 +471,17 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 
 fn getDirsFromRegistry(ref vars: VarsForMSVC, drv: Driver, env: Environment)
 {
-	vsInstalls := getVisualStudioInstallations(env);
-	if (vsInstalls.length == 0) {
+	vsInstalls: msvc.Result[];
+	fromEnv: msvc.FromEnv;
+	fromEnv.vcInstallDir  = env.getOrNull("VCINSTALLDIR");
+	fromEnv.vcToolsInstallDir = env.getOrNull("VCTOOLSINSTALLDIR");
+	fromEnv.universalCrtDir = env.getOrNull("UniversalCRTSdkDir");
+	fromEnv.windowsSdkDir = env.getOrNull("WindowsSdkDir");
+	fromEnv.universalCrtVersion = env.getOrNull("UCRTVersion");
+	fromEnv.windowsSdkVersion = env.getOrNull("WindowsSDKVersion");
+
+
+	if (!msvc.detect(ref fromEnv, out vsInstalls)) {
 		drv.info("couldn't find visual studio installation falling back to env vars");
 		vars.getDirsFromEnv(drv, env);
 		return;
@@ -500,8 +505,16 @@ fn getDirsFromRegistry(ref vars: VarsForMSVC, drv: Driver, env: Environment)
 
 fn getDirsFromEnv(ref vars: VarsForMSVC, drv: Driver, env: Environment)
 {
-	vsInstalls := getVisualStudioInstallations(env);
-	if (vsInstalls.length == 0) {
+	vsInstalls: msvc.Result[];
+	fromEnv: msvc.FromEnv;
+	fromEnv.vcInstallDir  = env.getOrNull("VCINSTALLDIR");
+	fromEnv.vcToolsInstallDir = env.getOrNull("VCTOOLSINSTALLDIR");
+	fromEnv.universalCrtDir = env.getOrNull("UniversalCRTSdkDir");
+	fromEnv.windowsSdkDir = env.getOrNull("WindowsSdkDir");
+	fromEnv.universalCrtVersion = env.getOrNull("UCRTVersion");
+	fromEnv.windowsSdkVersion = env.getOrNull("WindowsSDKVersion");
+
+	if (!msvc.detect(ref fromEnv, out vsInstalls)) {
 		drv.info("couldn't find visual studio installation falling back to env vars");
 		return;
 	}
@@ -530,7 +543,7 @@ fn fillInListsForMSVC(ref vars: VarsForMSVC)
 	vars.tPath(format("%s/bin/x86", vars.dirWinSDK));
 	vars.tPath(format("%s/bin/x64", vars.dirWinSDK));
 
-	final switch (vars.msvcVer) with (VisualStudioVersion) {
+	final switch (vars.msvcVer) with (msvc.VisualStudioVersion) {
 	case Unknown, MaxVersion:
 		break;
 	case V2015:
@@ -697,6 +710,7 @@ fn addCommonLinkerArgsMSVC(config: Configuration, linker: Command)
 
 fn doGDC(drv: Driver, config: Configuration) bool
 {
+	fromArgs: gdc.FromArgs;
 	results: gdc.Result[];
 	result: gdc.Result;
 
@@ -705,8 +719,8 @@ fn doGDC(drv: Driver, config: Configuration) bool
 	gdc.detectFromPath(path, out results);
 
 	// Did we get anything from the path?
-	fromArgs := drv.getCmd(config.isBootstrap, GdcName);
-	if (fromArgs !is null && gdc.detectFromArgs(fromArgs.cmd, fromArgs.args, out result)) {
+	fillIfFound(drv, config, GdcName, out fromArgs.cmd, out fromArgs.args);
+	if (gdc.detectFromArgs(ref fromArgs, out result)) {
 		results = result ~ results;
 	}
 
@@ -737,6 +751,7 @@ fn doGDC(drv: Driver, config: Configuration) bool
 
 fn doRDMD(drv: Driver, config: Configuration) bool
 {
+	fromArgs: rdmd.FromArgs;
 	results: rdmd.Result[];
 	result: rdmd.Result;
 
@@ -745,8 +760,8 @@ fn doRDMD(drv: Driver, config: Configuration) bool
 	rdmd.detectFromPath(path, out results);
 
 	// Did we get anything from the path?
-	fromArgs := drv.getCmd(config.isBootstrap, RdmdName);
-	if (fromArgs !is null && rdmd.detectFromArgs(fromArgs.cmd, fromArgs.args, out result)) {
+	fillIfFound(drv, config, RdmdName, out fromArgs.cmd, out fromArgs.args);
+	if (rdmd.detectFromArgs(ref fromArgs, out result)) {
 		results = result ~ results;
 	}
 
@@ -766,6 +781,7 @@ fn doRDMD(drv: Driver, config: Configuration) bool
 
 fn doNASM(drv: Driver, config: Configuration) bool
 {
+	fromArgs: nasm.FromArgs;
 	results: nasm.Result[];
 	result: nasm.Result;
 
@@ -774,8 +790,8 @@ fn doNASM(drv: Driver, config: Configuration) bool
 	nasm.detectFromPath(path, out results);
 
 	// Did we get anything from the path?
-	fromArgs := drv.getCmd(config.isBootstrap, NasmName);
-	if (fromArgs !is null && nasm.detectFromArgs(fromArgs.cmd, fromArgs.args, out result)) {
+	fillIfFound(drv, config, NasmName, out fromArgs.cmd, out fromArgs.args);
+	if (nasm.detectFromArgs(ref fromArgs, out result)) {
 		results = result ~ results;
 	}
 
@@ -868,4 +884,14 @@ fn makeCommandFromPath(config: Configuration, cmd: string, name: string) Command
 	c.cmd = cmd;
 	c.name = name;
 	return c;
+}
+
+fn fillIfFound(drv: Driver, config: Configuration, name: string, out cmd: string, out args: string[])
+{
+	c := drv.getCmd(config.isBootstrap, name);
+	if (c is null) {
+		return;
+	}
+	cmd = c.cmd;
+	args = c.args;
 }

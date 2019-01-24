@@ -17,20 +17,20 @@ import battery.detect.visualStudio;
  */
 global log: battery.util.log.Logger = {"detect.visualStudio"};
 
-fn dumpVisualStudioInstallation(ref installationInfo: VisualStudioInstallation, message: string)
+fn dump(ref result: Result, message: string)
 {
 	ss: watt.StringSink;
 
 	ss.sink(message);
-	watt.format(ss.sink, "\n\tver = %s", installationInfo.ver.visualStudioVersionToString());
-	watt.format(ss.sink, "\n\tvcInstallDir = %s", installationInfo.vcInstallDir);
-	watt.format(ss.sink, "\n\twindowsSdkDir = %s", installationInfo.windowsSdkDir);
-	watt.format(ss.sink, "\n\twindowsSdkVersion = %s", installationInfo.windowsSdkVersion);
-	watt.format(ss.sink, "\n\tuniversalCrtDir = %s", installationInfo.universalCrtDir);
-	watt.format(ss.sink, "\n\tuniversalCrtVersion = %s", installationInfo.universalCrtVersion);
-	watt.format(ss.sink, "\n\tlinkerPath = %s", installationInfo.linkerPath);
+	watt.format(ss.sink, "\n\tver = %s", result.ver.visualStudioVersionToString());
+	watt.format(ss.sink, "\n\tvcInstallDir = %s", result.vcInstallDir);
+	watt.format(ss.sink, "\n\twindowsSdkDir = %s", result.windowsSdkDir);
+	watt.format(ss.sink, "\n\twindowsSdkVersion = %s", result.windowsSdkVersion);
+	watt.format(ss.sink, "\n\tuniversalCrtDir = %s", result.universalCrtDir);
+	watt.format(ss.sink, "\n\tuniversalCrtVersion = %s", result.universalCrtVersion);
+	watt.format(ss.sink, "\n\tlinkerPath = %s", result.linkerPath);
 	watt.format(ss.sink, "\n\tlibs = [");
-	foreach (_lib; installationInfo.libsAsPaths) {
+	foreach (_lib; result.libsAsPaths) {
 		ss.sink("\n\t\t");
 		ss.sink(_lib);
 	}
