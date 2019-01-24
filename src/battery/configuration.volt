@@ -89,7 +89,7 @@ public:
 	{
 		c := getTool(name);
 		if (c !is null) {
-			throw new Exception("redefining tool '%s'", name);
+			throw new Exception(new "redefining tool ${name}");
 		}
 		c = new Command();
 		c.name = name;
