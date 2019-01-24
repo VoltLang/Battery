@@ -3,15 +3,15 @@
 /*!
  * Detect Visual Studio installations.
  */
-module battery.detect.visualStudio.windows;
+module battery.detect.msvc.windows;
 
 version (Windows):
 
 import watt = [watt.algorithm, watt.conv, watt.io.file,
 	watt.text.path, watt.text.sink, watt.text.string];
 
-import battery.detect.visualStudio;
-import battery.detect.visualStudio.logging;
+import battery.detect.msvc;
+import battery.detect.msvc.logging;
 
 import win32 = core.c.windows;
 import c = core.c.string;

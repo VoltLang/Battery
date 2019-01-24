@@ -7,12 +7,12 @@
  * @todo Remove lib property.
  * @todo Move expansions of libs and includes into here.
  */
-module battery.detect.visualStudio;
+module battery.detect.msvc;
 
 import watt = [watt.io.file, watt.text.sink];
 
-import battery.detect.visualStudio.logging;
-import battery.detect.visualStudio.windows;
+import battery.detect.msvc.logging;
+import battery.detect.msvc.windows;
 
 
 /*!

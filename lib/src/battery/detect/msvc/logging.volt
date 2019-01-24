@@ -3,19 +3,19 @@
 /*!
  * Shared logger for Visual Studio detection code.
  */
-module battery.detect.visualStudio.logging;
+module battery.detect.msvc.logging;
 
 static import battery.util.log;
 
 import watt = [watt.text.sink, watt.text.string];
 
-import battery.detect.visualStudio;
+import battery.detect.msvc;
 
 
 /*!
  * So we get the right prefix on logged messages.
  */
-global log: battery.util.log.Logger = {"detect.visualStudio"};
+global log: battery.util.log.Logger = {"detect.msvc"};
 
 fn dump(ref result: Result, message: string)
 {

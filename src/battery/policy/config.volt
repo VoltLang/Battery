@@ -20,7 +20,7 @@ import llvm = battery.detect.llvm;
 import gdc = battery.detect.gdc;
 import rdmd = battery.detect.rdmd;
 import nasm = battery.detect.nasm;
-import msvc = battery.detect.visualStudio;
+import msvc = battery.detect.msvc;
 
 
 fn getProjectConfig(drv: Driver, arch: Arch, platform: Platform) Configuration
