@@ -16,8 +16,8 @@ import battery.configuration;
 import battery.policy.tools;
 import battery.util.path : searchPath;
 
-import llvm = battery.detect.llvm;
 import gdc = battery.detect.gdc;
+import llvm = battery.detect.llvm;
 import rdmd = battery.detect.rdmd;
 import nasm = battery.detect.nasm;
 import msvc = battery.detect.msvc;
@@ -124,6 +124,7 @@ fn doEnv(drv: Driver, config: Configuration, outside: Environment)
 
 		// Only needed for RDMD if the installer wasn't used.
 		copyIfNotSet("VCINSTALLDIR");
+		copyIfNotSet("VCTOOLSINSTALLDIR");
 		copyIfNotSet("WindowsSdkDir");
 		copyIfNotSet("WindowsSDKVersion");
 		copyIfNotSet("UniversalCRTSdkDir");
@@ -185,39 +186,53 @@ enum UseAsLinker
 	YES,
 }
 
-fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
+fn pickLLVM(drv: Driver, config: Configuration,
+            out need: llvm.Needed, out result: llvm.Result) bool
 {
 	fromArgs: llvm.FromArgs;
 	results: llvm.Result[];
-	result: llvm.Result;
-	need: llvm.Needed;
-	confPaths := [config.llvmConf];
-	path := config.env.getOrNull("PATH");
+	temp: llvm.Result;
 
-	need.fillInNeeded(config);
+	// Needed to detect.
+	path := config.env.getOrNull("PATH");
+	llvmConfs := [config.llvmConf];
+
+	// Main detection.
+	llvm.detectFrom(path, llvmConfs, out results);
+
+	// Add from args.
 	fillIfFound(drv, config, LLVMConfigName, out fromArgs.configCmd, out fromArgs.configArgs);
 	fillIfFound(drv, config, LLVMArName, out fromArgs.arCmd, out fromArgs.arArgs);
 	fillIfFound(drv, config, ClangName, out fromArgs.clangCmd, out fromArgs.clangArgs);
 	fillIfFound(drv, config, LDLLDName, out fromArgs.ldCmd, out fromArgs.ldArgs);
 	fillIfFound(drv, config, LLDLinkName, out fromArgs.linkCmd, out fromArgs.linkArgs);
-
-	llvm.detectFrom(path, confPaths, out results);
-	if (llvm.detectFromArgs(ref fromArgs, out result)) {
-		results = result ~ results;
+	if (llvm.detectFromArgs(ref fromArgs, out temp)) {
+		results = temp ~ results;
 	}
 
-	found: bool;
+	// What do we need?
+	need.fillInNeeded(config);
+
+	// Loop the results.
 	foreach (ref res; results) {
 		if (!res.hasNeeded(ref need)) {
 			continue;
 		}
 
 		llvm.addArgs(ref res, config.arch, config.platform, out result);
-		found = true;
-		break;
+		return true;
 	}
 
-	if (!found) {
+	return false;
+}
+
+fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
+{
+	result: llvm.Result;
+	need: llvm.Needed;
+
+	// Pick the best suited LLVM toolchain found.
+	if (!pickLLVM(drv, config, out need, out result)) {
 		drv.abort("No valid LLVM Toolchains found!");
 	}
 
@@ -225,7 +240,7 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 	arCommand: Command;
 	ldCommand: Command;
 	linkCommand: Command;
-	clangCommand: Command;
+	clang: Command;
 
 	if (result.configCmd !is null && need.config) {
 		configCommand = config.addTool(LLVMConfigName, result.configCmd, result.configArgs);
@@ -259,7 +274,7 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 		assert(result.clangCmd !is null);
 
 		// Setup clang and cc tools.
-		clang := config.addTool(ClangName, result.clangCmd, result.clangArgs);
+		clang = config.addTool(ClangName, result.clangCmd, result.clangArgs);
 		cc := config.addTool(CCName, result.clangCmd, result.clangArgs);
 
 		// Add any extra arguments.
@@ -287,7 +302,7 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 
 	drv.info("Using LLVM-%s toolchain from %s.", result.ver, result.from);
 	if (configCommand !is null) drv.infoCmd(config, configCommand, result.from);
-	if (clangCommand  !is null) drv.infoCmd(config, clangCommand,  result.from);
+	if (clang         !is null) drv.infoCmd(config, clang,         result.from);
 	if (arCommand     !is null) drv.infoCmd(config, arCommand,     result.from);
 	if (ldCommand     !is null) drv.infoCmd(config, ldCommand,     result.from);
 	if (linkCommand   !is null) drv.infoCmd(config, linkCommand,   result.from);
