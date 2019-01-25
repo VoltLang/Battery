@@ -177,6 +177,7 @@ fn hasNeeded(ref res: llvm.Result, ref need: llvm.Needed) bool
 	if (need.ar && (res.arCmd is null)) return false;
 	if (need.link && (res.linkCmd is null)) return false;
 	if (need.ld && (res.ldCmd is null)) return false;
+	if (need.wasm && (res.wasmCmd is null)) return false;
 	return true;
 }
 
@@ -206,6 +207,7 @@ fn pickLLVM(drv: Driver, config: Configuration,
 	fillIfFound(drv, config, ClangName, out fromArgs.clangCmd, out fromArgs.clangArgs);
 	fillIfFound(drv, config, LDLLDName, out fromArgs.ldCmd, out fromArgs.ldArgs);
 	fillIfFound(drv, config, LLDLinkName, out fromArgs.linkCmd, out fromArgs.linkArgs);
+	fillIfFound(drv, config, WasmLLDName, out fromArgs.wasmCmd, out fromArgs.wasmArgs);
 	if (llvm.detectFromArgs(ref fromArgs, out temp)) {
 		results = temp ~ results;
 	}
@@ -240,6 +242,7 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 	arCommand: Command;
 	ldCommand: Command;
 	linkCommand: Command;
+	wasmCommand: Command;
 	clang: Command;
 
 	if (result.configCmd !is null && need.config) {
@@ -253,6 +256,9 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 	}
 	if (result.linkCmd !is null && need.link) {
 		linkCommand = config.addTool(LLDLinkName, result.linkCmd, result.linkArgs);
+	}
+	if (result.wasmCmd !is null && need.wasm) {
+		wasmCommand = config.addTool(WasmLLDName, result.wasmCmd, result.wasmArgs);
 	}
 
 	// If needed setup the linker command.
@@ -306,6 +312,7 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 	if (arCommand     !is null) drv.infoCmd(config, arCommand,     result.from);
 	if (ldCommand     !is null) drv.infoCmd(config, ldCommand,     result.from);
 	if (linkCommand   !is null) drv.infoCmd(config, linkCommand,   result.from);
+	if (wasmCommand   !is null) drv.infoCmd(config, wasmCommand,   result.from);
 }
 
 

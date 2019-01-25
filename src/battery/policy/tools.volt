@@ -21,6 +21,7 @@ enum LLVMArName = "llvm-ar";
 enum ClangName = "clang";
 enum LDLLDName = "ld.lld";
 enum LLDLinkName = "lld-link";
+enum WasmLLDName = "wasm-ld";
 
 enum NasmCommand = NasmName;
 enum RdmdCommand = RdmdName;
@@ -32,6 +33,7 @@ enum LLVMArCommand = LLVMArName;
 enum ClangCommand = ClangName;
 enum LDLLDCommand = LDLLDName;
 enum LLDLinkCommand = LLDLinkName;
+enum WasmLLDCommand = WasmLLDName;
 
 enum VoltaPrint =      "  VOLTA    ";
 enum NasmPrint =       "  NASM     ";
@@ -44,6 +46,7 @@ enum LLVMArPrint =     "  LLVM-AR  ";
 enum ClangPrint =      "  CLANG    ";
 enum LDLLDPrint =      "  LD.LLD   ";
 enum LLDLinkPrint =    "  LLD-LINK ";
+enum WasmLLDPrin =     "  WASM-LD  ";
 
 enum HostRdmdPrint =   "  HOSTRDMD ";
 enum HostGdcPrint =    "  HOSTGDC  ";

@@ -29,7 +29,7 @@ import battery.util.path;
 struct Needed
 {
 public:
-	config, ar, clang, ld, link: bool;
+	config, ar, clang, ld, link, wasm: bool;
 }
 
 /*!
