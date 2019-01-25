@@ -2,17 +2,10 @@
 // SPDX-License-Identifier: BSL-1.0
 module battery.policy.tools;
 
-import watt.text.format : format;
-import watt.text.string : split, startsWith, endsWith;
-import watt.path : pathSeparator, dirSeparator, exists;
-import watt.process : retriveEnvironment, Environment;
 import battery.commonInterfaces;
 import battery.configuration;
 import battery.driver;
-import battery.util.path : searchPath;
 import llvmVersion = battery.frontend.llvmVersion;
-
-import nasm = battery.detect.nasm;
 
 
 enum VoltaName = "volta";
