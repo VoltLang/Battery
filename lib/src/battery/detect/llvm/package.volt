@@ -117,7 +117,11 @@ fn detectFrom(path: string, confPaths: string[], out results: Result[]) bool
 fn detectFromArgs(ref fromArgs: FromArgs, out result: Result) bool
 {
 	// Arguments have the highest precedence.
-	return getFromArgs(ref fromArgs, out result);
+	if (getFromArgs(ref fromArgs, out result)) {
+		result.dump("Found");
+		return true;
+	}
+	return false;
 }
 
 /*!
@@ -151,24 +155,34 @@ fn getFromConf(confPath: string, out res: Result) bool
 
 fn getFromArgs(ref fromArgs: FromArgs, out res: Result) bool
 {
-	if (checkArgCmd(fromArgs.configCmd, "llvm-config")) {
-		res.configCmd = fromArgs.configCmd;
-	} else {
-		log.info("The llvm-config command was not given, skipping all other given commands.");
-		return false;
+	// First see if we where given llvm-config or clang.
+	res.configCmd = fromArgs.configCmd;
+	if (!checkArgCmd(res.configCmd, "llvm-config")) {
+		res.configCmd = null;
+	}
+	res.clangCmd = fromArgs.clangCmd;
+	if (!checkArgCmd(res.clangCmd, "clang")) {
+		res.clangCmd = null;
 	}
 
-	res.ver = getVersionFromConfig(res.configCmd);
+	if (res.configCmd !is null) {
+		res.ver = getVersionFromConfig(res.configCmd);
+	} else if (res.clangCmd !is null) {
+		res.ver = getVersionFromClang(res.clangCmd);
+	}
+
+	// Error out if llvm-config is needed and is missing.
 	if (res.ver is null) {
+		if (res.configCmd is null && res.clangCmd is null) {
+			log.info("Was not given 'llvm-config' nor 'clang' as arguments, skipping other commands.");
+		} else {
+			log.info(new "Could not determine LLVM$ version!\n\tllvm-config = '${res.configCmd}'\n\tclang = '${res.clangCmd}'");
+		}
 		return false;
 	}
 
 	if (checkArgCmd(fromArgs.arCmd, "llvm-ar")) {
 		res.arCmd = fromArgs.arCmd;
-	}
-
-	if (checkArgCmd(fromArgs.clangCmd, "clang")) {
-		res.clangCmd = fromArgs.clangCmd;
 	}
 
 	if (checkArgCmd(fromArgs.ldCmd, "ld.lld")) {
@@ -189,7 +203,7 @@ fn getFromArgs(ref fromArgs: FromArgs, out res: Result) bool
 
 fn getFromPath(path: string, suffix: string, out res: Result) bool
 {
-	// First look for llvm-config if it is needed.
+	// First look for llvm-config or clang.
 	res.configCmd = searchPath(path, "llvm-config" ~ suffix);
 	res.clangCmd = searchPath(path, "clang" ~ suffix);
 
