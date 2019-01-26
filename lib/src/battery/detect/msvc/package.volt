@@ -3,9 +3,6 @@
 // SPDX-License-Identifier: BSL-1.0
 /*!
  * Detect Visual Studio installations.
- *
- * @todo Remove lib property.
- * @todo Move expansions of libs and includes into here.
  */
 module battery.detect.msvc;
 
