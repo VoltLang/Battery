@@ -26,21 +26,30 @@ fn importDepFile(ins: Instance, file: SinkArg)
 
 	last: size_t;
 	skip: bool;
+	newline: bool;
+
 	foreach (i, char c; str) {
 		switch (c) {
 		case '\n':
-			if (!skip) {
-				parseDeps(ins, file, str[last .. i]);
-				last = i;
-			}
-			skip = false;
+			newline = true;
+			break;
+		case '\r':
+			newline = true;
 			break;
 		case '\\':
 			skip = true;
 			break;
 		default:
+			if (newline && !skip) {
+				parseDeps(ins, file, str[last .. i]);
+				last = i;
+			}
+			newline = false;
 			skip = false;
 		}
+	}
+	if (newline && !skip) {
+		parseDeps(ins, file, str[last .. $]);
 	}
 }
 
