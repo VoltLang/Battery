@@ -11,6 +11,7 @@ import watt = [watt.algorithm, watt.conv, watt.io.file,
 	watt.text.path, watt.text.sink, watt.text.string];
 
 import battery.detect.msvc;
+import battery.detect.msvc.util;
 import battery.detect.msvc.logging;
 
 import win32 = core.c.windows;
@@ -88,11 +89,6 @@ fn getUniversalSdkInformation(ref installationInfo: Result) bool
 		}
 	}
 
-	installationInfo.addLibPath(watt.concatenatePath(installationInfo.universalCrtDir,
-		new "lib\\${installationInfo.universalCrtVersion}\\ucrt\\x64"));
-	installationInfo.addLibPath(watt.concatenatePath(installationInfo.windowsSdkDir,
-		new "lib\\${installationInfo.windowsSdkVersion}\\um\\x64"));
-
 	return true;
 }
 
@@ -107,19 +103,14 @@ fn getVisualStudio2015Installation(out installationInfo: Result) bool
 		return false;
 	}
 
-	installationInfo.addLibPath(watt.concatenatePath(installationInfo.vcInstallDir, "LIB\\amd64"));
-
 	if (!getUniversalSdkInformation(ref installationInfo)) {
 		log.info("Could not get Universal SDK information");
 		return false;
 	}
 
-	proposedLinkerPath := watt.concatenatePath(installationInfo.vcInstallDir, "bin\\amd64");
-	if (watt.exists(watt.concatenatePath(proposedLinkerPath, "link.exe"))) {
-		installationInfo.linkerPath = proposedLinkerPath;
-	}
-
 	installationInfo.ver = VisualStudioVersion.V2015;
+	installationInfo.from = "registry";
+	installationInfo.addLinkAndCL("bin\\amd64");
 	installationInfo.dump("Found a VisualStudioInstallation");
 	return true;
 }
@@ -134,19 +125,14 @@ fn getVisualStudio2017Installation(out installationInfo: Result) bool
 		return false;
 	}
 
-	installationInfo.addLibPath(watt.concatenatePath(installationInfo.vcInstallDir, "lib\\x64"));
-
 	if (!getUniversalSdkInformation(ref installationInfo)) {
 		log.info("Could not get Universal SDK information");
 		return false;
 	}
 
-	proposedLinkerPath := watt.concatenatePath(installationInfo.vcInstallDir, "bin\\Hostx64\\x64");
-	if (watt.exists(watt.concatenatePath(proposedLinkerPath, "link.exe"))) {
-		installationInfo.linkerPath = proposedLinkerPath;
-	}
-
 	installationInfo.ver = VisualStudioVersion.V2017;
+	installationInfo.from = "registry";
+	installationInfo.addLinkAndCL("bin\\Hostx64\\x64");
 	installationInfo.dump("Found a VisualStudioInstallation");
 	return true;
 }

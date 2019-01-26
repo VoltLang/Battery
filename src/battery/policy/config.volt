@@ -7,7 +7,7 @@ module battery.policy.config;
 
 import watt.io.file : isDir;
 import watt.conv : toLower;
-import watt.text.string : join, split;
+import watt.text.string : join, split, endsWith;
 import watt.text.format : format;
 import watt.text.path : normalisePath;
 import watt.process : retrieveEnvironment, Environment;
@@ -65,7 +65,7 @@ fn doConfig(drv: Driver, config: Configuration)
 		doToolChainLLVM(drv, config, UseAsLinker.NO);
 
 		// Overwrite the LLVM toolchain a tiny bit.
-		if (config.isCross || config.isLTO) {
+		if (config.isCross) {
 			doToolChainCrossMSVC(drv, config, outside);
 		} else {
 			doToolChainNativeMSVC(drv, config, outside);
@@ -245,19 +245,19 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 	wasmCommand: Command;
 	clang: Command;
 
-	if (result.configCmd !is null && need.config) {
+	if (result.configCmd !is null) {
 		configCommand = config.addTool(LLVMConfigName, result.configCmd, result.configArgs);
 	}
-	if (result.arCmd !is null && need.ar) {
+	if (result.arCmd !is null) {
 		arCommand = config.addTool(LLVMArName, result.arCmd, result.arArgs);
 	}
-	if (result.ldCmd !is null && need.ld) {
+	if (result.ldCmd !is null) {
 		ldCommand = config.addTool(LDLLDName, result.ldCmd, result.ldArgs);
 	}
-	if (result.linkCmd !is null && need.link) {
+	if (result.linkCmd !is null) {
 		linkCommand = config.addTool(LLDLinkName, result.linkCmd, result.linkArgs);
 	}
-	if (result.wasmCmd !is null && need.wasm) {
+	if (result.wasmCmd !is null) {
 		wasmCommand = config.addTool(WasmLLDName, result.wasmCmd, result.wasmArgs);
 	}
 
@@ -334,6 +334,13 @@ public:
 
 	//! Best guess which MSVC thing we are using.
 	msvcVer: msvc.VisualStudioVersion;
+	//! How was this MSVC found?
+	from: string;
+
+	//! The cl.exe for this specific MSVC version.
+	clCmd: string;
+	//! The link.exe for this specific MSVC version.
+	linkCmd: string;
 
 	//! Install directory for compiler and linker, from either
 	//! @p VCTOOLSINSTALLDIR or @p VCINSTALLDIR env.
@@ -377,17 +384,9 @@ public:
 
 fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environment)
 {
-	fn overideIfNotSet(name: string, value: string) {
-		if (config.env.isSet(name)) {
-			return;
-		}
-
-		config.env.set(name, value);
-	}
-
 	lib, inc, path: string;
 	vars: VarsForMSVC;
-	vars.getDirsFromRegistry(drv, outside);
+	vars.getMSVCInfo(drv, outside);
 	vars.fillInListsForMSVC();
 	vars.genAndCheckEnv(drv, out inc, out lib, out path);
 
@@ -395,26 +394,45 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 	config.env.set("LIB", lib);
 	config.env.set("PATH", path);
 
-	overideIfNotSet("UniversalCRTSdkDir", vars.dirUCRT);
-	overideIfNotSet("WindowsSdkDir", vars.dirWinSDK);
-	overideIfNotSet("UCRTVersion", vars.numUCRT);
-	overideIfNotSet("WindowsSDKVersion", vars.numWinSDK);
+	config.env.set("UniversalCRTSdkDir", vars.dirUCRT);
+	config.env.set("WindowsSdkDir", vars.dirWinSDK);
+	config.env.set("UCRTVersion", vars.numUCRT);
+	config.env.set("WindowsSDKVersion", vars.numWinSDK);
+
+	// Setup cl.exe
+	cl := drv.getCmd(config.isBootstrap, CLName);
+	clFrom := "args";
+	if (cl !is null) {
+		cl = config.addTool(CLName, cl.cmd, cl.args);
+	} else if (vars.clCmd !is null) {
+		cl = config.addTool(CLName, vars.clCmd, null);
+		clFrom = vars.from;
+	}
+
+	// Setup link.exe
+	link := drv.getCmd(config.isBootstrap, LinkName);
+	linkFrom := "args";
+	if (link !is null) {
+		link = config.addTool(LinkName, link.cmd, link.args);
+	} else if (vars.linkCmd !is null) {
+		link = config.addTool(LinkName, vars.linkCmd, null);
+		linkFrom = vars.from;
+	}
 
 	// First see if the linker is specified.
 	linker := drv.getCmd(config.isBootstrap, LinkerName);
-	linkerFromArg := true;
-	linkerFromLLVM := false;
-
-	// If it was not specified try getting 'link.exe' from the path.
-	if (linker is null) {
-		linker = config.makeCommandFromPath(LinkCommand, LinkName);
-		linkerFromArg = false;
-	}
+	linkerFrom := "args";
 
 	// If it was not specified or found get 'lld-link' from the LLVM toolchain.
 	if (linker is null) {
 		linker = config.getTool(LLDLinkName);
-		linkerFromLLVM = true;
+		linkerFrom = "llvm";
+	}
+
+	// If it was not specified try getting from the MSVC installation.
+	if (linker is null) {
+		linker = link;
+		linkerFrom = linkFrom;
 	}
 
 	// Abort if we don't have a linker.
@@ -423,28 +441,16 @@ fn doToolChainNativeMSVC(drv: Driver, config: Configuration, outside: Environmen
 	}
 
 	// Always add it to the config.
-	assert(linker !is null);
 	linker = config.addTool(LinkerName, linker.cmd, linker.args);
 
 	// Always add the common arguments to the linker.
 	addCommonLinkerArgsMSVC(config, linker);
 
 	verStr := msvc.visualStudioVersionToString(vars.msvcVer);
-	drv.info("Using Visual Studio Build Tools %s.", verStr);
-	if (linkerFromLLVM) {
-		drv.info("\tcmd linker: Linking with lld-link.exe from LLVM toolchain.");
-	} else {
-		drv.infoCmd(config, linker, linkerFromArg ? "args" : "path");
-	}
-
-	cl := config.makeCommandFromPath(CLCommand, CLName);
-	if (cl !is null) {
-		/* We don't use this in the build, but it does get used to test
-		 * the ABI on Windows; so we don't error if it's missing, but
-		 * we do add it if we see it.
-		 */
-		config.addTool(CLName, cl.cmd, cl.args);
-	}
+	drv.info("Using Visual Studio Build Tools %s from %s.", verStr, vars.from);
+	if (cl !is null)     drv.infoCmd(config, cl, clFrom);
+	if (link !is null)   drv.infoCmd(config, link, linkFrom);
+	if (linker !is null) drv.infoCmd(config, linker, linkerFrom);
 }
 
 fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment)
@@ -473,7 +479,7 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 	assert(cc !is null);
 
 	vars: VarsForMSVC;
-	vars.getDirsFromEnv(drv, outside);
+	vars.getMSVCInfo(drv, outside);
 	vars.fillInListsForMSVC();
 
 	foreach (i; vars.inc) {
@@ -491,7 +497,7 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 	}
 }
 
-fn getDirsFromRegistry(ref vars: VarsForMSVC, drv: Driver, env: Environment)
+fn getMSVCInfo(ref vars: VarsForMSVC, drv: Driver, env: Environment)
 {
 	vsInstalls: msvc.Result[];
 	fromEnv: msvc.FromEnv;
@@ -504,60 +510,27 @@ fn getDirsFromRegistry(ref vars: VarsForMSVC, drv: Driver, env: Environment)
 
 
 	if (!msvc.detect(ref fromEnv, out vsInstalls)) {
-		drv.info("couldn't find visual studio installation falling back to env vars");
-		vars.getDirsFromEnv(drv, env);
-		return;
+		drv.abort("Couldn't find visual studio installation.");
 	}
 
 	// Advanced Visual Studio Selection Algorithm Copyright Bernard Helyer, Donut Steel (@todo)
 	vsInstall := vsInstalls[0];
-
-	vars.msvcVer      = vsInstall.ver;
-	vars.dirVCInstall = vsInstall.vcInstallDir;
-	vars.dirUCRT      = vsInstall.universalCrtDir;
-	vars.dirWinSDK    = vsInstall.windowsSdkDir;
-	vars.numUCRT      = vsInstall.universalCrtVersion;
-	vars.numWinSDK    = vsInstall.windowsSdkVersion;
-	vars.oldLib       = vsInstall.lib;
-	vars.oldPath      = env.getOrNull("PATH");
-	if (vsInstall.linkerPath !is null) {
-		vars.path ~= vsInstall.linkerPath;
-	}
-}
-
-fn getDirsFromEnv(ref vars: VarsForMSVC, drv: Driver, env: Environment)
-{
-	vsInstalls: msvc.Result[];
-	fromEnv: msvc.FromEnv;
-	fromEnv.vcInstallDir  = env.getOrNull("VCINSTALLDIR");
-	fromEnv.vcToolsInstallDir = env.getOrNull("VCTOOLSINSTALLDIR");
-	fromEnv.universalCrtDir = env.getOrNull("UniversalCRTSdkDir");
-	fromEnv.windowsSdkDir = env.getOrNull("WindowsSdkDir");
-	fromEnv.universalCrtVersion = env.getOrNull("UCRTVersion");
-	fromEnv.windowsSdkVersion = env.getOrNull("WindowsSDKVersion");
-
-	if (!msvc.detect(ref fromEnv, out vsInstalls)) {
-		drv.info("couldn't find visual studio installation falling back to env vars");
-		return;
-	}
-
-	// Advanced Visual Studio Selection Algorithm Copyright Bernard Helyer, Donut Steel (@todo)
-	vsInstall := vsInstalls[0];
-
-	vars.msvcVer      = vsInstall.ver;
-	vars.dirVCInstall = vsInstall.vcInstallDir;
-	vars.dirUCRT      = vsInstall.universalCrtDir;
-	vars.dirWinSDK    = vsInstall.windowsSdkDir;
-	vars.numUCRT      = vsInstall.universalCrtVersion;
-	vars.numWinSDK    = vsInstall.windowsSdkVersion;
-	vars.oldLib       = vsInstall.lib;
-	if (vsInstall.linkerPath !is null) {
-		vars.path ~= vsInstall.linkerPath;
-	}
 
 	vars.oldInc  = env.getOrNull("INCLUDE");
 	vars.oldLib  = env.getOrNull("LIB");
 	vars.oldPath = env.getOrNull("PATH");
+
+	vars.msvcVer      = vsInstall.ver;
+	vars.from         = vsInstall.from;
+
+	vars.clCmd        = vsInstall.clCmd;
+	vars.linkCmd      = vsInstall.linkCmd;
+
+	vars.dirVCInstall = vsInstall.vcInstallDir;
+	vars.dirUCRT      = vsInstall.universalCrtDir;
+	vars.dirWinSDK    = vsInstall.windowsSdkDir;
+	vars.numUCRT      = vsInstall.universalCrtVersion;
+	vars.numWinSDK    = vsInstall.windowsSdkVersion;
 }
 
 fn fillInListsForMSVC(ref vars: VarsForMSVC)
@@ -587,6 +560,7 @@ fn fillInListsForMSVC(ref vars: VarsForMSVC)
 	vars.tInc(format("%s/Include/%s/shared", vars.dirWinSDK, vars.numWinSDK));
 	vars.tInc(format("%s/Include/%s/um", vars.dirWinSDK, vars.numWinSDK));
 	vars.tInc(format("%s/Include/%s/winrt", vars.dirWinSDK, vars.numWinSDK));
+	vars.tInc(format("%s/Include/%s/cppwinrt", vars.dirWinSDK, vars.numWinSDK));
 
 	vars.tLib(format("%s/Lib/%s/ucrt/x64", vars.dirUCRT, vars.numUCRT));
 	vars.tLib(format("%s/Lib/%s/um/x64", vars.dirWinSDK, vars.numWinSDK));
@@ -671,14 +645,22 @@ fn compareOldAndNew(oldPath: string, newPath: string) bool
 fn genAndCheckEnv(ref vars: VarsForMSVC, drv: Driver, out inc: string, out lib: string, out path: string)
 {
 	// Make and check the INCLUDE var.
-	inc = join(vars.inc, ";") ~ ";";
+	inc = join(vars.inc, ";");
+	if (vars.oldInc.endsWith(";")) {
+		inc ~= ";";
+	}
+
 	if (compareOldAndNew(vars.oldInc, inc)) {
 		drv.info("env INCLUDE differers (using given)\ngiven: %s\n ours: %s", vars.oldInc, inc);
 		inc = vars.oldInc;
 	}
 
 	// Make and check the LIB var.
-	lib = join(vars.lib, ";") ~ ";";
+	lib = join(vars.lib, ";");
+	if (vars.oldLib.endsWith(";")) {
+		lib ~= ";";
+	}
+
 	if (compareOldAndNew(vars.oldLib, lib)) {
 		drv.info("env LIB differers (using given)\ngiven: %s\n ours: %s", vars.oldLib, lib);
 		lib = vars.oldLib;

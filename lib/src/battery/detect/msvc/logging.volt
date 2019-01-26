@@ -23,18 +23,13 @@ fn dump(ref result: Result, message: string)
 
 	ss.sink(message);
 	watt.format(ss.sink, "\n\tver = %s", result.ver.visualStudioVersionToString());
+	watt.format(ss.sink, "\n\tfrom = %s", result.from);
 	watt.format(ss.sink, "\n\tvcInstallDir = %s", result.vcInstallDir);
+	watt.format(ss.sink, "\n\tclCmd = %s", result.clCmd);
+	watt.format(ss.sink, "\n\tlinkCmd = %s", result.linkCmd);
 	watt.format(ss.sink, "\n\twindowsSdkDir = %s", result.windowsSdkDir);
 	watt.format(ss.sink, "\n\twindowsSdkVersion = %s", result.windowsSdkVersion);
 	watt.format(ss.sink, "\n\tuniversalCrtDir = %s", result.universalCrtDir);
 	watt.format(ss.sink, "\n\tuniversalCrtVersion = %s", result.universalCrtVersion);
-	watt.format(ss.sink, "\n\tlinkerPath = %s", result.linkerPath);
-	watt.format(ss.sink, "\n\tlibs = [");
-	foreach (_lib; result.libsAsPaths) {
-		ss.sink("\n\t\t");
-		ss.sink(_lib);
-	}
-	ss.sink("]");
-
 	log.info(ss.toString());
 }

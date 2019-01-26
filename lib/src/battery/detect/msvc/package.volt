@@ -9,8 +9,10 @@
  */
 module battery.detect.msvc;
 
-import watt = [watt.io.file, watt.text.sink];
+import watt = [watt.io.file, watt.text.sink, watt.text.path];
 
+import battery.detect.msvc.util;
+import battery.detect.msvc.vswhere;
 import battery.detect.msvc.logging;
 import battery.detect.msvc.windows;
 
@@ -46,16 +48,10 @@ struct FromEnv
 struct Result
 {
 public:
-	fn addLibPath(path: string)
-	{
-		if (watt.isDir(path)) {
-			mLibs ~= path;
-		}
-	}
-
-public:
 	//! The version of this installation.
 	ver: VisualStudioVersion;
+	//! How was this MSVC found?
+	from: string;
 	//! The installation path of VC.
 	vcInstallDir: string;
 	//! The path to the Windows SDK.
@@ -66,25 +62,12 @@ public:
 	universalCrtDir: string;
 	//! The Universal CRT version.
 	universalCrtVersion: string;
-	//! Semicolon separated list of paths for the linker.
-	@property fn lib() string
-	{
-		ss: watt.StringSink;
-		foreach (_lib; mLibs) {
-			ss.sink(_lib);
-			ss.sink(";");
-		}
-		return ss.toString();
-	}
-	//! Path where link.exe resides.
-	linkerPath: string;
-	@property fn libsAsPaths() string[]
-	{
-		return mLibs;
-	}
 
-private:
-	mLibs: string[];
+
+	//! The cl.exe command.
+	clCmd: string;
+	//! The link.exe command.
+	linkCmd: string;
 }
 
 /*!
@@ -109,15 +92,19 @@ fn detect(ref fromEnv: FromEnv, out results: Result[]) bool
 {
 	result: Result;
 
+	// Prefer from vswhere.exe
+	version (Windows) if (fromVSWhere(out result)) {
+		results = result ~ results;
+	}
 	// Prefer 2017
 	version (Windows) if (getVisualStudio2017Installation(out result)) {
-		results ~= result;
+		results = result ~ results;
 	}
 	version (Windows) if (getVisualStudio2015Installation(out result)) {
-		results ~= result;
+		results = result ~ results;
 	}
 	if (getVisualStudioEnvInstallations(ref fromEnv, out result)) {
-		results ~= result;
+		results = result ~ results;
 	}
 
 	return results.length != 0;
@@ -155,6 +142,7 @@ fn getVisualStudioEnvInstallations(ref fromEnv: FromEnv, out installationInfo: R
 		return value;
 	}
 
+	installationInfo.from = "env";
 	installationInfo.universalCrtDir = getOrWarn(fromEnv.universalCrtDir, "UniversalCRTSdkDir");
 	installationInfo.windowsSdkDir = getOrWarn(fromEnv.windowsSdkDir, "WindowsSdkDir");
 	installationInfo.universalCrtVersion = getOrWarn(fromEnv.universalCrtVersion, "UCRTVersion");
@@ -166,6 +154,15 @@ fn getVisualStudioEnvInstallations(ref fromEnv: FromEnv, out installationInfo: R
 	    installationInfo.windowsSdkVersion.length == 0) {
 		log.info("failed to find needed environmental variables.");
 		return false;
+	}
+
+
+	version (Windows) {
+		final switch (installationInfo.ver) with (VisualStudioVersion) {
+		case Unknown, MaxVersion: assert(false);
+		case V2015: installationInfo.addLinkAndCL("bin\\amd64"); break;
+		case V2017: installationInfo.addLinkAndCL("bin\\Hostx64\\x64"); break;
+		}
 	}
 
 	installationInfo.dump("Found a VisualStudioInstallation");
