@@ -179,10 +179,18 @@ public:
 
 			if (kind & Kind.Dmd) {
 				ret ~= ("-I" ~ b.srcDir);
+
+				foreach (def; b.defs) {
+					ret ~= new "-version=${def}";
+				}
 			}
 
 			if (kind & Kind.Gdc) {
 				ret ~= ["-I", b.srcDir];
+
+				foreach (def; b.defs) {
+					ret ~= new "-fversion=${def}";
+				}
 			}
 
 			// Shared with clang and volta.

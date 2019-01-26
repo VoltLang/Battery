@@ -15,9 +15,10 @@ enum IdentifierPrefix = "LLVMVersion";
 
 fn addVersionIdentifiers(ver: semver.Release, prj: battery.Project) bool
 {
-	if (!text.startsWith(prj.name, "volta")) {
+	if (!prj.llvmHack) {
 		return false;
 	}
+
 	prj.defs ~= identifiers(ver);
 	return true;
 }

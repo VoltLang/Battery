@@ -204,16 +204,6 @@ public:
 		verifyConfig();
 		bootstrapArgs: string[][2];
 		if (mBootstrapConfig !is null) {
-			foreach (name, command; mBootstrapConfig.tools) {
-				switch (name) {
-				case "rdmd", "gdc":
-					// Make sure the llvmVersion defines are defined for bootstrap too.
-					addLlvmVersionsToBootstrapCompiler(this, mBootstrapConfig, command);
-					break;
-				default:
-					break;
-				}
-			}
 			bootstrapArgs[0] = getArgs(true, mBootstrapConfig.env);
 			bootstrapArgs[1] = getArgs(true, mBootstrapConfig.tools.values);
 		}

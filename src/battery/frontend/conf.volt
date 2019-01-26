@@ -48,6 +48,7 @@ fn parseTomlConfig(tomlFilename: string, path: string, d: Driver, c: Configurati
 	}
 	b.deps           ~= optionalStringArray(root, d, c, DependenciesKey);
 	b.scanForD       = optionalBoolValue  (root, d, c, ScanForDKey);
+	b.llvmHack       = optionalBoolValue  (root, d, c, LLVMHackKey);
 	b.warningsEnabled= optionalBoolValue(root, d, c, WarningKey);
 	setIfNonEmpty(ref b.srcDir,  makePath(path, optionalStringValue(root, d, c, SrcDirKey)));
 	setIfNonEmpty(ref b.jsonOutput, makePath(path, optionalStringValue(root, d, c, JsonOutputKey)));
@@ -102,7 +103,7 @@ fn verifyKeys(root: toml.Value, tomlPath: string, d: Driver, prefix: string = nu
 			SrcDirKey, TestFilesKey, JsonOutputKey, LibsKey, LPathsKey, FrameworksKey, FPathsKey,
 			StringPathKey, LDArgsKey, CCArgsKey, LinkArgsKey, LinkerArgsKey,
 			AsmFilesKey, CFilesKey, ObjFilesKey, VoltFilesKey, IdentKey, CommandKey, WarningKey,
-			LlvmConfig:
+			LlvmConfig, LLVMHackKey:
 			continue;
 		default:
 			d.info(new "Warning: unknown key \"${prefix}${key}\" in config file '${tomlPath}'");
@@ -138,6 +139,7 @@ enum PlatformTable   = "platform";
 enum NameKey         = "name";
 enum OutputKey       = "output";
 enum ScanForDKey     = "scanForD";
+enum LLVMHackKey     = "llvmHack";
 enum IsTheRTKey      = "isTheRT";
 enum SrcDirKey       = "srcDir";
 enum TestFilesKey    = "testFiles";

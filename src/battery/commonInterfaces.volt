@@ -51,6 +51,9 @@ class Project
 	//! For D projects.
 	scanForD: bool;
 
+	//! Hack to add LLVMVersionX versions.
+	llvmHack: bool;
+
 	warningsEnabled: bool;
 }
 

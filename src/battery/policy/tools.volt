@@ -66,26 +66,6 @@ fn infoCmd(drv: Driver, c: Configuration, cmd: Command, from: string)
 	drv.info("\t%scmd %s: '%s' from %s.", c.getCmdPre(), cmd.name, cmd.cmd, from);
 }
 
-fn addLlvmVersionsToBootstrapCompiler(drv: Driver, config: Configuration, c: Command)
-{
-	fn getVersionFlag(s: string) string
-	{
-		if (c.name == "rdmd") {
-			return new "-version=${s}";
-		} else if (c.name == "gdc") {
-			return new "-fversion=${s}";
-		} else {
-			assert(false, "unknown bootstrap compiler");
-		}
-	}
-
-	assert(config.llvmVersion !is null);
-	llvmVersions := llvmVersion.identifiers(config.llvmVersion);
-	foreach (v; llvmVersions) {
-		c.args ~= getVersionFlag(v);
-	}
-}
-
 fn getCmdPre(c: Configuration) string
 {
 	final switch (c.kind) with (ConfigKind) {
