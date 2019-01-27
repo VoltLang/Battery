@@ -55,6 +55,8 @@ fn doConfig(drv: Driver, config: Configuration)
 		if (doRDMD(drv, config)) {
 			return;
 		}
+
+		drv.abort("Did not find any bootstrap compiler (GDC) or (RDMD)");
 		return;
 	default:
 	}
