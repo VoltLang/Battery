@@ -93,3 +93,26 @@ public:
 		this.args = new string[](c.args);
 	}
 }
+
+/*!
+ * A struct holding information from a battery.conf.toml file.
+ */
+struct BatteryConfig
+{
+	filename: string;
+
+	voltaCmd: string;
+	nasmCmd: string;
+
+	gdcCmd: string;
+	rdmdCmd: string;
+
+	pkgs: string[];
+
+	llvmConfigCmd: string;
+	llvmArCmd: string;
+	llvmClangCmd: string;
+	llvmLinkCmd: string;
+	llvmWasmCmd: string;
+	llvmC: string;
+}
