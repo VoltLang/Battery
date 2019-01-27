@@ -41,6 +41,9 @@ public:
 	//! The llvmConf path, given by --llvmconf.
 	llvmConf: string;
 
+	//! The battery config file that might be loaded.
+	batConf: BatteryConfig;
+
 	//! LLVM version.
 	llvmVersion: semver.Release;
 

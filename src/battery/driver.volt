@@ -14,7 +14,7 @@ import watt.text.string : endsWith, replace, split;
 import watt.text.ascii : isAlpha, isAlphaNum;
 import watt.text.getopt;
 import watt.io.streams : OutputFileStream;
-import watt.path : fullPath, dirSeparator, mkdir;
+import watt.path : fullPath, dirSeparator, mkdir, getExecDir;
 import watt.process;
 import watt.conv;
 import watt.io.file : exists, isFile, chdir;
@@ -32,6 +32,7 @@ import battery.policy.tools;
 import battery.policy.validate;
 import battery.frontend.parameters;
 import battery.frontend.scanner;
+import battery.frontend.batteryConf;
 import llvmVersion = battery.frontend.llvmVersion;
 import llvmConf = battery.frontend.llvmConf;
 import battery.backend.builder;
@@ -126,8 +127,12 @@ public:
 		newLog(new "${BatteryDirectory}${dirSeparator}config-log.txt");
 		log.info("starting config");
 
-		originalArgs := args;
+		// Load the battery config.
+		batConf: BatteryConfig;
+		loadBatteryConf(null, getExecDir(), out batConf);
+
 		// Filter out --release, --arch and --platform arguments.
+		originalArgs := args;
 		isRelease, isLTO: bool;
 		findArchAndPlatform(this, ref args, ref arch, ref platform,
 		                    ref isRelease, ref isLTO);
@@ -162,22 +167,28 @@ public:
 		// If we get volta via the command line, no need for bootstrap config.
 		if (getCmd(false, "volta") !is null) {
 			mBootstrapConfig = null;
+		} else if (batConf.voltaCmd !is null) {
+			addCmd(false, "volta", batConf.voltaCmd);
+			mBootstrapConfig = null;
 		}
 
 		// Handle bootstrapping of volted.
 		if (mBootstrapConfig !is null) {
 			// Need fill in bootstrap commands seperatly.
 			mBootstrapConfig.llvmConf = mLLVMConf;
+			mBootstrapConfig.batConf = batConf;
 			doConfig(this, mBootstrapConfig);
 			fillInConfigCommands(this, mBootstrapConfig);
 		}
 
 		// Do this after the arguments has been parsed.
 		mConfig.llvmConf = mLLVMConf;
+		mConfig.batConf = batConf;
 		doConfig(this, mConfig);
 		fillInConfigCommands(this, mConfig);
 
 		// Parse the rest of the arguments.
+		arg.addExtraPkgs(batConf.pkgs);
 		arg.parseProjects(mConfig);
 
 		batteryTomls: string[];

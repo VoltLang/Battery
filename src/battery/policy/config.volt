@@ -214,6 +214,11 @@ fn pickLLVM(drv: Driver, config: Configuration,
 		results = temp ~ results;
 	}
 
+	// Did we get anything from the BatteryConfig.
+	if (llvm.detectFromBatConf(ref config.batConf, out temp)) {
+		results = temp ~ results;
+	}
+
 	// What do we need?
 	need.fillInNeeded(config);
 
@@ -730,6 +735,11 @@ fn doGDC(drv: Driver, config: Configuration) bool
 		results = result ~ results;
 	}
 
+	// Did we get anything from the BatteryConfig.
+	if (gdc.detectFromBatConf(ref config.batConf, out result)) {
+		results = result ~ results;
+	}
+
 	// Find a good a result from the one that the detection code found.
 	found := false;
 	foreach (res; results) {
@@ -771,6 +781,11 @@ fn doRDMD(drv: Driver, config: Configuration) bool
 		results = result ~ results;
 	}
 
+	// Did we get anything from the BatteryConfig.
+	if (rdmd.detectFromBatConf(ref config.batConf, out result)) {
+		results = result ~ results;
+	}
+
 	// Didn't find any.
 	if (results.length == 0) {
 		return false;
@@ -798,6 +813,11 @@ fn doNASM(drv: Driver, config: Configuration) bool
 	// Did we get anything from the path?
 	fillIfFound(drv, config, NasmName, out fromArgs.cmd, out fromArgs.args);
 	if (nasm.detectFromArgs(ref fromArgs, out result)) {
+		results = result ~ results;
+	}
+
+	// Did we get anything from the BatteryConfig.
+	if (nasm.detectFromBatConf(ref config.batConf, out result)) {
 		results = result ~ results;
 	}
 

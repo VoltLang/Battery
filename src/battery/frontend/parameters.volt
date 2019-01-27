@@ -245,6 +245,15 @@ public:
 		mDrv = drv;
 	}
 
+	fn addExtraPkgs(pkgs: string[])
+	{
+		foreach (pkg; pkgs) {
+			a := new Arg(Arg.Kind.Directory, pkg);
+			a.extra = normalisePath(pkg);
+			mArgs ~= a;
+		}
+	}
+
 	fn parseConfig(args: string[])
 	{
 		toArgs: ToArgs;
