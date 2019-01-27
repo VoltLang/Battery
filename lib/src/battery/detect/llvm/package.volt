@@ -118,9 +118,33 @@ fn detectFromArgs(ref fromArgs: FromArgs, out result: Result) bool
 {
 	// Arguments have the highest precedence.
 	if (getFromArgs(ref fromArgs, out result)) {
+		result.from = "arguments";
 		result.dump("Found");
 		return true;
 	}
+	return false;
+}
+
+/*!
+ * Check the battery config for gdc.
+ */
+fn detectFromBatConf(ref batConf: BatteryConfig, out result: Result) bool
+{
+	log.info(new "Checking llvm from '${batConf.filename}'.");
+	fromArgs: FromArgs;
+	fromArgs.configCmd = batConf.llvmConfigCmd;
+	fromArgs.clangCmd = batConf.llvmClangCmd;
+	fromArgs.arCmd = batConf.llvmArCmd;
+	fromArgs.linkCmd = batConf.llvmLinkCmd;
+	fromArgs.wasmCmd = batConf.llvmWasmCmd;
+
+	// Arguments have the highest precedence.
+	if (getFromArgs(ref fromArgs, out result)) {
+		result.from = "conf";
+		result.dump("Found");
+		return true;
+	}
+
 	return false;
 }
 
@@ -174,9 +198,9 @@ fn getFromArgs(ref fromArgs: FromArgs, out res: Result) bool
 	// Error out if llvm-config is needed and is missing.
 	if (res.ver is null) {
 		if (res.configCmd is null && res.clangCmd is null) {
-			log.info("Was not given 'llvm-config' nor 'clang' as arguments, skipping other commands.");
+			log.info("Was not given 'llvm-config' nor 'clang', skipping other commands.");
 		} else {
-			log.info(new "Could not determine LLVM$ version!\n\tllvm-config = '${res.configCmd}'\n\tclang = '${res.clangCmd}'");
+			log.info(new "Could not determine LLVM version!\n\tllvm-config = '${res.configCmd}'\n\tclang = '${res.clangCmd}'");
 		}
 		return false;
 	}
@@ -197,7 +221,6 @@ fn getFromArgs(ref fromArgs: FromArgs, out res: Result) bool
 		res.wasmCmd = fromArgs.wasmCmd;
 	}
 
-	res.from = "arguments";
 	return true;
 }
 

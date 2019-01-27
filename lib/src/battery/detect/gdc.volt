@@ -101,6 +101,32 @@ fn detectFromArgs(ref arg: FromArgs, out result: Result) bool
 }
 
 /*!
+ * Check the battery config for gdc.
+ */
+fn detectFromBatConf(ref batConf: BatteryConfig, out result: Result) bool
+{
+	if (batConf.gdcCmd is null) {
+		return false;
+	}
+
+	log.info(new "Checking gdc from '${batConf.filename}'.");
+
+	if (!checkArgCmd(ref log, batConf.gdcCmd, "gdc")) {
+		return false;
+	}
+
+	result.ver = getVersionFromGdc(batConf.gdcCmd);
+	if (result.ver is null) {
+		return false;
+	}
+
+	result.from = "conf";
+	result.cmd = batConf.gdcCmd;
+	result.dump("Found");
+	return true;
+}
+
+/*!
  * Add extra arguments to the command, any given args are appended after the
  * extra arguments.
  */

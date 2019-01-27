@@ -54,6 +54,24 @@ fn detectFromPath(path: string, out results: Result[]) bool
 	return results.length != 0;
 }
 
+fn detectFromBatConf(ref batConf: BatteryConfig, out result: Result) bool
+{
+	if (batConf.nasmCmd is null) {
+		return false;
+	}
+
+	log.info(new "Checking nasm from '${batConf.filename}'.");
+
+	if (!checkArgCmd(ref log, batConf.nasmCmd, "nasm")) {
+		return false;
+	}
+
+	result.from = "conf";
+	result.cmd = batConf.nasmCmd;
+	result.dump("Found");
+	return true;
+}
+
 /*!
  * Detect nasm from arguments.
  */

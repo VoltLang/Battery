@@ -79,6 +79,27 @@ fn detectFromArgs(ref arg: FromArgs, out result: Result) bool
 }
 
 /*!
+ * Check the battery config for rdmd.
+ */
+fn detectFromBatConf(ref batConf: BatteryConfig, out result: Result) bool
+{
+	if (batConf.rdmdCmd is null) {
+		return false;
+	}
+
+	log.info(new "Checking rdmd from '${batConf.filename}'.");
+
+	if (!checkArgCmd(ref log, batConf.rdmdCmd, "rdmd")) {
+		return false;
+	}
+
+	result.from = "conf";
+	result.cmd = batConf.rdmdCmd;
+	result.dump("Found");
+	return true;
+}
+
+/*!
  * Add extra arguments to the command, any given args are appended after the
  * extra arguments.
  */
