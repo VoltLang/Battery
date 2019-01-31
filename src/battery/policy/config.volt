@@ -466,16 +466,20 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 
 	// First see if the linker is specified.
 	linker := drv.getCmd(config.isBootstrap, LinkerName);
-	linkerFromArg := true;
+	linkerFrom := "args";
 
 	// If it was not specified get 'lld-link' from the LLVM toolchain.
 	if (linker is null) {
 		linker = config.getTool(LLDLinkName);
-		linkerFromArg = false;
+		linkerFrom = "llvm";
+	}
+
+	// Just in case.
+	if (linker is null) {
+		drv.abort("Could not find any linker!");
 	}
 
 	// Always add it to the config.
-	assert(linker !is null);
 	linker = config.addTool(LinkerName, linker.cmd, linker.args);
 
 	// Always add the common arguments to the linker.
@@ -498,10 +502,8 @@ fn doToolChainCrossMSVC(drv: Driver, config: Configuration, outside: Environment
 	}
 
 	verStr := msvc.visualStudioVersionToString(vars.msvcVer);
-	drv.info("Using MSVC %s from the enviroment.", verStr);
-	if (linkerFromArg) {
-		drv.infoCmd(config, linker, linkerFromArg ? "args" : "path");
-	}
+	drv.info("Using Visual Studio Build Tools %s from %s.", verStr, vars.from);
+	drv.infoCmd(config, linker, linkerFrom);
 }
 
 fn getMSVCInfo(ref vars: VarsForMSVC, drv: Driver, env: Environment)
