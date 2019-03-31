@@ -727,18 +727,18 @@ fn doGDC(drv: Driver, config: Configuration) bool
 	results: gdc.Result[];
 	result: gdc.Result;
 
-	// Setup the path.
+	// Search the path last.
 	path := config.env.getOrNull("PATH");
 	gdc.detectFromPath(path, out results);
 
-	// Did we get anything from the path?
-	fillIfFound(drv, config, GdcName, out fromArgs.cmd, out fromArgs.args);
-	if (gdc.detectFromArgs(ref fromArgs, out result)) {
+	// Did we get anything from the BatteryConfig?
+	if (gdc.detectFromBatConf(ref config.batConf, out result)) {
 		results = result ~ results;
 	}
 
-	// Did we get anything from the BatteryConfig.
-	if (gdc.detectFromBatConf(ref config.batConf, out result)) {
+	// Did we get anything from the args?
+	fillIfFound(drv, config, GdcName, out fromArgs.cmd, out fromArgs.args);
+	if (gdc.detectFromArgs(ref fromArgs, out result)) {
 		results = result ~ results;
 	}
 
@@ -761,7 +761,7 @@ fn doGDC(drv: Driver, config: Configuration) bool
 		return false;
 	}
 
-	// Do that adding.
+	// Do that adding, result now holds all of the info.
 	c := config.addTool(GdcName, result.cmd, result.args);
 	drv.infoCmd(config, c, result.from);
 	return true;
@@ -773,18 +773,18 @@ fn doRDMD(drv: Driver, config: Configuration) bool
 	results: rdmd.Result[];
 	result: rdmd.Result;
 
-	// Setup the path.
+	// Search the path.
 	path := config.env.getOrNull("PATH");
 	rdmd.detectFromPath(path, out results);
 
-	// Did we get anything from the path?
-	fillIfFound(drv, config, RdmdName, out fromArgs.cmd, out fromArgs.args);
-	if (rdmd.detectFromArgs(ref fromArgs, out result)) {
+	// Did we get anything from the BatteryConfig?
+	if (rdmd.detectFromBatConf(ref config.batConf, out result)) {
 		results = result ~ results;
 	}
 
-	// Did we get anything from the BatteryConfig.
-	if (rdmd.detectFromBatConf(ref config.batConf, out result)) {
+	// Did we get anything from the args?
+	fillIfFound(drv, config, RdmdName, out fromArgs.cmd, out fromArgs.args);
+	if (rdmd.detectFromArgs(ref fromArgs, out result)) {
 		results = result ~ results;
 	}
 
@@ -793,10 +793,10 @@ fn doRDMD(drv: Driver, config: Configuration) bool
 		return false;
 	}
 
-	// Add any extra arguments needed.s
+	// Add any extra arguments needed, select the first one!
 	rdmd.addArgs(ref results[0], config.arch, config.platform, out result);
 
-	// Do that adding.
+	// Do that adding, result now holds all of the info.
 	c := config.addTool(RdmdName, result.cmd, result.args);
 	drv.infoCmd(config, c, result.from);
 	return true;
@@ -808,18 +808,18 @@ fn doNASM(drv: Driver, config: Configuration) bool
 	results: nasm.Result[];
 	result: nasm.Result;
 
-	// Setup the path.
+	// Search the path.
 	path := config.env.getOrNull("PATH");
 	nasm.detectFromPath(path, out results);
 
-	// Did we get anything from the path?
-	fillIfFound(drv, config, NasmName, out fromArgs.cmd, out fromArgs.args);
-	if (nasm.detectFromArgs(ref fromArgs, out result)) {
+	// Did we get anything from the BatteryConfig?
+	if (nasm.detectFromBatConf(ref config.batConf, out result)) {
 		results = result ~ results;
 	}
 
-	// Did we get anything from the BatteryConfig.
-	if (nasm.detectFromBatConf(ref config.batConf, out result)) {
+	// Did we get anything from the args?
+	fillIfFound(drv, config, NasmName, out fromArgs.cmd, out fromArgs.args);
+	if (nasm.detectFromArgs(ref fromArgs, out result)) {
 		results = result ~ results;
 	}
 
@@ -828,10 +828,10 @@ fn doNASM(drv: Driver, config: Configuration) bool
 		return false;
 	}
 
-	// Add any extra arguments needed.s
+	// Add any extra arguments needed, select the first one!
 	nasm.addArgs(ref results[0], config.arch, config.platform, out result);
 
-	// Do that adding.
+	// Do that adding, result now holds all of the info.
 	c := config.addTool(NasmName, result.cmd, result.args);
 	drv.infoCmd(config, c, result.from);
 	return true;
