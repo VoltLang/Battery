@@ -59,6 +59,7 @@ public:
 
 
 protected:
+	mLogFile: string;
 	mConfig: Configuration;
 	mHostConfig: Configuration;
 	mBootstrapConfig: Configuration;
@@ -124,7 +125,8 @@ public:
 		mkdir(BatteryDirectory);
 
 		// Setup logging file.
-		newLog(new "${BatteryDirectory}${dirSeparator}config-log.txt");
+		mLogFile = new "${BatteryDirectory}${dirSeparator}config-log.txt";
+		newLog(mLogFile);
 		log.info("starting config");
 
 		// Load the battery config.
@@ -735,6 +737,9 @@ in your system.
 		io.output.vwritefln(fmt, ref _typeids, ref vl);
 		io.output.flush();
 		va_end(vl);
+		if (mLogFile !is null) {
+			io.output.writefln("\tSee log in: %s", mLogFile);
+		}
 		exit(-1);
 	}
 
