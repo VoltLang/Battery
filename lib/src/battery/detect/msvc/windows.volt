@@ -95,7 +95,7 @@ fn getUniversalSdkInformation(ref installationInfo: Result) bool
 // Get the information on VS2015, if we can find it.
 fn getVisualStudio2015Installation(out installationInfo: Result) bool
 {
-	log.info("Searching for Visual Studio 2017 using registry");
+	log.info("Searching for Visual Studio 2015 using registry");
 
 	retval := getVcInstallDir2015(out installationInfo.vcInstallDir);
 	if (!retval) {
