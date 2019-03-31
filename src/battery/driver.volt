@@ -168,7 +168,6 @@ public:
 		if (getCmd(false, "volta") !is null) {
 			mBootstrapConfig = null;
 		} else if (batConf.voltaCmd !is null) {
-			addCmd(false, "volta", batConf.voltaCmd);
 			mBootstrapConfig = null;
 		}
 
