@@ -21,6 +21,7 @@ import llvm = battery.detect.llvm;
 import rdmd = battery.detect.rdmd;
 import nasm = battery.detect.nasm;
 import msvc = battery.detect.msvc;
+import volta = battery.detect.volta;
 
 
 fn getProjectConfig(drv: Driver, arch: Arch, platform: Platform) Configuration
@@ -83,11 +84,7 @@ fn doConfig(drv: Driver, config: Configuration)
 	drv.info("Various tools needed by compile.");
 
 	// Make it possible for the user to supply the volta.exe
-	drvVolta := drv.getCmd(config.isBootstrap, "volta");
-	if (drvVolta !is null) {
-		config.addTool("volta", drvVolta.cmd, drvVolta.args);
-		drv.infoCmd(config, drvVolta, "args");
-	}
+	doVolta(drv, config);
 
 	// NASM is needed for RT.
 	doNASM(drv, config);
@@ -836,6 +833,41 @@ fn doNASM(drv: Driver, config: Configuration) bool
 	drv.infoCmd(config, c, result.from);
 	return true;
 }
+
+fn doVolta(drv: Driver, config: Configuration) bool
+{
+	fromArgs: volta.FromArgs;
+	results: volta.Result[];
+	result: volta.Result;
+
+	// Do not do any path detection.
+
+	// Did we get anything from the BatteryConfig?
+	if (volta.detectFromBatConf(ref config.batConf, out result)) {
+		results = result ~ results;
+	}
+
+	// Did we get anything from the args?
+	fillIfFound(drv, config, VoltaName, out fromArgs.cmd, out fromArgs.args);
+	if (volta.detectFromArgs(ref fromArgs, out result)) {
+		results = result ~ results;
+	}
+
+	// Didn't find any.
+	if (results.length == 0) {
+		return false;
+	}
+
+	// Add any extra arguments needed, select the first one!
+	volta.addArgs(ref results[0], config.arch, config.platform, out result);
+
+	// Do that adding, result now holds all of the info.
+	c := config.addTool(VoltaName, results[0].cmd, results[0].args);
+	drv.infoCmd(config, c, results[0].from);
+
+	return true;
+}
+
 
 /*
  *
