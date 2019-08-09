@@ -453,8 +453,12 @@ public:
 
 			args = c.args ~ [
 				"--build-only",
-				"-of" ~ name
+				"-of" ~ name,
 			];
+
+			version (Linux || OSX) {
+				args ~= "-L-lstdc++";
+			}
 		}
 
 		// Collect all D files.
