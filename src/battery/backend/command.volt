@@ -348,6 +348,11 @@ public:
 
 	fn genCO(name: string) string
 	{
+		return cleanPath(buildDir ~ dirSeparator ~ name ~ ".o");
+	}
+
+	fn genSO(name: string) string
+	{
 		ending := config.isLTO ? ".thin.o" : ".o";
 		return cleanPath(buildDir ~ dirSeparator ~ name ~ ending);
 	}

@@ -105,7 +105,10 @@ public:
 	fn processProject(ref gen: ArgsGenerator, b: Project) Store
 	{
 		// Get the number of objects.
-		num := b.srcAsm.length + b.srcObj.length + b.srcC.length;
+		num := b.srcAsm.length +
+		       b.srcObj.length +
+		       b.srcC.length +
+		       b.srcS.length;
 
 		store := new Store();
 
@@ -123,6 +126,11 @@ public:
 			store.objs[count++] = makeTargetC(ref gen, src);
 		}
 
+		// Setup S targets.
+		foreach (src; b.srcS) {
+			store.objs[count++] = makeTargetS(ref gen, src);
+		}
+
 		// Add store.objs into into the store.
 		foreach (a; b.srcAsm) {
 			store.objs[count++] = makeTargetAsm(ref gen, a);
@@ -132,6 +140,9 @@ public:
 		foreach (obj; b.srcObj) {
 			store.objs[count++] = ins.file(obj);
 		}
+
+		// Paranoia.
+		assert(count == store.objs.length);
 
 		return store;
 	}
@@ -379,6 +390,25 @@ public:
 		t.deps = [ins.file(src)];
 
 		c := gen.config.ccCmd;
+		assert(gen.config.ccKind == CCKind.Clang);
+
+		t.rule = new uni.Rule();
+		t.rule.cmd = c.cmd;
+		t.rule.args = c.args ~ ["-o", oName, "-c", src];
+		t.rule.print = c.print ~ oName;
+		t.rule.outputs = [t];
+
+		return t;
+	}
+
+	fn makeTargetS(ref gen: ArgsGenerator, src: string) uni.Target
+	{
+		oName := gen.genSO(src);
+
+		t := ins.fileNoRule(oName);
+		t.deps = [ins.file(src)];
+
+		c := gen.config.clangCmd;
 		assert(gen.config.ccKind == CCKind.Clang);
 
 		t.rule = new uni.Rule();

@@ -232,7 +232,7 @@ private:
 		final switch (front) with (Token) {
 		case X86:     value = mArch == Arch.X86; break;
 		case X86_64:  value = mArch == Arch.X86_64; break;
-		case AArch64: /* value = mArch == Arch.AArch64; */ break;
+		case AArch64: value = mArch == Arch.AArch64; break;
 		case OSX:     value = mPlatform == Platform.OSX; break;
 		case Linux:   value = mPlatform == Platform.Linux; break;
 		case MSVC:    value = mPlatform == Platform.MSVC; break;

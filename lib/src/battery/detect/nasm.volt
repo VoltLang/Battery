@@ -156,21 +156,25 @@ fn getFormatString(arch: Arch, platform: Platform) string
 		final switch (arch) with (Arch) {
 		case X86: return "win32";
 		case X86_64: return "win64";
+		case AArch64: assert(false);
 		}
 	case OSX:
 		final switch (arch) with (Arch) {
 		case X86: return "macho32";
 		case X86_64: return "macho64";
+		case AArch64: assert(false);
 		}
 	case Linux:
 		final switch (arch) with (Arch) {
 		case X86: return "elf32";
 		case X86_64: return "elf64";
+		case AArch64: assert(false);
 		}
 	case Metal:
 		final switch (arch) with (Arch) {
 		case X86: return "elf32";
 		case X86_64: return "elf64";
+		case AArch64: assert(false);
 		}
 	}
 }

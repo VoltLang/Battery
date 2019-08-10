@@ -29,8 +29,9 @@ enum Platform
  */
 enum Arch
 {
-	X86,    //!< X86 32 Bit
-	X86_64, //!< X86 64 Bit aka AMD64.
+	X86,     //!< X86 32 Bit
+	X86_64,  //!< X86 64 Bit aka AMD64.
+	AArch64, //!< AArch64, ARM64.
 }
 
 /*!

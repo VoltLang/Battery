@@ -86,8 +86,10 @@ fn doConfig(drv: Driver, config: Configuration)
 	// Make it possible for the user to supply the volta.exe
 	doVolta(drv, config);
 
-	// NASM is needed for RT.
-	doNASM(drv, config);
+	if (config.arch != Arch.AArch64) {
+		// NASM is needed for RT.
+		doNASM(drv, config);
+	}
 }
 
 fn doEnv(drv: Driver, config: Configuration, outside: Environment)
@@ -905,18 +907,25 @@ fn fillInConfigCommands(drv: Driver, config: Configuration)
 
 	config.linkerCmd = config.getTool(LinkerName);
 	config.clangCmd = config.getTool(ClangName);
-	config.nasmCmd = config.getTool(NasmName);
 	config.ccCmd = config.getTool(CCName);
 
 	assert(config.linkerCmd !is null);
 	assert(config.clangCmd !is null);
-	assert(config.nasmCmd !is null);
 	assert(config.ccCmd !is null);
 
 	config.clangCmd.print = ClangPrint;
-	config.nasmCmd.print = NasmPrint;
 	config.ccCmd.print = ClangPrint;
 	config.ccKind = CCKind.Clang;
+
+	final switch (config.arch) with (Arch) {
+	case AArch64:
+		break;
+	case X86, X86_64:
+		config.nasmCmd = config.getTool(NasmName);
+		assert(config.nasmCmd !is null);
+		config.nasmCmd.print = NasmPrint;
+		break;
+	}
 
 	final switch (config.platform) with (Platform) {
 	case MSVC:

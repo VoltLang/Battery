@@ -189,6 +189,7 @@ fn getTargetString(arch: Arch) string
 	final switch (arch) with (Arch) {
 	case X86: return "-m32";
 	case X86_64: return "-m64";
+	case AArch64: return "-m64";
 	}
 }
 

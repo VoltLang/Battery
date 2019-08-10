@@ -46,6 +46,7 @@ public:
 
 		FileC,
 		FileD,
+		FileS,
 		FileObj,
 		FileAsm,
 		FileVolt,

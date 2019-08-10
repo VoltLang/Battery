@@ -72,6 +72,7 @@ fn parseTomlConfig(tomlFilename: string, path: string, d: Driver, c: Configurati
 	b.xlink          ~= optionalStringArray(root, d, c, LinkArgsKey);
 	b.xlinker        ~= optionalStringArray(root, d, c, LinkerArgsKey);
 	b.srcAsm         ~= optionalPathArray(root, path, d, c, AsmFilesKey);
+	b.srcS           ~= optionalPathArray(root, path, d, c, SFilesKey);
 	cmdarr           := optionalStringArray(root, d, c, CommandKey);
 	foreach (cmd; cmdarr) {
 		parseCommand(cmd, c, b);
@@ -111,7 +112,7 @@ fn verifyKeys(root: toml.Value, tomlPath: string, d: Driver, prefix: string = nu
 		case DependenciesKey, NameKey, OutputKey, ScanForDKey, IsTheRTKey,
 			SrcDirKey, TestFilesKey, JsonOutputKey, LibsKey, LPathsKey, FrameworksKey, FPathsKey,
 			StringPathKey, LDArgsKey, CCArgsKey, LinkArgsKey, LinkerArgsKey,
-			AsmFilesKey, CFilesKey, ObjFilesKey, VoltFilesKey, IdentKey, CommandKey, WarningKey,
+			AsmFilesKey, CFilesKey, SFilesKey, ObjFilesKey, VoltFilesKey, IdentKey, CommandKey, WarningKey,
 			LlvmConfig, LLVMHackKey, CfgTable:
 			continue;
 		default:
@@ -164,6 +165,7 @@ enum LinkArgsKey     = "linkArguments";
 enum LinkerArgsKey   = "linkerArguments";
 enum AsmFilesKey     = "asmFiles";
 enum CFilesKey       = "cFiles";
+enum SFilesKey       = "sFiles";
 enum ObjFilesKey     = "objFiles";
 enum VoltFilesKey    = "voltFiles";
 enum IdentKey        = "versionIdentifiers";

@@ -179,6 +179,7 @@ fn getArgsProject(b: Project, tag: string) string[]
 	ret ~= ["--src-I", fullPath(b.srcDir)];
 
 	ret ~= b.srcC;
+	ret ~= b.srcS;
 	ret ~= b.srcObj;
 	ret ~= b.srcAsm;
 
@@ -374,6 +375,7 @@ protected:
 			case ArgLink: lib.xlink ~= arg.extra; break;
 			case ArgLinker: lib.xlinker ~= arg.extra; break;
 			case FileC: lib.srcC ~= arg.extra; break;
+			case FileS: lib.srcS ~= arg.extra; break;
 			case FileObj: lib.srcObj ~= arg.extra; break;
 			case FileAsm: lib.srcAsm ~= arg.extra; break;
 			case Command: handleCommand(c, arg.extra); break;
@@ -404,6 +406,7 @@ protected:
 			case Identifier: exe.defs ~= arg.extra; break;
 			case FileC: exe.srcC ~= arg.extra; break;
 			case FileD: exe.srcVolt ~= arg.extra; break;
+			case FileS: exe.srcS ~= arg.extra; break;
 			case FileAsm: exe.srcAsm ~= arg.extra; break;
 			case FileObj: exe.srcObj ~= arg.extra; break;
 			case FileVolt: exe.srcVolt ~= arg.extra; break;
@@ -485,6 +488,8 @@ fn parseArch(driver: Driver, a: string) Arch
 		return Arch.X86;
 	case "x86_64":
 		return Arch.X86_64;
+	case "aarch64":
+		return Arch.AArch64;
 	default:
 		driver.abort("unknown arch '%s'", a);
 		assert(false);
@@ -699,6 +704,8 @@ struct ToArgs
 				argPath(Arg.Kind.FileC);
 			} else if (endsWith(tmp, ".d")) {
 				argPath(Arg.Kind.FileD);
+			} else if (endsWith(tmp, ".s")) {
+				argPath(Arg.Kind.FileS);
 			} else if (endsWith(tmp, ".volt")) {
 				argPath(Arg.Kind.FileVolt);
 			} else if (endsWith(tmp, ".asm")) {

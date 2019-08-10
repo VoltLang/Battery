@@ -34,6 +34,7 @@ class Project
 	srcDir: string;
 
 	srcC: string[];
+	srcS: string[];
 	srcObj: string[];
 	srcAsm: string[];
 

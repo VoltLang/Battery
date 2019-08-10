@@ -202,6 +202,7 @@ public:
 			batteryTomls ~= _exe.batteryToml;
 		}
 
+		applyQuirks();
 		configSanity();
 		verifyConfig();
 		bootstrapArgs: string[][2];
@@ -558,9 +559,17 @@ in your system.
 
 	/*
 	 *
-	 * Verifying the condig.
+	 * Quirking and verifying the config.
 	 *
 	 */
+
+	fn applyQuirks()
+	{
+		if (mConfig.arch == Arch.AArch64 && mConfig.isCross) {
+			cc := mConfig.getTool("ccompiler");
+			cc.args ~= ["-isystem", "/usr/aarch64-linux-gnu/include"];
+		}
+	}
 
 	fn verifyConfig()
 	{
@@ -578,11 +587,11 @@ in your system.
 			}
 		}
 
-		if (!hasGdcTool && !hasRdmdTool && !hasVoltaTool) {
-			abort("No rdmd or gdc found (needed right now for Volta).");
-		}
 		if (!hasVoltaDir && !hasVoltaTool) {
 			abort("Must specify a Volta directory or --cmd-volta (for now).");
+		}
+		if (!hasGdcTool && !hasRdmdTool && !hasVoltaTool) {
+			abort("No rdmd or gdc found (needed right now for Volta).");
 		}
 		if (!hasRtDir) {
 			abort("Must specify a Volta rt directory (for now).");

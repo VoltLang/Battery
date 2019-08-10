@@ -18,7 +18,9 @@ version (MSVC) {
 	static assert(false, "native platform not supported");
 }
 
-version (X86_64) {
+version (AArch64) {
+	enum Arch HostArch = Arch.AArch64;
+} else version (X86_64) {
 	enum Arch HostArch = Arch.X86_64;
 } else version (X86) {
 	enum Arch HostArch = Arch.X86;
