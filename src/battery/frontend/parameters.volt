@@ -294,27 +294,12 @@ public:
 		}
 	}
 
-	fn parseProjects(c: Configuration, args: string[], path: string, base: Project)
-	{
-		toArgs: ToArgs;
-		mPos = 0;
-		mArgs = toArgs.process(mDrv, path, args);
-		filterArgs(ref mArgs, mDrv.arch, mDrv.platform);
-
-		process(c, base);
-	}
-
 
 protected:
 	fn parseDefault(c: Configuration)
 	{
 		void fromDir(Project base) {
-			process(c, base);
-			if (auto lib = cast(Lib)base) {
-				mDrv.add(lib);
-			} else if (auto exe = cast(Exe)base) {
-				mDrv.add(exe);
-			}
+			processBase(c, base);
 		}
 
 		for (; mPos < mArgs.length; mPos++) {
@@ -324,15 +309,13 @@ protected:
 				mPos++;
 				exe := new Exe();
 				exe.name = arg.extra;
-				process(c, exe);
-				mDrv.add(exe);
+				processBase(c, exe);
 				return;
 			case Lib:
 				mPos++;
 				lib := new Lib();
 				lib.name = arg.extra;
-				process(c, lib);
-				mDrv.add(lib);
+				processBase(c, lib);
 				return;
 			case Directory:
 				mPos++;
@@ -351,18 +334,20 @@ protected:
 		}
 	}
 
-	fn process(c: Configuration, base: Project)
+	fn processBase(c: Configuration, base: Project)
 	{
 		lib := cast(Lib)base;
 		if (lib !is null) {
 			parseLib(c, lib);
 			verify(lib);
+			mDrv.add(lib);
 		}
 
 		exe := cast(Exe)base;
 		if (exe !is null) {
 			parseExe(c, exe);
 			verify(exe);
+			mDrv.add(exe);
 		}
 	}
 
