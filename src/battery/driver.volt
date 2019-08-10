@@ -595,7 +595,7 @@ in your system.
 			abort("No system c compiler found.");
 		}
 
-		if (mExe.length == 1) {
+		if (mExe.length == 1 && !hasVoltaTool) {
 			info("WARNING: Didn't specify any executables beyond Volta. (ignore if building Volta)");
 		}
 	}
