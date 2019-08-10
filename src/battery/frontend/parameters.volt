@@ -99,34 +99,14 @@ fn getArgs(libs: Lib[], exes: Exe[]) string[]
 
 	foreach (lib; libs) {
 		ret ~= getArgsLib(lib);
-		ret ~= processChildren(lib.children);
 	}
 
 	foreach (exe; exes) {
 		ret ~= getArgsExe(exe);
-		ret ~= processChildren(exe.children);
 	}
 
 	return ret;
 }
-
-fn processChildren(children: Project[]) string[]
-{
-	ret: string[];
-
-	foreach (child; children) {
-		if (clib := cast(Lib)child) {
-			ret ~= getArgsLib(clib);
-		} else if (cexe := cast(Exe)child) {
-			ret ~= getArgsExe(cexe);
-		} else {
-			assert(false);
-		}
-	}
-
-	return ret;
-}
-
 
 fn getArgsProject(b: Project, tag: string) string[]
 {
@@ -328,6 +308,15 @@ public:
 protected:
 	fn parseDefault(c: Configuration)
 	{
+		void fromDir(Project base) {
+			process(c, base);
+			if (auto lib = cast(Lib)base) {
+				mDrv.add(lib);
+			} else if (auto exe = cast(Exe)base) {
+				mDrv.add(exe);
+			}
+		}
+
 		for (; mPos < mArgs.length; mPos++) {
 			arg := mArgs[mPos];
 			switch (arg.kind) with (Arg.Kind) {
@@ -347,13 +336,7 @@ protected:
 				return;
 			case Directory:
 				mPos++;
-				base := scanDir(mDrv, c, arg.extra);
-				process(c, base);
-				if (auto lib = cast(Lib)base) {
-					mDrv.add(lib);
-				} else if (auto exe = cast(Exe)base) {
-					mDrv.add(exe);
-				}
+				scanDir(mDrv, c, fromDir, arg.extra);
 				return;
 			case Env:
 			case HostEnv:

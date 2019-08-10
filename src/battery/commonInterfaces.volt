@@ -43,8 +43,6 @@ class Project
 	//! Was this target given a -jo argument.
 	jsonOutput: string;
 
-	children: Project[];
-
 	//! Should we ignore this project unless explicitly asked for
 	isExternal: bool;
 

@@ -193,23 +193,13 @@ public:
 		arg.parseProjects(mConfig);
 
 		batteryTomls: string[];
-		fn addProjectBatteryTxt(prj: Project)
-		{
-			llvmVersion.addVersionIdentifiers(mConfig.llvmVersion, prj);
-			batteryTomls ~= prj.batteryToml;
-			foreach (child; prj.children) {
-				/* Calculating the dependency graph
-				 * here to avoid some spurious (but harmless)
-				 * listings here isn't worth it.
-				 */
-				addProjectBatteryTxt(child);
-			}
-		}
 		foreach (_lib; mLib) {
-			addProjectBatteryTxt(_lib);
+			llvmVersion.addVersionIdentifiers(mConfig.llvmVersion, _lib);
+			batteryTomls ~= _lib.batteryToml;
 		}
 		foreach (_exe; mExe) {
-			addProjectBatteryTxt(_exe);
+			llvmVersion.addVersionIdentifiers(mConfig.llvmVersion, _exe);
+			batteryTomls ~= _exe.batteryToml;
 		}
 
 		configSanity();
@@ -679,7 +669,6 @@ in your system.
 
 		mLib ~= lib;
 		mStore[lib.name] = lib;
-		addChildren(lib);
 	}
 
 	override fn add(exe: Exe)
@@ -690,7 +679,6 @@ in your system.
 
 		mExe ~= exe;
 		mStore[exe.name] = exe;
-		addChildren(exe);
 	}
 
 	fn clearProjects()
@@ -700,14 +688,6 @@ in your system.
 		}
 		mExe = null;
 		mLib = null;
-	}
-
-	fn addChildren(b: Project)
-	{
-		foreach (child; b.children) {
-			mStore[child.name] = child;
-			addChildren(child);
-		}
 	}
 
 	override fn action(fmt: Fmt, ...)

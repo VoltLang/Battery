@@ -34,12 +34,11 @@ enum PathTestSimple  = "battery.tests.simple";
 /*!
  * Scan a directory and see what it holds.
  */
-fn scanDir(drv: Driver, c: Configuration, path: string) Project
-{
-	return scanDir(drv, c, path, null);
-}
-
-fn scanDir(drv: Driver, c: Configuration, path: string, parent: string) Project
+fn scanDir(drv: Driver,
+           c: Configuration,
+           onProject: scope dg(Project),
+           path: string,
+           parent: string = null)
 {
 	s: Scanner;
 	s.scan(drv, path);
@@ -64,27 +63,27 @@ fn scanDir(drv: Driver, c: Configuration, path: string, parent: string) Project
 	}
 
 	// Create exectuable or library.
-	ret: Project; exe: Exe; lib: Lib;
+	p: Project; exe: Exe; lib: Lib;
 	if (s.hasMainD && s.hasMainVolt) {
 		drv.abort("Project can not have both '%s' and '%s'",
 			s.pathMainD, s.pathMainVolt);
 	} else if (s.hasMainVolt || s.hasMainD) {
-		ret = exe = s.buildExe();
+		p = exe = s.buildExe();
 	} else {
-		ret = lib = s.buildLib();
+		p = lib = s.buildLib();
 	}
 
 	if (parent.length != 0) {
-		ret.name = format("%s.%s", parent, ret.name);
+		p.name = format("%s.%s", parent, p.name);
 	}
 
-	processBatteryCmd(drv, c, ret, ref s);
+	processBatteryCmd(drv, c, p, ref s);
 
-	if (!ret.scanForD && s.filesVolt.length == 0) {
+	if (!p.scanForD && s.filesVolt.length == 0) {
 		drv.abort("path '%s' has no volt files", s.pathSrc);
 	}
 
-	if (ret.scanForD && s.filesD.length == 0) {
+	if (p.scanForD && s.filesD.length == 0) {
 		drv.abort("path '%s' has no D files", s.pathSrc);
 	}
 
@@ -96,11 +95,12 @@ fn scanDir(drv: Driver, c: Configuration, path: string, parent: string) Project
 		printInfo(drv, exe, ref s);
 	}
 
-	foreach (sub; s.pathSubProjects) {
-		ret.children ~= scanDir(drv, c, dirName(sub), ret.name);
-	}
+	// Done now, send it to the callback.
+	onProject(p);
 
-	return ret;
+	foreach (sub; s.pathSubProjects) {
+		scanDir(drv, c, onProject, dirName(sub), p.name);
+	}
 }
 
 fn rootify(root: string, path: string) string
