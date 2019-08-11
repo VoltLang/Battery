@@ -5,14 +5,18 @@
  */
 module battery.frontend.conf;
 
+import core.exception;
+
 import io = watt.io;
 import file = watt.io.file;
 import toml = watt.toml;
 import wpath = watt.path;
-import text = [watt.text.string, watt.text.ascii, watt.text.path, watt.process.cmd];
+import text = [watt.text.path, watt.process.cmd];
 import process = watt.process.pipe;
 import semver = watt.text.semver;
 
+import platformEval = battery.conf.platform;
+import cfgEval = battery.conf.cfg;
 import llvmConf = battery.frontend.llvmConf;
 
 import battery.configuration;
@@ -39,6 +43,11 @@ fn parseTomlConfig(tomlFilename: string, path: string, d: Driver, c: Configurati
 			return;
 		}
 		s = val;
+	}
+
+	if (root.hasKey(CfgTable) && root.hasKey(PlatformTable)) {
+		d.info("Found '%s' in '%s' ignoring '%s'", CfgTable, tomlFilename, PlatformTable);
+		root.removeKey(PlatformTable);
 	}
 
 	// Set values that apply to both Libs and Exes.
@@ -103,7 +112,7 @@ fn verifyKeys(root: toml.Value, tomlPath: string, d: Driver, prefix: string = nu
 			SrcDirKey, TestFilesKey, JsonOutputKey, LibsKey, LPathsKey, FrameworksKey, FPathsKey,
 			StringPathKey, LDArgsKey, CCArgsKey, LinkArgsKey, LinkerArgsKey,
 			AsmFilesKey, CFilesKey, ObjFilesKey, VoltFilesKey, IdentKey, CommandKey, WarningKey,
-			LlvmConfig, LLVMHackKey:
+			LlvmConfig, LLVMHackKey, CfgTable:
 			continue;
 		default:
 			d.info(new "Warning: unknown key \"${prefix}${key}\" in config file '${tomlPath}'");
@@ -161,6 +170,7 @@ enum IdentKey        = "versionIdentifiers";
 enum CommandKey      = "commands";
 enum WarningKey      = "warningsEnabled";
 enum LlvmConfig      = "llvmConfig";
+enum CfgTable        = "cfg";
 
 fn parseCommand(cmd: string, c: Configuration, b: Project)
 {
@@ -222,36 +232,88 @@ fn makePath(path: string, flag: string) string
 	return text.normalisePath(str);
 }
 
+fn evaluatePlatform(d: Driver, c: Configuration, key: string) bool
+{
+	try {
+		return platformEval.eval(c.platform, key);
+	} catch (Exception e) {
+		d.abort(e.msg);
+		return false;
+	}
+}
+
+fn evaluateCfg(d: Driver, c: Configuration, key: string) bool
+{
+	try {
+		return cfgEval.eval(c.arch, c.platform, key);
+	} catch (Exception e) {
+		d.abort("%s in \"%s\"", e.msg, key);
+		return false;
+	}
+}
+
+alias Callback = scope dg (table: toml.Value);
+
+fn onPlatform(root: toml.Value, d: Driver, c: Configuration, cb: Callback)
+{
+	if (!root.hasKey(PlatformTable)) {
+		return;
+	}
+
+	platformTable := root[PlatformTable];
+	foreach (platformKey; platformTable.tableKeys()) {
+		if (!evaluatePlatform(d, c, platformKey)) {
+			continue;
+		}
+
+		cb(platformTable[platformKey]);
+	}
+}
+
+fn onTargets(root: toml.Value, d: Driver, c: Configuration, cb: Callback)
+{
+	if (!root.hasKey(CfgTable)) {
+		return;
+	}
+
+	cfgTable := root[CfgTable];
+	foreach (cfgKey; cfgTable.tableKeys()) {
+		if (!evaluateCfg(d, c, cfgKey)) {
+			continue;
+		}
+
+		cb(cfgTable[cfgKey]);
+	}	
+}
+
 fn optionalStringValue(root: toml.Value, d: Driver, c: Configuration, key: string) string
 {
 	base := optionalStringValue(root, key);
-	if (root.hasKey(PlatformTable)) {
-		platformTable := root[PlatformTable];
-		foreach (platformKey; platformTable.tableKeys()) {
-			if (evaluatePlatformConditional(d, c, platformKey)) {
-				val := optionalStringValue(platformTable[platformKey], key);
-				if (val != "") {
-					base = val;
-				}
-			}
+	fn call(table: toml.Value) {
+		val := optionalStringValue(table, key);
+		if (val != "") {
+			base = val;
 		}
 	}
+
+	onTargets(root, d, c, call);
+	onPlatform(root, d, c, call);
+
 	return base;
 }
 
 fn optionalBoolValue(root: toml.Value, d: Driver, c: Configuration, key: string) bool
 {
 	base := optionalBoolValue(root, key);
-	if (root.hasKey(PlatformTable)) {
-		platformTable := root[PlatformTable];
-		foreach (platformKey; platformTable.tableKeys()) {
-			if (evaluatePlatformConditional(d, c, platformKey)) {
-				if (platformTable[platformKey].hasKey(key)) {
-					base = optionalBoolValue(platformTable[platformKey], key);
-				}
-			}
+	fn call(table: toml.Value) {
+		if (table.hasKey(key)) {
+			base = optionalBoolValue(table, key);
 		}
 	}
+
+	onTargets(root, d, c, call);
+	onPlatform(root, d, c, call);
+
 	return base;
 }
 
@@ -267,14 +329,13 @@ fn optionalPathArray(root: toml.Value, path: string, d: Driver, c: Configuration
 fn optionalStringArray(root: toml.Value, d: Driver, c: Configuration, key: string) string[]
 {
 	baseArr := optionalStringArray(root, key);
-	if (root.hasKey(PlatformTable)) {
-		platformTable := root[PlatformTable];
-		foreach (platformKey; platformTable.tableKeys()) {
-			if (evaluatePlatformConditional(d, c, platformKey)) {
-				baseArr ~= optionalStringArray(platformTable[platformKey], key);
-			}
-		}
+	fn call(table: toml.Value) {
+		baseArr ~= optionalStringArray(table, key);
 	}
+
+	onTargets(root, d, c, call);
+	onPlatform(root, d, c, call);
+
 	return baseArr;
 }
 
@@ -305,129 +366,4 @@ fn optionalStringArray(root: toml.Value, key: string) string[]
 		strArray[i] = arr[i].str();
 	}
 	return strArray;
-}
-
-class PlatformComponent
-{
-	enum Link
-	{
-		None,
-		And,
-		Or,
-	}
-
-	not: bool;
-	platform: Platform;
-	link: Link;
-	next: PlatformComponent;
-
-	/*!
-	 * Given a string, parse out one link in the platform chain.
-	 *
-	 * e.g., give this "!msvc && linux" and it will advance `key`, eating
-	 * '!msvc && ', set `not` to `true`, set platform to MSVC, and set `link`
-	 * to `Link.And`.
-	 *
-	 * The only valid characters are ASCII letters, !, |, and whitespace,
-	 * so this code does no unicode processing, and assumes ASCII.
-	 */
-	this(d: Driver, originalKey: string, ref key: string)
-	{
-		skipWhitespace(ref key);
-		failIfEmpty(d, originalKey, key);
-		not = get(ref key, '!');
-		assert(key[0] != '!');
-		skipWhitespace(ref key);
-		failIfEmpty(d, originalKey, key);
-		platformString := "";
-		while (key.length > 0 && text.isAlpha(key[0])) {
-			platformString ~= key[0];
-			key = key[1 .. $];
-		}
-		if (!isPlatform(platformString)) {
-			d.abort(new "unknown platform string \"${platformString}\"");
-		}
-		platform = stringToPlatform(platformString);
-		skipWhitespace(ref key);
-		if (key.length == 0) {
-			link = Link.None;
-			return;
-		}
-		switch (key[0]) {
-		case '|':
-			get(ref key, '|');
-			if (!get(ref key, '|')) {
-				d.abort(new "malformed platform string: \"${originalKey}\"");
-				break;
-			}
-			link = Link.Or;
-			break;
-		case '&':
-			get(ref key, '&');
-			if (!get(ref key, '&')) {
-				d.abort(new "malformed platform string: \"${originalKey}\"");
-				break;
-			}
-			link = Link.And;
-			break;
-		default:
-			d.abort(new "malformed platform string: \"${originalKey}\"");
-			break;
-		}
-		skipWhitespace(ref key);
-	}
-
-	fn evaluate(c: Configuration) bool
-	{
-		result := not ? platform != c.platform : platform == c.platform;
-		final switch (link) with (PlatformComponent.Link) {
-		case None: return result;
-		case And : return result && next.evaluate(c);
-		case Or  : return result || next.evaluate(c);
-		}
-	}
-
-	private fn get(ref key: string, c: dchar) bool
-	{
-		if (key.length == 0 || key[0] != c) {
-			return false;
-		}
-		key = key[1 .. $];
-		return true;
-	}
-
-	private fn skipWhitespace(ref key: string)
-	{
-		while (key.length > 0 && text.isWhite(key[0])) {
-			key = key[1 .. $];
-		}
-	}
-
-	private fn failIfEmpty(d: Driver, originalKey: string, key: string)
-	{
-		if (key.length == 0) {
-			d.abort(new "malformed platform key \"${originalKey}\"");
-		}
-	}
-}
-
-fn evaluatePlatformConditional(d: Driver, c: Configuration, key: string) bool
-{
-	platformChain := constructPlatformChain(d, ref key);
-	return platformChain.evaluate(c);
-}
-
-fn constructPlatformChain(d: Driver, ref key: string) PlatformComponent
-{
-	originalKey := key;
-	base := new PlatformComponent(d, originalKey, ref key);
-	current := base;
-	while (current.link != PlatformComponent.Link.None && key.length > 0) {
-		current.next = new PlatformComponent(d, originalKey, ref key);
-		current = current.next;
-	}
-	if (current.link != PlatformComponent.Link.None || key.length != 0) {
-		d.abort(new "malformed platform expression: \"${originalKey}\"");
-	}
-	return base;
 }
