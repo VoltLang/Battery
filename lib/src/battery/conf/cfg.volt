@@ -1,6 +1,6 @@
 // Copyright 2019, Collabora, Ltd.
 // SPDX-License-Identifier: BSL-1.0
-module battery.parsing.conf.cfg;
+module battery.conf.cfg;
 
 import core.exception;
 
