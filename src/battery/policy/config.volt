@@ -273,7 +273,11 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 		// If linker was not given use clang as the linker.
 		// Always add it to the config.
 		if (linker is null) {
-			linker = config.addTool(LinkerName, result.clangCmd, result.clangArgs);
+			args := result.clangArgs;
+			if (result.ldCmd !is null) {
+				args ~= "-fuse-ld=" ~ result.ldCmd;
+			}
+			linker = config.addTool(LinkerName, result.clangCmd, args);
 		} else {
 			linker = config.addTool(LinkerName, linker.cmd, linker.args);
 		}
@@ -303,7 +307,7 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 			clang.args ~= "-flto=thin";
 			cc.args ~= "-flto=thin";
 			if (linker !is null) {
-				linker.args ~= ["-flto=thin", "-fuse-ld=lld"];
+				linker.args ~= "-flto=thin";
 			}
 		}
 	}
