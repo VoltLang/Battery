@@ -134,7 +134,9 @@ fn addArgs(ref from: Result, arch: Arch, platform: Platform, out res: Result)
 {
 	res.from = from.from;
 	res.cmd = from.cmd;
-	res.args = [getTargetString(arch)] ~ from.args;
+	if (target := getTargetString(arch)) {
+		res.args = [target] ~ from.args;
+	}
 }
 
 
@@ -189,7 +191,7 @@ fn getTargetString(arch: Arch) string
 	final switch (arch) with (Arch) {
 	case X86: return "-m32";
 	case X86_64: return "-m64";
-	case AArch64: return "-m64";
+	case AArch64: return null;
 	}
 }
 
