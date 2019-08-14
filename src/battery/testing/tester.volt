@@ -162,6 +162,10 @@ public:
 				files ~= gen.genAsmO(asmpath);
 			}
 
+			foreach (spath; base.srcS) {
+				files ~= gen.genSO(spath);
+			}
+
 			foreach (cpath; base.srcC) {
 				files ~= gen.genCO(cpath);
 			}
