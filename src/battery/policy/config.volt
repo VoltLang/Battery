@@ -868,8 +868,8 @@ fn doVolta(drv: Driver, config: Configuration) bool
 	volta.addArgs(ref results[0], config.arch, config.platform, out result);
 
 	// Do that adding, result now holds all of the info.
-	c := config.addTool(VoltaName, results[0].cmd, results[0].args);
-	drv.infoCmd(config, c, results[0].from);
+	c := config.addTool(VoltaName, result.cmd, result.args);
+	drv.infoCmd(config, c, result.from);
 
 	return true;
 }
