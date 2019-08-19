@@ -722,12 +722,14 @@ in your system.
 	{
 		vl: va_list;
 		va_start(vl);
-		io.output.write("error: ");
-		io.output.vwritefln(fmt, ref _typeids, ref vl);
 		io.output.flush();
+		io.error.write("error: ");
+		io.error.vwritefln(fmt, ref _typeids, ref vl);
+		io.error.flush();
 		va_end(vl);
 		if (mLogFile !is null) {
-			io.output.writefln("\tSee log in: %s", mLogFile);
+			io.error.writefln("\tSee log in: %s", mLogFile);
+			io.error.flush();
 		}
 		exit(-1);
 	}
