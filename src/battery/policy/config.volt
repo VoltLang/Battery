@@ -918,7 +918,7 @@ fn fillInConfigCommands(drv: Driver, config: Configuration)
 	config.ccKind = CCKind.Clang;
 
 	final switch (config.arch) with (Arch) {
-	case AArch64:
+	case ARMHF, AArch64:
 		break;
 	case X86, X86_64:
 		config.nasmCmd = config.getTool(NasmName);

@@ -488,6 +488,8 @@ fn parseArch(driver: Driver, a: string) Arch
 		return Arch.X86;
 	case "x86_64":
 		return Arch.X86_64;
+	case "armhf":
+		return Arch.ARMHF;
 	case "aarch64":
 		return Arch.AArch64;
 	default:

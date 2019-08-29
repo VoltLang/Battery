@@ -376,24 +376,28 @@ fn getLLVMTargetString(arch: Arch, platform: Platform) string
 		final switch (arch) with (Arch) {
 		case X86: return null;
 		case X86_64: return "x86_64-pc-windows-msvc";
+		case ARMHF: return null;
 		case AArch64: return null;
 		}
 	case OSX:
 		final switch (arch) with (Arch) {
 		case X86: return "i386-apple-macosx10.9.0";
 		case X86_64: return "x86_64-apple-macosx10.9.0";
+		case ARMHF: return null;
 		case AArch64: return null;
 		}
 	case Linux:
 		final switch (arch) with (Arch) {
 		case X86: return "i386-pc-linux-gnu";
 		case X86_64: return "x86_64-pc-linux-gnu";
+		case ARMHF: return "armv7l-unknown-linux-gnueabihf";
 		case AArch64: return "aarch64-unknown-linux-gnu";
 		}
 	case Metal:
 		final switch (arch) with (Arch) {
 		case X86: return "i686-pc-none-elf";
 		case X86_64: return "x86_64-pc-none-elf";
+		case ARMHF: return null;
 		case AArch64: return null;
 		}
 	}

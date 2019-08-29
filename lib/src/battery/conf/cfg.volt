@@ -34,6 +34,7 @@ enum Token
 
 	X86,
 	X86_64,
+	ARMHF,
 	AArch64,
 	OSX,
 	Linux,
@@ -138,6 +139,7 @@ public:
 		switch (str.toLower()) with (Token) {
 		case "x86": return X86;
 		case "x86_64": return X86_64;
+		case "armhf": return ARMHF;
 		case "aarch64": return AArch64;
 		case "linux": return Linux;
 		case "osx": return OSX;
@@ -232,6 +234,7 @@ private:
 		final switch (front) with (Token) {
 		case X86:     value = mArch == Arch.X86; break;
 		case X86_64:  value = mArch == Arch.X86_64; break;
+		case ARMHF:   value = mArch == Arch.ARMHF; break;
 		case AArch64: value = mArch == Arch.AArch64; break;
 		case OSX:     value = mPlatform == Platform.OSX; break;
 		case Linux:   value = mPlatform == Platform.Linux; break;
@@ -276,7 +279,7 @@ private:
 		final switch (front) with (Token) {
 		case Not:
 			throw abortUnexpected("!");
-		case X86, X86_64, AArch64, OSX, Linux, MSVC:
+		case X86, X86_64, ARMHF, AArch64, OSX, Linux, MSVC:
 			throw abort("Unexpected identifier");
 		case OpenP:
 			throw abortUnexpected(")");
