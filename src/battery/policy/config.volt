@@ -86,9 +86,12 @@ fn doConfig(drv: Driver, config: Configuration)
 	// Make it possible for the user to supply the volta.exe
 	doVolta(drv, config);
 
-	if (config.arch != Arch.AArch64) {
-		// NASM is needed for RT.
+	final switch (config.arch) with (Arch) {
+	case AArch64, ARMHF: break;
+	case X86, X86_64:
+		// NASM is needed for RT on X86 & X86_64.
 		doNASM(drv, config);
+		break;
 	}
 }
 

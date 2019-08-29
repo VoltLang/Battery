@@ -569,6 +569,11 @@ in your system.
 			cc := mConfig.getTool("ccompiler");
 			cc.args ~= ["-isystem", "/usr/aarch64-linux-gnu/include"];
 		}
+
+		if (mConfig.arch == Arch.ARMHF && mConfig.isCross) {
+			cc := mConfig.getTool("ccompiler");
+			cc.args ~= ["-isystem", "/usr/arm-linux-gnueabihf/include"];
+		}
 	}
 
 	fn verifyConfig()
