@@ -225,16 +225,15 @@ private:
 
 	fn evalRoot() bool
 	{
-		value := evalStart();
+		value := evalStart(false);
 
 		if (front == Token.CloseP) {
 			throw abort("Left over ')");
 		}
-
 		return value;
 	}
 
-	fn evalStart() bool
+	fn evalStart(neg: bool) bool
 	{
 		bool value = false;
 
@@ -249,7 +248,7 @@ private:
 		case Unknown: value = false; break;
 		case Not:
 			popFront();
-			return !evalStart();
+			return evalStart(true);
 		case OpenP:
 			popFront();
 			value = evalParan();
@@ -264,6 +263,11 @@ private:
 			throw abort("Unexpected end of string!");
 		}
 
+		// Was there a neg in front of this value.
+		if (neg) {
+			value = !value;
+		}
+
 		popFront();
 
 		return evalLink(value);
@@ -271,7 +275,7 @@ private:
 
 	fn evalParan() bool
 	{
-		value := evalStart();
+		value := evalStart(false);
 
 		if (front != Token.CloseP) {
 			throw abort("Unclosed '(' at end of string!");
@@ -298,7 +302,8 @@ private:
 			break;
 		}
 
-		second := evalStart();
+		second := evalStart(false);
+		ret: bool;
 
 		if (link == Token.AndAnd) {
 			return first && second;
