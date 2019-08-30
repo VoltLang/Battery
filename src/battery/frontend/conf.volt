@@ -50,6 +50,9 @@ fn parseTomlConfig(tomlFilename: string, path: string, d: Driver, c: Configurati
 		root.removeKey(PlatformTable);
 	}
 
+	pruneCfgTable(root, d, c);
+	prunePlatformTable(root, d, c);
+
 	// Set values that apply to both Libs and Exes.
 	b.name = optionalStringValue(root, d, c, NameKey);
 	if (b.name is null) {
@@ -244,6 +247,22 @@ fn evaluatePlatform(d: Driver, c: Configuration, key: string) bool
 	}
 }
 
+fn prunePlatformTable(root: toml.Value, d: Driver, c: Configuration)
+{
+	if (!root.hasKey(PlatformTable)) {
+		return;
+	}
+
+	platformTable := root[PlatformTable];
+	foreach (platformKey; platformTable.tableKeys()) {
+		if (evaluatePlatform(d, c, platformKey)) {
+			continue;
+		}
+
+		platformTable.removeKey(platformKey);
+	}
+}
+
 fn evaluateCfg(d: Driver, c: Configuration, key: string) bool
 {
 	fn warn(str: text.SinkArg) {
@@ -259,6 +278,22 @@ fn evaluateCfg(d: Driver, c: Configuration, key: string) bool
 	return ret;
 }
 
+fn pruneCfgTable(root: toml.Value, d: Driver, c: Configuration)
+{
+	if (!root.hasKey(CfgTable)) {
+		return;
+	}
+
+	cfgTable := root[CfgTable];
+	foreach (cfgKey; cfgTable.tableKeys()) {
+		if (evaluateCfg(d, c, cfgKey)) {
+			continue;
+		}
+
+		cfgTable.removeKey(cfgKey);
+	}
+}
+
 alias Callback = scope dg (table: toml.Value);
 
 fn onPlatform(root: toml.Value, d: Driver, c: Configuration, cb: Callback)
@@ -267,13 +302,8 @@ fn onPlatform(root: toml.Value, d: Driver, c: Configuration, cb: Callback)
 		return;
 	}
 
-	platformTable := root[PlatformTable];
-	foreach (platformKey; platformTable.tableKeys()) {
-		if (!evaluatePlatform(d, c, platformKey)) {
-			continue;
-		}
-
-		cb(platformTable[platformKey]);
+	foreach (value; root[PlatformTable].tableValues()) {
+		cb(value);
 	}
 }
 
@@ -283,13 +313,8 @@ fn onTargets(root: toml.Value, d: Driver, c: Configuration, cb: Callback)
 		return;
 	}
 
-	cfgTable := root[CfgTable];
-	foreach (cfgKey; cfgTable.tableKeys()) {
-		if (!evaluateCfg(d, c, cfgKey)) {
-			continue;
-		}
-
-		cb(cfgTable[cfgKey]);
+	foreach (value; root[CfgTable].tableValues()) {
+		cb(value);
 	}	
 }
 
