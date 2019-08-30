@@ -4,6 +4,8 @@ module battery.conf.cfg;
 
 import core.exception;
 
+import watt.text.format : format;
+import watt.text.sink : Sink;
 import watt.text.source : Source;
 import watt.text.ascii : isAlpha, isAlphaNum, isWhite;
 import watt.conv : toLower;
@@ -14,10 +16,10 @@ import battery.defines;
 /*!
  * Evals a target string, throws @ref core.Exception on errors.
  */
-fn eval(arch: Arch, platform: Platform, str: string) bool
+fn eval(arch: Arch, platform: Platform, str: string, warning: Sink) bool
 {
 	te: TargetEval;
-	return te.eval(arch, platform, str);
+	return te.eval(arch, platform, str, warning);
 }
 
 
@@ -32,6 +34,7 @@ enum Token
 	CloseP, //<! `)`
 	End,    //<! End of string
 
+	Unknown,
 	X86,
 	X86_64,
 	ARMHF,
@@ -49,11 +52,13 @@ struct Lexer
 private:
 	mSrc: Source;
 	mTokens: Token[];
+	mWarning: Sink;
 
 
 public:
-	fn lex(text: string) Token[]
+	fn lex(text: string, warning: Sink) Token[]
 	{
+		mWarning = warning;
 		mSrc = new Source(text, null);
 
 		mSrc.skipWhitespace();
@@ -144,7 +149,9 @@ public:
 		case "linux": return Linux;
 		case "osx": return OSX;
 		case "msvc": return MSVC;
-		default: throw abort(new "Unknown arch or platform '${str}'");
+		default:
+			mWarning(format("unknown ident '%s'", str));
+			return Unknown;
 		}
 	}
 
@@ -190,10 +197,10 @@ private:
 
 
 public:
-	fn eval(arch: Arch, platform: Platform, str: string) bool
+	fn eval(arch: Arch, platform: Platform, str: string, warning: Sink) bool
 	{
 		p: Lexer;
-		this.mTokens = p.lex(str);
+		this.mTokens = p.lex(str, warning);
 		assert(mTokens.length > 0);
 		this.front = this.mTokens[0];
 		this.mIndex = 0;
@@ -239,6 +246,7 @@ private:
 		case OSX:     value = mPlatform == Platform.OSX; break;
 		case Linux:   value = mPlatform == Platform.Linux; break;
 		case MSVC:    value = mPlatform == Platform.MSVC; break;
+		case Unknown: value = false; break;
 		case Not:
 			popFront();
 			return !evalStart();
@@ -279,7 +287,7 @@ private:
 		final switch (front) with (Token) {
 		case Not:
 			throw abortUnexpected("!");
-		case X86, X86_64, ARMHF, AArch64, OSX, Linux, MSVC:
+		case X86, X86_64, ARMHF, AArch64, OSX, Linux, MSVC, Unknown:
 			throw abort("Unexpected identifier");
 		case OpenP:
 			throw abortUnexpected(")");

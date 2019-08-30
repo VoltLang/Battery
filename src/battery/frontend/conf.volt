@@ -11,7 +11,7 @@ import io = watt.io;
 import file = watt.io.file;
 import toml = watt.toml;
 import wpath = watt.path;
-import text = [watt.text.path, watt.process.cmd];
+import text = [watt.text.path, watt.process.cmd, watt.text.sink];
 import process = watt.process.pipe;
 import semver = watt.text.semver;
 
@@ -246,12 +246,17 @@ fn evaluatePlatform(d: Driver, c: Configuration, key: string) bool
 
 fn evaluateCfg(d: Driver, c: Configuration, key: string) bool
 {
-	try {
-		return cfgEval.eval(c.arch, c.platform, key);
-	} catch (Exception e) {
-		d.abort("%s in \"%s\"", e.msg, key);
-		return false;
+	fn warn(str: text.SinkArg) {
+		d.info("warning: In key '%s' %s", key, str);
 	}
+
+	ret: bool;
+	try {
+		ret = cfgEval.eval(c.arch, c.platform, key, warn);
+	} catch (Exception e) {
+		d.info("warning: In key '%s' %s", key, e.msg);
+	}
+	return ret;
 }
 
 alias Callback = scope dg (table: toml.Value);
