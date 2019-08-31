@@ -32,7 +32,7 @@ import battery.policy.tools;
 import battery.policy.validate;
 import battery.frontend.parameters;
 import battery.frontend.scanner;
-import battery.frontend.batteryConf;
+import conf = battery.frontend.batteryConf;
 import llvmVersion = battery.frontend.llvmVersion;
 import llvmConf = battery.frontend.llvmConf;
 import battery.backend.builder;
@@ -68,6 +68,7 @@ protected:
 	mLib: Lib[];
 	mPwd: string;
 	mLLVMConf: string;
+	mConf: string;
 
 	mBootstrapCommands: Command[string];
 	mTargetCommands: Command[string];
@@ -91,6 +92,7 @@ public:
 			}
 		}
 
+		conf.parseArguments(this, ref args, out mConf);
 
 		llvmConf.parseArguments(ref args, out mLLVMConf);
 		arch = HostArch;
@@ -131,7 +133,10 @@ public:
 
 		// Load the battery config.
 		batConf: BatteryConfig;
-		loadBatteryConf(null, getExecDir(), out batConf);
+		if (conf.loadFromFile(mConf, out batConf) ||
+		    conf.loadFromDir(getExecDir(), out batConf)) {
+		    	log.info("Got a BatConf!");
+		}
 
 		// Filter out --release, --arch and --platform arguments.
 		originalArgs := args;

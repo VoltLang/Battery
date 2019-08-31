@@ -7,22 +7,15 @@
 module battery.frontend.batteryConf;
 
 import toml = watt.toml;
+import getopt = watt.text.getopt;
 
 import watt.text.string : replace, StringSink;
 import watt.text.format : format;
 import watt.text.path : concatenatePath;
 import watt.io.file : exists, isFile, read;
-import watt.path : fullPath;
+import watt.path : fullPath, exists, dirName;
 
-//import io = watt.io;
-//import file = watt.io.file;
-//import wpath = watt.path;
-//import text = [watt.text.string, watt.text.ascii, watt.text.path, watt.process.cmd];
-//import process = watt.process.pipe;
-//import semver = watt.text.semver;
-
-//import battery.configuration;
-//import battery.util.parsing;
+import battery.commonInterfaces;
 import battery.defines;
 import battery.util.log;
 
@@ -32,37 +25,78 @@ enum BatteryConfName = "battery.conf.toml";
 private global log: Logger = {"frontend.batteryConf"};
 
 
-fn loadBatteryConf(filename: string, path: string, out batConf: BatteryConfig) bool
+/*!
+ * This parses the argument `--conf` from `args`.
+ */
+fn parseArguments(drv: Driver, ref args: string[], out conf: string)
 {
-	log.info("BatConf parser online, lets parse some ${BatteryConfName} files!");
+	if (!getopt.getopt(ref args, "conf", ref conf)) {
+		log.info("Did not get any --conf argument");
+		return;
+	}
+
+	if (!exists(conf)) {
+		drv.abort("Got --conf '%s' as a argument but it did not exists", conf);
+	}
+}
+
+fn loadFromFile(filename: string, out batConf: BatteryConfig) bool
+{
+	if (filename is null) {
+		log.info("\tNo filename given!");
+		return false;
+	}
+
+	if (!filename.isFile()) {
+		log.info(new "The file '${filename}' doesn't exists or is not a file!");
+		return false;
+	}
+
+	// Tidy up the filename.
+	state: State;
+	state.filename = fullPath(filename);
+	state.path = dirName(filename);
+
+	return loadBatteryConf(ref state, out batConf);
+}
+
+fn loadFromDir(path: string, out batConf: BatteryConfig) bool
+{
 	if (path is null) {
 		log.info("\tNo path given!");
 		return false;
 	}
 
-	if (filename is null) {
-		filename = concatenatePath(path, BatteryConfName);
-	}
-
-	// Tidy up the filename.
-	filename = fullPath(filename);
-
+	filename := concatenatePath(path, BatteryConfName);
 	if (!filename.isFile()) {
-		log.info(new "The file '${filename}' doesn't excist or is not a file!");
+		log.info(new "The file '${filename}' doesn't exists or is not a file!");
 		return false;
 	}
 
+	// Tidy up the filename.
+	state: State;
+	state.path = path;
+	state.filename = fullPath(filename);
+
+	return loadBatteryConf(ref state, out batConf);
+}
+
+fn loadBatteryConf(ref state: State, out batConf: BatteryConfig) bool
+{
+	if (!state.filename.isFile()) {
+		log.info(new "The file '${state.filename}' doesn't exists or is not a file!");
+		return false;
+	}
+
+	log.info(new "BatConf parsing ${state.filename}'");
 
 	try {
-		root := toml.parse(cast(string)read(filename));
+		root := toml.parse(cast(string)read(state.filename));
 
-		state: State;
-		state.path = path;
-		state.filename = filename;
 		state.parseRoot(root, out batConf);
-		batConf.filename = filename;	
+		batConf.filename = state.filename;	
 	} catch (toml.TomlException e) {
-		log.info(new "Failed to parse '${filename}'\n\t${e.msg}");
+		log.info(new "Failed to parse '${state.filename}'\n\t${e.msg}");
 	}
 
 	batConf.dump("Found");
