@@ -130,7 +130,7 @@ fn detectFromArgs(ref fromArgs: FromArgs, out result: Result) bool
  */
 fn detectFromBatConf(ref batConf: BatteryConfig, out result: Result) bool
 {
-	log.info(new "Checking llvm from '${batConf.filename}'.");
+	log.info(new "Checking llvm from battery config '${batConf.filename}'.");
 	fromArgs: FromArgs;
 	fromArgs.configCmd = batConf.llvmConfigCmd;
 	fromArgs.clangCmd = batConf.llvmClangCmd;
