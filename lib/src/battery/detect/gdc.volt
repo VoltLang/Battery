@@ -58,7 +58,7 @@ fn detectFromPath(path: string, out results: Result[]) bool
 	}
 
 	// Try some known suffixes.
-	suffixes := ["-6", "-7", "-8", "-9"];
+	suffixes := ["-6", "-7", "-8", "-9", "-10"];
 	foreach (suffix; suffixes) {
 		if (fromPath(path, out res, suffix)) {
 			results ~= res;
