@@ -16,12 +16,20 @@ import battery.configuration;
 import battery.policy.tools;
 import battery.util.path : searchPath;
 
+static import battery.util.log;
+
 import gdc = battery.detect.gdc;
 import llvm = battery.detect.llvm;
 import rdmd = battery.detect.rdmd;
 import nasm = battery.detect.nasm;
 import msvc = battery.detect.msvc;
 import volta = battery.detect.volta;
+
+
+/*!
+ * So we get the right prefix on logged messages.
+ */
+global log: battery.util.log.Logger = {"config"};
 
 
 fn getProjectConfig(drv: Driver, arch: Arch, platform: Platform) Configuration
@@ -143,6 +151,29 @@ fn doEnv(drv: Driver, config: Configuration, outside: Environment)
  *
  */
 
+fn logNeeded(ref need: llvm.Needed, config: Configuration)
+{
+	info := new "${config.arch}-${config.platform}${config.isBootstrap ? \" (bootstrap)\" : \"\"}";
+
+	if (!need.config &&
+	    !need.ar &&
+	    !need.clang &&
+	    !need.ld &&
+	    !need.link &&
+	    !need.wasm) {
+		log.info(new "Nothing from LLVM is needed ${info}");
+	}
+
+	str := new "For ${info} we need:";
+	if (need.config) { str ~= "\n\tllvm-config"; }
+	if (need.clang) { str ~= "\n\tclang"; }
+	if (need.ar) { str ~= "\n\tllvm-ar"; }
+	if (need.link) { str ~= "\n\tllvm-link"; }
+	if (need.ld) { str ~= "\n\tlld"; }
+	if (need.wasm) { str ~= "\n\twasm-ld"; }
+	log.info(str);
+}
+
 fn fillInNeeded(ref need: llvm.Needed, config: Configuration)
 {
 	// For Windows llvm-config is not needed.
@@ -174,15 +205,39 @@ fn fillInNeeded(ref need: llvm.Needed, config: Configuration)
 	}
 }
 
+fn logMissingNeeded(ref res: llvm.Result, cmd: string)
+{
+	log.info(new "Needed cmd '${cmd}' was not found in LLVM-${res.ver} result from ${res.from}.");
+}
+
 fn hasNeeded(ref res: llvm.Result, ref need: llvm.Needed) bool
 {
-	if (need.config && (res.configCmd is null)) return false;
-	if (need.clang && (res.clangCmd is null)) return false;
-	if (need.ar && (res.arCmd is null)) return false;
-	if (need.link && (res.linkCmd is null)) return false;
-	if (need.ld && (res.ldCmd is null)) return false;
-	if (need.wasm && (res.wasmCmd is null)) return false;
-	return true;
+	bool ok = true;
+	if (need.config && (res.configCmd is null)) {
+		res.logMissingNeeded("llvm-config");
+		ok = false;
+	}
+	if (need.clang && (res.clangCmd is null)) {
+		res.logMissingNeeded("clang");
+		ok = false;
+	}
+	if (need.ar && (res.arCmd is null)) {
+		res.logMissingNeeded("llvm-ar");
+		ok = false;
+	}
+	if (need.link && (res.linkCmd is null)) {
+		res.logMissingNeeded("llvm-link");
+		ok = false;
+	}
+	if (need.ld && (res.ldCmd is null)) {
+		res.logMissingNeeded("lld");
+		ok = false;
+	}
+	if (need.wasm && (res.wasmCmd is null)) {
+		res.logMissingNeeded("wasm-ld");
+		ok = false;
+	}
+	return ok;
 }
 
 enum UseAsLinker
@@ -223,16 +278,22 @@ fn pickLLVM(drv: Driver, config: Configuration,
 
 	// What do we need?
 	need.fillInNeeded(config);
+	need.logNeeded(config);
 
 	// Loop the results.
-	foreach (ref res; results) {
+	foreach (i, ref res; results) {
 		if (!res.hasNeeded(ref need)) {
+			log.info(new "Rejecting result #${i + 1} (LLVM-${res.ver}) result from ${res.from} because of missing commands.");
 			continue;
 		}
+
+		log.info(new "Selecting result #${i + 1} (LLVM-${res.ver}) from ${res.from} for ${config.arch}-${config.platform}.");
 
 		llvm.addArgs(ref res, config.arch, config.platform, out result);
 		return true;
 	}
+
+	log.info(new "Could not find any LLVM toolchain for ${config.arch}-${config.platform}.");
 
 	return false;
 }
