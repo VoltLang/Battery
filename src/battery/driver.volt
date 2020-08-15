@@ -252,10 +252,13 @@ public:
 		}
 	}
 
-	fn build(bargs: string[])
+	fn build(buildArgs: string[])
 	{
 		bool verbose;
-		getopt(ref bargs, "verbose", ref verbose);
+		getopt(ref buildArgs, "verbose", ref verbose);
+		if (buildArgs.length > 0) {
+			return abort("Extra arguments given to build!\n%s", buildArgs);
+		}
 
 		root: toml.Value;
 		if (!getTomlConfig(BatteryConfigFile, out root)) {
