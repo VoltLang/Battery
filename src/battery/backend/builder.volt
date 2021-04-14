@@ -155,12 +155,9 @@ public:
 		// Should we include the library source directly in the binary.
 		if (gen.shouldSourceInclude(lib)) {
 			store = processProject(ref gen, lib);
-		} else if (gen.config.isLTO) {
-			store = processProject(ref gen, lib);
-			store.objs ~= makeTargetVoltLibraryAr(ref gen, lib);
 		} else {
 			store = processProject(ref gen, lib);
-			store.objs ~= makeTargetVoltLibraryO(ref gen, lib);
+			store.objs ~= makeTargetVoltLibraryAr(ref gen, lib);
 		}
 
 		addStore(lib.name, store);
