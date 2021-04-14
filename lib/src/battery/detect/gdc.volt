@@ -223,32 +223,44 @@ fn getVersionFromGdc(cmd: string) semver.Release
 	return ret;
 }
 
-enum VersionLine = "gcc version ";
+enum VersionLines = ["gcc version ", "gcc-Version"];
 
 fn extractGdcVersionString(output: string) string
 {
 	line: string;
+	versionLine: string;
+
 	foreach (l; watt.splitLines(watt.strip(output))) {
-		if (watt.startsWith(l, VersionLine) == 0) {
+		foreach (ver; VersionLines) {
+			if (watt.startsWith(l, ver) == 0) {
+				continue;
+			}
+
+			versionLine = ver;
+		}
+
+		// We did not find any version line.
+		if (versionLine is null) {
 			continue;
 		}
+
 		line = l;
 		break;
 	}
 
-	if (line.length <= VersionLine.length) {
+	if (line.length <= versionLine.length) {
 		return null;
 	}
 
 	// Cut off any junk at the end of the version string.
-	index := VersionLine.length;
+	index := versionLine.length;
 	while (index < line.length && !watt.isWhite(line[index])) {
 		index++;
 	}
 
-	if (index == VersionLine.length) {
+	if (index == versionLine.length) {
 		return null;
 	}
 
-	return line[VersionLine.length .. index];
+	return line[versionLine.length .. index];
 }
