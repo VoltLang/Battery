@@ -252,8 +252,8 @@ public:
 
 	fn makeTargetVoltLibraryAr(ref gen: ArgsGenerator, lib: Lib) uni.Target
 	{
-		oName := gen.genVoltA(lib.name);
-		return makeTargetVoltLibraryGeneric(ref gen, lib, oName, ArgsKind.VoltaAr);
+		aName := gen.genVoltA(lib.name);
+		return makeTargetVoltLibraryGeneric(ref gen, lib, aName, ArgsKind.VoltaAr);
 	}
 
 	fn makeTargetVoltLibraryO(ref gen: ArgsGenerator, lib: Lib) uni.Target
