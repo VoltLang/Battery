@@ -223,7 +223,7 @@ fn getVersionFromGdc(cmd: string) semver.Release
 	return ret;
 }
 
-enum VersionLines = ["gcc version ", "gcc-Version"];
+enum VersionLines = ["gcc version ", "gcc-Version "];
 
 fn extractGdcVersionString(output: string) string
 {
