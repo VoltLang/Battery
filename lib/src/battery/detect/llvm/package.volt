@@ -96,7 +96,7 @@ fn detectFrom(path: string, confPaths: string[], out results: Result[]) bool
 	}
 
 	// We do not scan the suffix paths on windows.
-	suffixes := ["-12", "-11", "-10", "-9", "-8", "-7", "-6.0", "-5.0", "-4.0", "-3.9"];
+	suffixes := ["-14", "-13", "-12", "-11", "-10", "-9", "-8", "-7", "-6.0", "-5.0", "-4.0", "-3.9"];
 	version (!Windows) foreach (suffix; suffixes) {
 		if (getFromPath(path, suffix, out result)) {
 			results ~= result;
