@@ -1,7 +1,7 @@
 // Copyright 2016-2018, Jakob Bornecrantz.
 // SPDX-License-Identifier: BSL-1.0
 /*!
- * Holds to interact with github, like parsing a url.
+ * Holds code to interact with github, like parsing a url.
  */
 module battery.frontend.github;
 
