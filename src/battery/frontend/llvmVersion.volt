@@ -7,7 +7,7 @@ module battery.frontend.llvmVersion;
 
 import text     = watt.text.string;
 import semver   = watt.text.semver;
-import battery  = battery.commonInterfaces;
+import battery  = battery.interfaces;
 
 
 enum IdentifierPrefixLegacy = "LlvmVersion";

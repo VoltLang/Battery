@@ -15,7 +15,7 @@ import watt.text.format;
 
 import build.util.cmdgroup;
 
-import battery.configuration;
+import battery.interfaces.configuration;
 import battery.util.parsing;
 import battery.testing.test;
 import battery.testing.project;

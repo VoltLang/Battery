@@ -19,7 +19,7 @@ import platformEval = battery.conf.platform;
 import cfgEval = battery.conf.cfg;
 import llvmConf = battery.frontend.llvmConf;
 
-import battery.configuration;
+import battery.interfaces;
 import battery.util.parsing;
 import battery.util.log;
 

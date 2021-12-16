@@ -11,8 +11,7 @@ import watt.text.string : join, split, endsWith;
 import watt.text.format : format;
 import watt.text.path : normalisePath;
 import watt.process : retrieveEnvironment, Environment;
-import battery.commonInterfaces;
-import battery.configuration;
+import battery.interfaces;
 import battery.policy.tools;
 import battery.util.path : searchPath;
 

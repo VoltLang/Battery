@@ -1,16 +1,16 @@
 // Copyright 2016-2018, Jakob Bornecrantz.
+// Copyright 2021, Collabora Inc.
 // SPDX-License-Identifier: BSL-1.0
 /*!
  * Contians the per build configuration.
  */
-module battery.configuration;
+module battery.interfaces.configuration;
 
 import core.exception;
 
 import semver = watt.text.semver;
 import watt.process : Environment;
 public import battery.defines;
-public import battery.commonInterfaces;
 
 
 /*!

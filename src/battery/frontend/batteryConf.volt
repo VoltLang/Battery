@@ -15,8 +15,8 @@ import watt.text.path : concatenatePath;
 import watt.io.file : exists, isFile, read;
 import watt.path : fullPath, exists, dirName;
 
-import battery.commonInterfaces;
 import battery.defines;
+import battery.interfaces;
 import battery.util.log;
 
 

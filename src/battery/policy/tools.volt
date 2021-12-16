@@ -2,8 +2,7 @@
 // SPDX-License-Identifier: BSL-1.0
 module battery.policy.tools;
 
-import battery.commonInterfaces;
-import battery.configuration;
+import battery.interfaces;
 import battery.driver;
 import llvmVersion = battery.frontend.llvmVersion;
 

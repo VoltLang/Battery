@@ -11,7 +11,7 @@ import json = watt.json;
 import core.exception;
 import core.c.stdio;
 
-import battery.configuration;
+import battery.interfaces.configuration;
 import battery.testing.test;
 import battery.testing.project;
 import battery.testing.regular;

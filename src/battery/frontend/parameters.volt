@@ -12,8 +12,7 @@ import watt.text.path : normalisePath;
 import watt.text.string : startsWith, endsWith;
 import watt.text.getopt;
 
-import battery.configuration;
-import battery.commonInterfaces;
+import battery.interfaces;
 import battery.policy.arg;
 import battery.util.parsing;
 import battery.util.printing;

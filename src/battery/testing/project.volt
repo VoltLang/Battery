@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: BSL-1.0
 module battery.testing.project;
 
-import battery.commonInterfaces;
+import battery.interfaces;
 
 
 class TestProject

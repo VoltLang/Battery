@@ -10,8 +10,7 @@ import watt.path : dirSeparator;
 import uni = build.core;
 import build.util.make;
 
-import battery.commonInterfaces;
-import battery.configuration;
+import battery.interfaces;
 import battery.policy.tools;
 import battery.backend.command;
 import battery.frontend.scanner : deepScan;
