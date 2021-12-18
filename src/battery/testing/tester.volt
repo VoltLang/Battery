@@ -169,11 +169,8 @@ public:
 				files ~= gen.genCO(cpath);
 			}
 
-			if (gen.config.isLTO) {
-				files ~= gen.genVoltA(base.name);
-			} else {
-				files ~= gen.genVoltO(base.name);
-			}
+			// Always use A files for libraries.
+			files ~= gen.genVoltA(base.name);
 
 			return files;
 		}
