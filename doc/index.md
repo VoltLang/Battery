@@ -107,7 +107,7 @@ We've seen the `config` command already. Here are some flags that can affect it.
 	--dep depname    Add a dependency.
 	--src-I dir      Use a different source directory, instead of src.
 	--cmd command    Run the command and treat the output as parameters.
-	--cmd-(tool)     Specify an external tool location. e.g. Tesla, or nasm.
+	--cmd-(tool)     Specify an external tool location. e.g. Volta, or nasm.
 	-l lib           Add a library to link with.
 	-L path          Add a path to search with libraries.
 	-framework name  Add a framework to link with. (macOS only)
