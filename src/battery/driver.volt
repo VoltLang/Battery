@@ -504,7 +504,7 @@ These are the available commands:
 	help <command>   Prints more help about a command.
 	build            Build current config.
 	config [args]    Configures a build.
-	test             Build current config, then run Tesla.
+	test             Build current config, then run tests.
 	toolchain        Manage Volt toolchain.
 	version          Display battery version then exit.
 	init             Generate a battery.txt file in the current directory.
@@ -535,7 +535,7 @@ in your system.
 
 	fn printTestUsage()
 	{
-		info("Invoke a build, then test with Tesla.");
+		info("Invoke a build, then run tests.");
 	}
 
 	fn printToolchainUsage()
