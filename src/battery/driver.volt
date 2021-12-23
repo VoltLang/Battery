@@ -1,3 +1,4 @@
+// Copyright 2018-2021, Collabora, Ltd.
 // Copyright 2016-2018, Jakob Bornecrantz.
 // SPDX-License-Identifier: BSL-1.0
 /*!
@@ -20,7 +21,7 @@ import watt.conv;
 import watt.io.file : exists, isFile, chdir;
 
 import battery.interfaces;
-import battery.util.log : newLog, Logger;
+import battery.util.log : setLog, newLog, Logger;
 import battery.util.file : getLinesFromFile, getTomlConfig, getStringArray, outputConfig;
 import battery.util.path : cleanPath;
 import battery.util.printing;
@@ -39,6 +40,9 @@ import battery.backend.command : ArgsGenerator;
 import battery.testing.project;
 import battery.testing.tester;
 import build.util.file : modifiedMoreRecentlyThan;
+
+import curl = battery.detect.curl;
+
 
 /*!
  * So we get the right prefix on logged messages.
@@ -111,6 +115,7 @@ public:
 		case "build": build(args[2 .. $]); break;
 		case "config": config(args[2 .. $]); break;
 		case "test": test(args[2 .. $]); break;
+		case "toolchain": toolchain(args[2 .. $]); break;
 		case "version": printVersion(); break;
 		case "init": projectInit(args[2 .. $]); break;
 		default: printUsage(); break;
@@ -358,6 +363,32 @@ public:
 		tester.test(mConfig, mHostConfig, mLib, mExe, filter);
 	}
 
+	fn toolchain(args: string[])
+	{
+		// Log to stdout
+		setLog(io.output);
+
+		res: curl.Result[];
+		env := retrieveEnvironment();
+		path := env.getOrNull("PATH");
+
+		curl.detectFromPath(path, out res);
+		if (res.length <= 0) {
+			return abort("Could not find curl command!");
+		}
+
+		curlRetval: u32;
+		curlOutput: string;
+
+		voltaArgs := ["-o", "votla.zip", "-L", "https://github.com/VoltLang/Volta/archive/refs/tags/v0.1.3.zip"];
+		wattArgs := ["-o", "watt.zip", "-L", "https://github.com/VoltLang/Watt/archive/refs/tags/v0.1.3.zip"];
+
+		curlOutput = getOutput(res[0].cmd, voltaArgs, ref curlRetval);
+		log.info(new "Output from curl '${curlRetval}':\n${curlOutput}");
+		curlOutput = getOutput(res[0].cmd, voltaArgs, ref curlRetval);
+		log.info(new "Output from curl '${curlRetval}':\n${curlOutput}");
+	}
+
 	fn help(args: string[])
 	{
 		if (args.length <= 0) {
@@ -369,6 +400,7 @@ public:
 		case "build": printBuildUsage(); break;
 		case "config": printConfigUsage(); break;
 		case "test": printTestUsage(); break;
+		case "toolchain": printToolchainUsage; break;
 		case "init": printInitUsage(); break;
 		default: info("unknown command '%s'", args[0]);
 		}
@@ -473,6 +505,7 @@ These are the available commands:
 	build            Build current config.
 	config [args]    Configures a build.
 	test             Build current config, then run Tesla.
+	toolchain        Manage Volt toolchain.
 	version          Display battery version then exit.
 	init             Generate a battery.txt file in the current directory.
 
@@ -503,6 +536,11 @@ in your system.
 	fn printTestUsage()
 	{
 		info("Invoke a build, then test with Tesla.");
+	}
+
+	fn printToolchainUsage()
+	{
+		info("Manage Volta toolchain, command in flux!");
 	}
 
 	fn printInitUsage()
