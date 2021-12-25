@@ -357,7 +357,7 @@ public:
 
 	fn test(args: string[])
 	{
-		build(args);
+		build(null);
 		filter := parseTestArgs(this, args);
 		tester := new Tester(this);
 		tester.test(mConfig, mHostConfig, mLib, mExe, filter);
