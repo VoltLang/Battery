@@ -23,6 +23,8 @@ enum VisualStudioVersion
 	Unknown,  //!< An unsupported Visual Studio version.
 	V2015,    //!< Visual Studio 2015 (AKA v14)
 	V2017,    //!< Visual Studio 2017 (AKA v15)
+	V2019,    //!< Visual Studio 2019 (AKA v16)
+	V2022,    //!< Visual Studio 2022 (AKA v17)
 	MaxVersion,  // This should always be last.
 }
 
@@ -76,6 +78,8 @@ fn visualStudioVersionToString(ver: VisualStudioVersion) string
 	case Unknown, MaxVersion: return "unknown";
 	case V2015: return "2015";
 	case V2017: return "2017";
+	case V2019: return "2019";
+	case V2022: return "2022";
 	}
 }
 
@@ -159,6 +163,8 @@ fn getVisualStudioEnvInstallations(ref fromEnv: FromEnv, out installationInfo: R
 		case Unknown, MaxVersion: assert(false);
 		case V2015: installationInfo.addLinkAndCL("bin\\amd64"); break;
 		case V2017: installationInfo.addLinkAndCL("bin\\Hostx64\\x64"); break;
+		case V2019: installationInfo.addLinkAndCL("bin\\Hostx64\\x64"); break; // Maybe?
+		case V2022: installationInfo.addLinkAndCL("bin\\Hostx64\\x64"); break; // Maybe?
 		}
 	}
 

@@ -623,6 +623,8 @@ fn fillInListsForMSVC(ref vars: VarsForMSVC)
 		vars.tLib(format("%s/LIB/amd64", vars.dirVCInstall));
 		break;
 	case V2017:
+	case V2019: // Maybe?
+	case V2022: // Maybe?
 		vars.tPath(format("%s/bin/HostX64/x64", vars.dirVCInstall));
 		vars.tInc(format("%s/ATLMFC/include", vars.dirVCInstall));
 		vars.tInc(format("%s/include", vars.dirVCInstall));
