@@ -47,6 +47,9 @@ struct FromEnv
 struct Result
 {
 public:
+	// The VSWhere command used to look up other commands and properties.
+	vsWhereCmd: string;
+
 	//! The version of this installation.
 	ver: VisualStudioVersion;
 	//! How was this MSVC found?
@@ -61,7 +64,6 @@ public:
 	universalCrtDir: string;
 	//! The Universal CRT version.
 	universalCrtVersion: string;
-
 
 	//! The cl.exe command.
 	clCmd: string;

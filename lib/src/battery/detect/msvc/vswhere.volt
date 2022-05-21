@@ -29,12 +29,11 @@ fn fromVSWhere(out result: Result) bool
 {
 	log.info("Trying to find MSVC with vswhere.exe");
 
-	cmd: string;
-	if (!result.getVSWhere(out cmd)) {
+	if (!result.getVSWhere()) {
 		return false;
 	}
 
-	if (!result.getInstallDir(cmd)) {
+	if (!result.getInstallDir()) {
 		return false;
 	}
 
@@ -42,8 +41,9 @@ fn fromVSWhere(out result: Result) bool
 		return false;
 	}
 
-	// Ok to fail.
-	result.getProductLineVersion(cmd);
+	if (!result.getProductLineVersion()) {
+		// Ok to fail.
+	}
 
 	result.from = "vswhere";
 	result.addLinkAndCL("bin\\Hostx64\\x64");
@@ -86,10 +86,10 @@ enum InstallDirArgs = [
 	"-property", "installationPath",
 ];
 
-fn getVSWhere(ref result: Result, out cmd: string) bool
+fn getVSWhere(ref result: Result) bool
 {
 	// @TODO look up env var ProgramFiles(x86)
-	cmd = "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe";
+	cmd := "C:\\Program Files (x86)\\Microsoft Visual Studio\\Installer\\vswhere.exe";
 	if (!watt.exists(cmd)) {
 		log.info(new "Didn't find vswhere.exe looked here: '${cmd}");
 		return false;
@@ -97,13 +97,15 @@ fn getVSWhere(ref result: Result, out cmd: string) bool
 		log.info(new "Found vswhere.exe '${cmd}'");
 	}
 
+	result.vsWhereCmd = cmd;
+
 	return true;
 }
 
-fn getInstallDir(ref result: Result, cmd: string) bool
+fn getInstallDir(ref result: Result) bool
 {
 	installationPath: string;
-	if (!getOutput(cmd, InstallDirArgs, out installationPath)) {
+	if (!getOutput(result.vsWhereCmd, InstallDirArgs, out installationPath)) {
 		return false;
 	}
 
@@ -139,10 +141,10 @@ enum ProductLineVersionArgs = [
 	"-property", "catalog_productLineVersion",
 ];
 
-fn getProductLineVersion(ref result: Result, cmd: string) bool
+fn getProductLineVersion(ref result: Result) bool
 {
 	verstr: string;
-	if (!getOutput(cmd, ProductLineVersionArgs, out verstr)) {
+	if (!getOutput(result.vsWhereCmd, ProductLineVersionArgs, out verstr)) {
 		return false;
 	}
 

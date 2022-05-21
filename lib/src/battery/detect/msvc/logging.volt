@@ -24,6 +24,7 @@ fn dump(ref result: Result, message: string)
 	ss.sink(message);
 	watt.format(ss.sink, "\n\tver = %s", result.ver.visualStudioVersionToString());
 	watt.format(ss.sink, "\n\tfrom = %s", result.from);
+	watt.format(ss.sink, "\n\tvsWhereCmd = %s", result.vsWhereCmd);
 	watt.format(ss.sink, "\n\tvcInstallDir = %s", result.vcInstallDir);
 	watt.format(ss.sink, "\n\tclCmd = %s", result.clCmd);
 	watt.format(ss.sink, "\n\tlinkCmd = %s", result.linkCmd);
