@@ -6,7 +6,7 @@
 module battery.frontend.github;
 
 import watt.text.string;
-import battery.commonInterfaces;
+import battery.interfaces;
 
 
 class Repo
