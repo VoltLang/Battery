@@ -29,6 +29,7 @@ public:
 		LinkLink      = 0x040,
 		Dmd           = 0x080,
 		Gdc           = 0x100,
+		Ldc           = 0x200,
 
 		AnyLdLink     = VoltaLink | ClangLink | Gdc,
 		AnyLink       = VoltaLink | ClangLink | LinkLink,
@@ -192,6 +193,30 @@ public:
 				}
 			}
 
+			if (kind & Kind.Ldc) {
+				ret ~= ["-I", b.srcDir];
+
+				foreach (def; b.defs) {
+					ret ~= new "--d-version=${def}";
+				}
+
+				foreach (path; b.frameworkPaths) {
+					ret ~= new "-L-F${path}";
+				}
+
+				foreach (framework; b.frameworks) {
+					ret ~= new "-L-framework ${framework}";
+				}
+
+				foreach (path; b.libPaths) {
+					ret ~= new "-L-L${path}";
+				}
+
+				foreach (l; b.libs) {
+					ret ~= new "-L-l${l}";
+				}
+			}
+
 			// Shared with clang and volta.
 			if (kind & Kind.AnyLdLink) {
 				foreach (path; b.frameworkPaths) {
@@ -285,7 +310,7 @@ public:
 
 		traverse(base);
 
-		if (!(kind & Kind.Dmd || kind & Kind.Gdc)) {
+		if (!(kind & Kind.Dmd || kind & Kind.Gdc || kind & Kind.Ldc)) {
 			// Implictly add rt as a dependancy
 			traverse(rt);
 		}

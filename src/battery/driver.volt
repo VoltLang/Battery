@@ -627,6 +627,7 @@ in your system.
 		hasRtDir: bool;
 		hasRdmdTool := mBootstrapConfig !is null && mBootstrapConfig.getTool(RdmdName) !is null;
 		hasGdcTool := mBootstrapConfig !is null && mBootstrapConfig.getTool(GdcName) !is null;
+		hasLdcTool := mBootstrapConfig !is null && mBootstrapConfig.getTool(LdcName) !is null;
 		hasVoltaDir := mStore.get("volta", null) !is null;
 		hasVoltaTool := mConfig.getTool(VoltaName) !is null;
 
@@ -640,8 +641,8 @@ in your system.
 		if (!hasVoltaDir && !hasVoltaTool) {
 			abort("Must specify a Volta directory or --cmd-volta (for now).");
 		}
-		if (!hasGdcTool && !hasRdmdTool && !hasVoltaTool) {
-			abort("No rdmd or gdc found (needed right now for Volta).");
+		if (!hasGdcTool && !hasRdmdTool && !hasLdcTool && !hasVoltaTool) {
+			abort("No rdmd, gdc, or ldc found (needed right now for Volta).");
 		}
 		if (!hasRtDir) {
 			abort("Must specify a Volta rt directory (for now).");

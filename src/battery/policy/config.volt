@@ -18,6 +18,7 @@ import battery.util.path : searchPath;
 static import battery.util.log;
 
 import gdc = battery.detect.gdc;
+import ldc = battery.detect.ldc;
 import llvm = battery.detect.llvm;
 import rdmd = battery.detect.rdmd;
 import nasm = battery.detect.nasm;
@@ -56,6 +57,11 @@ fn doConfig(drv: Driver, config: Configuration)
 
 		// Get GDC if we are bootstrapping.
 		if (doGDC(drv, config)) {
+			return;
+		}
+		
+		// Failing that, give LDC a try.
+		if (doLDC(drv, config)) {
 			return;
 		}
 
@@ -835,6 +841,41 @@ fn doGDC(drv: Driver, config: Configuration) bool
 	return true;
 }
 
+fn doLDC(drv: Driver, config: Configuration) bool
+{
+	fromArgs: ldc.FromArgs;
+	results: ldc.Result[];
+	result: ldc.Result;
+
+	// Search the path.
+	path := config.env.getOrNull("PATH");
+	ldc.detectFromPath(path, out results);
+
+	// Did we get anything from the BatteryConfig?
+	if (ldc.detectFromBatConf(ref config.batConf, out result)) {
+		results = result ~ results;
+	}
+
+	// Did we get anything from the args?
+	fillIfFound(drv, config, LdcName, out fromArgs.cmd, out fromArgs.args);
+	if (ldc.detectFromArgs(ref fromArgs, out result)) {
+		results = result ~ results;
+	}
+
+	// Didn't find any.
+	if (results.length == 0) {
+		return false;
+	}
+
+	// Add any extra arguments needed.
+	ldc.addArgs(ref results[0], config.arch, config.platform, out result);
+
+	// Add result to the config.
+	c := config.addTool(LdcName, result.cmd, result.args);
+	drv.infoCmd(config, c, result.from);
+	return true;
+}
+
 fn doRDMD(drv: Driver, config: Configuration) bool
 {
 	fromArgs: rdmd.FromArgs;
@@ -964,6 +1005,11 @@ fn fillInConfigCommands(drv: Driver, config: Configuration)
 		config.gdcCmd = config.getTool(GdcName);
 		if (config.gdcCmd !is null) {
 			config.gdcCmd.print = BootGdcPrint;
+		}
+
+		config.ldcCmd = config.getTool(LdcName);
+		if (config.ldcCmd !is null) {
+			config.ldcCmd.print = BootLdcPrint;
 		}
 
 		// Done now.

@@ -1,4 +1,4 @@
-// Copyright 2015-2018, Jakob Bornecrantz.
+// Copyright 2015-2024, Jakob Bornecrantz.
 // SPDX-License-Identifier: BSL-1.0
 module battery.policy.tools;
 
@@ -9,6 +9,7 @@ import llvmVersion = battery.frontend.llvmVersion;
 
 enum VoltaName = "volta";
 enum GdcName = "gdc";
+enum LdcName = "ldc";
 enum NasmName = "nasm";
 enum RdmdName = "rdmd";
 enum CLName = "cl";
@@ -38,6 +39,7 @@ enum VoltaPrint =      "  VOLTA    ";
 enum NasmPrint =       "  NASM     ";
 enum RdmdPrint =       "  RDMD     ";
 enum GdcPrint =        "  GDC      ";
+enum LdcPrint =        "  LDC      ";
 enum LinkPrint =       "  LINK     ";
 enum CLPrint   =       "  CL       ";
 enum LLVMConfigPrint = "  LLVM-CONFIG  ";
@@ -52,6 +54,7 @@ enum HostGdcPrint =    "  HOSTGDC  ";
 
 enum BootRdmdPrint =   "  BOOTRDMD ";
 enum BootGdcPrint =    "  BOOTGDC  ";
+enum BootLdcPrint =    "  BOOTLDC  ";
 
 
 /*

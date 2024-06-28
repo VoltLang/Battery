@@ -69,6 +69,9 @@ public:
 	//! Gdc for bootstrapping.
 	gdcCmd: Command;
 
+	//! LDC for bootstrapping.
+	ldcCmd: Command;
+
 	//! All added tools.
 	tools: Command[string];
 
