@@ -1,4 +1,4 @@
-// Copyright 2016-2018, Jakob Bornecrantz.
+// Copyright 2016-2024, Jakob Bornecrantz.
 // SPDX-License-Identifier: BSL-1.0
 /*!
  * Common enums and classes, aka "defines".
@@ -108,6 +108,7 @@ struct BatteryConfig
 
 	gdcCmd: string;
 	rdmdCmd: string;
+	ldcCmd: string;
 
 	pkgs: string[];
 

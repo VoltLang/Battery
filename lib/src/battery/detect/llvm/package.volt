@@ -384,7 +384,7 @@ fn getLLVMTargetString(arch: Arch, platform: Platform) string
 		case X86: return "i386-apple-macosx10.9.0";
 		case X86_64: return "x86_64-apple-macosx10.9.0";
 		case ARMHF: return null;
-		case AArch64: return null;
+		case AArch64: return "aarch64-apple-macosx10.9.0";
 		}
 	case Linux:
 		final switch (arch) with (Arch) {

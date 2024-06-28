@@ -473,6 +473,13 @@ public:
 				"-o",
 				name
 			];
+		} else if (gen.config.ldcCmd !is null) {
+			c = gen.config.ldcCmd;
+			kind = ArgsKind.Ldc;
+
+			args = c.args ~ [
+				"--of=" ~ name
+			];
 		} else if (gen.config.rdmdCmd !is null) {
 			c = gen.config.rdmdCmd;
 			kind = ArgsKind.Dmd;
@@ -492,7 +499,7 @@ public:
 		fn doScan(p: Project) string[] {
 			found := deepScan(p.srcDir, ".d");
 			files ~= found;
-			if (kind == ArgsKind.Gdc) {
+			if (kind == ArgsKind.Gdc || kind == ArgsKind.Ldc) {
 				return found;
 			} else {
 				return null;
