@@ -285,8 +285,8 @@ fn getVersionFromConfig(cmd: string) semver.Release
 		configOutput = watt.getOutput(cmd, ["--version"], ref configRetval);
 
 		configOutput = watt.strip(configOutput);
-		if (watt.endsWith(configOutput, "svn")) {
-			// When you build from SVN you'll get 8.0.0svn (say). Trim the last part off.
+		if (watt.endsWith(configOutput, ["svn", "git"])) {
+			// When you build from SVN or Git you'll get 8.0.0svn (say). Trim the last part off.
 			configOutput = configOutput[0 .. $-3];
 		}
 
