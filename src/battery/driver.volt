@@ -1,5 +1,5 @@
 // Copyright 2018-2021, Collabora, Ltd.
-// Copyright 2016-2018, Jakob Bornecrantz.
+// Copyright 2016-2026, Jakob Bornecrantz.
 // SPDX-License-Identifier: BSL-1.0
 /*!
  * Holds the default implementation of the Driver class.
@@ -57,7 +57,7 @@ class DefaultDriver : Driver
 public:
 	enum BatteryDirectory = ".battery";
 	enum BatteryConfigFile = "${BatteryDirectory}${dirSeparator}config.txt";
-	enum VersionNumber = "0.1.25-dev";
+	enum VersionNumber = "0.1.25";
 	enum VersionString = "battery version ${VersionNumber}";
 
 
