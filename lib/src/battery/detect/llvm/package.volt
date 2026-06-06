@@ -395,7 +395,7 @@ fn getLLVMTargetString(arch: Arch, platform: Platform) string
 		final switch (arch) with (Arch) {
 		case X86: return "i386-pc-linux-gnu";
 		case X86_64: return "x86_64-pc-linux-gnu";
-		case ARMHF: return "armv7l-unknown-linux-gnueabihf";
+		case ARMHF: return "armv7-unknown-linux-gnueabihf";
 		case AArch64: return "aarch64-unknown-linux-gnu";
 		}
 	case Metal:
