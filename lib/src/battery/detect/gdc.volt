@@ -57,8 +57,12 @@ fn detectFromPath(path: string, out results: Result[]) bool
 		results ~= res;
 	}
 
-	// Try some known suffixes.
-	suffixes := ["-6", "-7", "-8", "-9", "-10", "-11", "-12", "-13"];
+	// Try some known suffixes, build the array.
+	suffixes: string[];
+	foreach_reverse (i; 6 .. 16) {
+		suffixes ~= new "-${i}";
+	}
+
 	foreach (suffix; suffixes) {
 		if (fromPath(path, out res, suffix)) {
 			results ~= res;
