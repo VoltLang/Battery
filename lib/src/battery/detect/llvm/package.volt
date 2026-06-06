@@ -77,8 +77,12 @@ public:
 
 /*!
  * Detect LLVM toolchains.
+ *
+ * When `requestSuffix` is set, only that suffixed toolchain and an
+ * unsuffixed llvm-config/clang pair are searched for on the path.
  */
-fn detectFrom(path: string, confPaths: string[], out results: Result[]) bool
+fn detectFrom(path: string, confPaths: string[], requestSuffix: string,
+              out results: Result[]) bool
 {
 	log.info("Searching for LLVM toolchains.");
 	result: Result;
@@ -90,21 +94,34 @@ fn detectFrom(path: string, confPaths: string[], out results: Result[]) bool
 		}
 	}
 
+	// On Windows we do not scan the suffix paths.
+	version (!Windows) {
+		requestSuffix = null;
+	}
+
+	if (requestSuffix !is null) {
+		if (getFromPath(path, requestSuffix, out result)) {
+			results ~= result;
+		}
+	}
+
 	// No suffix at all.
 	if (getFromPath(path, null, out result)) {
 		results ~= result;
 	}
 
-	// Build the suffixes array.
-	suffixes: string[];
-	foreach_reverse (i; 10 .. 23) {
-		suffixes ~= new "-${i}";
-	}
+	version (!Windows) if (requestSuffix is null) {
+		// Build the suffixes array.
+		suffixes: string[];
+		foreach_reverse (i; 10 .. 23) {
+			suffixes ~= new "-${i}";
+		}
 
-	// We do not scan the suffix paths on windows.
-	version (!Windows) foreach (suffix; suffixes) {
-		if (getFromPath(path, suffix, out result)) {
-			results ~= result;
+		// We do not scan the suffix paths on windows.
+		foreach_reverse (suffix; suffixes) {
+			if (getFromPath(path, suffix, out result)) {
+				results ~= result;
+			}
 		}
 	}
 

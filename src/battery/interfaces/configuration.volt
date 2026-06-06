@@ -1,4 +1,4 @@
-// Copyright 2016-2018, Jakob Bornecrantz.
+// Copyright 2016-2026, Jakob Bornecrantz.
 // Copyright 2021, Collabora Inc.
 // SPDX-License-Identifier: BSL-1.0
 /*!
@@ -10,6 +10,7 @@ import core.exception;
 
 import semver = watt.text.semver;
 import watt.process : Environment;
+import llvmVerReq = battery.frontend.llvmVersion;
 public import battery.defines;
 
 
@@ -40,6 +41,9 @@ public:
 
 	//! The llvmConf path, given by --llvmconf.
 	llvmConf: string;
+
+	//! Requested LLVM version, given by --llvm-version.
+	llvmVersionRequest: llvmVerReq.LLVMVersionRequest;
 
 	//! The battery config file that might be loaded.
 	batConf: BatteryConfig;

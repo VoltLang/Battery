@@ -1,4 +1,4 @@
-// Copyright 2016-2018, Jakob Bornecrantz.
+// Copyright 2016-2026, Jakob Bornecrantz.
 // SPDX-License-Identifier: BSL-1.0
 /*!
  * Logic for setting up configs.
@@ -14,6 +14,7 @@ import watt.process : retrieveEnvironment, Environment;
 import battery.interfaces;
 import battery.policy.tools;
 import battery.util.path : searchPath;
+import llvmVersion = battery.frontend.llvmVersion;
 
 static import battery.util.log;
 
@@ -263,7 +264,11 @@ fn pickLLVM(drv: Driver, config: Configuration,
 	llvmConfs := [config.llvmConf];
 
 	// Main detection.
-	llvm.detectFrom(path, llvmConfs, out results);
+	requestSuffix: string;
+	if (config.llvmVersionRequest.isSet) {
+		requestSuffix = config.llvmVersionRequest.suffix();
+	}
+	llvm.detectFrom(path, llvmConfs, requestSuffix, out results);
 
 	// Add from args.
 	fillIfFound(drv, config, LLVMConfigName, out fromArgs.configCmd, out fromArgs.configArgs);
@@ -292,6 +297,12 @@ fn pickLLVM(drv: Driver, config: Configuration,
 			continue;
 		}
 
+		if (config.llvmVersionRequest.isSet &&
+		    !config.llvmVersionRequest.matches(res.ver)) {
+			log.info(new "Rejecting result #${i + 1} (LLVM-${res.ver}) result from ${res.from} because it does not match requested LLVM version ${config.llvmVersionRequest}.");
+			continue;
+		}
+
 		log.info(new "Selecting result #${i + 1} (LLVM-${res.ver}) from ${res.from} for ${config.arch}-${config.platform}.");
 
 		llvm.addArgs(ref res, config.arch, config.platform, out result);
@@ -310,6 +321,10 @@ fn doToolChainLLVM(drv: Driver, config: Configuration, useLinker: UseAsLinker)
 
 	// Pick the best suited LLVM toolchain found.
 	if (!pickLLVM(drv, config, out need, out result)) {
+		if (config.llvmVersionRequest.isSet) {
+			drv.abort("No valid LLVM Toolchains found for version %s!",
+			          config.llvmVersionRequest.toString());
+		}
 		drv.abort("No valid LLVM Toolchains found!");
 	}
 

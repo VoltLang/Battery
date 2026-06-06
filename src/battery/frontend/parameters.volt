@@ -1,4 +1,4 @@
-// Copyright 2016-2018, Jakob Bornecrantz.
+// Copyright 2016-2026, Jakob Bornecrantz.
 // SPDX-License-Identifier: BSL-1.0
 /*!
  * Holds code for parsing command line options into Lib and Exe.
@@ -17,6 +17,7 @@ import battery.policy.arg;
 import battery.util.parsing;
 import battery.util.printing;
 import battery.frontend.scanner;
+import llvmVersion = battery.frontend.llvmVersion;
 
 
 fn parseTestArgs(drv: Driver, args: string[]) string
@@ -46,7 +47,8 @@ fn parseTestArgs(drv: Driver, args: string[]) string
 }
 
 
-fn getArgs(arch: Arch, platform: Platform, isRelease: bool, isLTO: bool) string[]
+fn getArgs(arch: Arch, platform: Platform, isRelease: bool, isLTO: bool,
+           llvmVersionRequest: llvmVersion.LLVMVersionRequest) string[]
 {
 	ret: string[] = [
 		"--arch", archToString(arch),
@@ -57,6 +59,9 @@ fn getArgs(arch: Arch, platform: Platform, isRelease: bool, isLTO: bool) string[
 	}
 	if (isLTO) {
 		ret ~= "--lto";
+	}
+	if (llvmVersionRequest.isSet) {
+		ret ~= ["--llvm-version", llvmVersionRequest.toString()];
 	}
 	return ret;
 }
@@ -512,12 +517,13 @@ fn parsePlatform(driver: Driver, p: string) Platform
 	}
 }
 
-fn findArchAndPlatform(driver: Driver, ref args: string[],
-                       ref arch: Arch, ref platform: Platform,
-                       ref isRelease: bool, ref isLTO: bool)
+fn findSpecialParameters(driver: Driver, ref args: string[],
+                         ref arch: Arch, ref platform: Platform,
+                         ref isRelease: bool, ref isLTO: bool,
+                         ref llvmVersionRequest: llvmVersion.LLVMVersionRequest)
 {
 	debugFlag, releaseFlag: bool;
-	platformStr, archStr: string;
+	platformStr, archStr, llvmVersionStr: string;
 
 	getopt(ref args, "debug", ref debugFlag);
 	getopt(ref args, "release", ref releaseFlag);
@@ -531,6 +537,12 @@ fn findArchAndPlatform(driver: Driver, ref args: string[],
 
 	if (getopt(ref args, "arch", ref archStr)) {
 		arch = parseArch(driver, archStr);
+	}
+
+	if (getopt(ref args, "llvm-version", ref llvmVersionStr)) {
+		if (!llvmVersion.parseRequest(llvmVersionStr, out llvmVersionRequest)) {
+			driver.abort("invalid llvm version '%s'", llvmVersionStr);
+		}
 	}
 }
 
@@ -668,6 +680,7 @@ struct ToArgs
 			case "--debug": mDrv.abort("--debug argument must be first argument after config"); continue;
 			case "--release": mDrv.abort("--release argument must be first argument after config"); continue;
 			case "--lto": mDrv.abort("--lto argument must be first argument after config"); continue;
+			case "--llvm-version": mDrv.abort("--llvm-version argument must be first argument after config"); continue;
 			case "--exe": argNext(Exe, "expected name"); continue;
 			case "--lib": argNext(Lib, "expected name"); continue;
 			case "--name": argNext(Name, "expected name"); continue;

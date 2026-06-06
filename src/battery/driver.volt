@@ -145,8 +145,9 @@ public:
 		// Filter out --release, --arch and --platform arguments.
 		originalArgs := args;
 		isRelease, isLTO: bool;
-		findArchAndPlatform(this, ref args, ref arch, ref platform,
-		                    ref isRelease, ref isLTO);
+		llvmVersionRequest: llvmVersion.LLVMVersionRequest;
+		findSpecialParameters(this, ref args, ref arch, ref platform,
+		                      ref isRelease, ref isLTO, ref llvmVersionRequest);
 		mBootstrapConfig = getProjectHostConfig(this);
 		mHostConfig = getProjectHostConfig(this);
 		mConfig = getProjectConfig(this, arch, platform);
@@ -159,6 +160,7 @@ public:
 		mConfig.kind = ConfigKind.Native;
 		mConfig.isRelease = isRelease;
 		mConfig.isLTO = isLTO;
+		mConfig.llvmVersionRequest = llvmVersionRequest;
 
 		// Are we not cross compiling.
 		if (arch == mHostConfig.arch &&
@@ -186,6 +188,7 @@ public:
 		if (mBootstrapConfig !is null) {
 			// Need fill in bootstrap commands seperatly.
 			mBootstrapConfig.llvmConf = mLLVMConf;
+			mBootstrapConfig.llvmVersionRequest = llvmVersionRequest;
 			mBootstrapConfig.batConf = batConf;
 			doConfig(this, mBootstrapConfig);
 			fillInConfigCommands(this, mBootstrapConfig);
@@ -220,7 +223,8 @@ public:
 			bootstrapArgs[1] = getArgs(true, mBootstrapConfig.tools.values);
 		}
 		outputConfig(BatteryConfigFile, VersionNumber, originalArgs, batteryTomls,
-			getArgs(arch, platform, mConfig.isRelease, mConfig.isLTO),
+			getArgs(arch, platform, mConfig.isRelease, mConfig.isLTO,
+			        llvmVersionRequest),
 			getArgs(false, mConfig.env),
 			getArgs(false, mConfig.tools.values),
 			bootstrapArgs[0], bootstrapArgs[1],
@@ -288,8 +292,9 @@ public:
 
 		// Filter out --release, --arch and --platform arguments.
 		isRelease, isLTO: bool;
-		findArchAndPlatform(this, ref args, ref arch, ref platform,
-		                    ref isRelease, ref isLTO);
+		llvmVersionRequest: llvmVersion.LLVMVersionRequest;
+		findSpecialParameters(this, ref args, ref arch, ref platform,
+		                      ref isRelease, ref isLTO, ref llvmVersionRequest);
 
 		// Get the configs.
 		mBootstrapConfig = getProjectHostConfig(this);
@@ -562,6 +567,7 @@ in your system.
 		info("\t--platform plat  Selects platform (osx, msvc, linux).");
 		info("\t--release        Builds optimised release binaries.");
 		info("\t--debug          Set debug mode.");
+		info("\t--llvm-version   Select LLVM toolchain (e.g. 14.1.6 is >= 14.1.6, < 15).");
 		info("");
 		info("The three following arguments create a new project.");
 		info("");
