@@ -1,5 +1,5 @@
 // Copyright 2018-2019, Bernard Helyer.
-// Copyright 2016-2019, Jakob Bornecrantz.
+// Copyright 2016-2026, Jakob Bornecrantz.
 // SPDX-License-Identifier: BSL-1.0
 /*!
  * Detect LLVM toolchains.
